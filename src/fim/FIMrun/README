@@ -1,0 +1,5 @@
+
+NOTE: The FIM test suite and run automation ignore any subdirectories of FIMrun.
+      If it is ever necessary to introduce a hierarchy of directories here,
+      changes to the test suite and run automation will also be required.
+

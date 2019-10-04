@@ -1,0 +1,77 @@
+
+List of Fields to be Exchanged Between FIM "DYN" and "PHY" Components
+
+              :PHYSICS:       :PHYSICS:
+ACTUAL        : DUMMY : OWNER :INTENT : TYPE              : NAME
+--------------+-------+-------+-------+-------------------+-------------------------------------------------
+its           :       : ATM   : IN    : INTEGER           : Time step
+ndpv          :       : ATM?  : INOUT : INTEGER           : diagnostics
+us3d          :       : DYN   : INOUT : REAL(nvl,nip)     : west     wind (m/s), layer
+vs3d          :       : DYN   : INOUT : REAL(nvl,nip)     : south    wind (m/s), layer
+ws3d          :       : DYN   : IN    : REAL(nvl,nip)     : vertical wind (m/s), layer
+dp3d          :       : DYN   : IN    : REAL(nvl,nip)     : del p between coord levels (pascals)
+pr3d          :       : DYN   : IN    : REAL(nvlp1,nip)   : pressure (pascals), level
+mp3d          :       : DYN   :NOTUSED: REAL(nvl,nip)     : Montgomery Potential (m**2/s**2)
+tr3d          : tr    : DYN   : INOUT : REAL(nvl,nip,ntr) : tracers, 1=theta, 2=qv, 3=qw, 4=O3
+ex3d          :       : DYN   :NOTUSED: REAL(nvlp1,nip)   : exner funciton, level
+qs3d          :       :  PHY  :NOTUSED: REAL(nvl,nip)     : saturated humidity
+rh3d          :       : DYN   :NOTUSED: REAL(nvl,nip)     : relative humidity from 0 to 1
+ph3d          :       : DYN   : IN    : REAL(nvlp1,nip)   : phi (=gz), m**2/s**2
+trdp          :       : DYN   :   OUT : REAL(nvl,nip,ntr) : (tracer times dp3d ) for tracer transport eq.
+st3d          :       :  PHY  : INOUT : REAL(4,nip)       : soil temperature
+sm3d          :       :  PHY  : INOUT : REAL(4,nip)       : soil moisture
+ts2d          :       :  PHY  : INOUT : REAL(nip)         : skin temperature
+us2d          :       :  PHY  : INOUT : REAL(nip)         : friction velocity/equivalent momentum flux
+hf2d          :       :  PHY  : INOUT : REAL(nip)         : sensible heat flux
+qf2d          :       :  PHY  : INOUT : REAL(nip)         : water vapor/equivalent latent heat flux
+ssus          :       :  PHY  :   OUT : REAL(nvl,nip)     : source/sink for u eqn
+ssvs          :       :  PHY  :   OUT : REAL(nvl,nip)     : source/sink for v eqn
+ssdp          :       :  PHY  :   OUT : REAL(nvl,nip)     : source/sink for dp eqn
+ssth          :       :  PHY  :   OUT : REAL(nvl,nip)     : source/sink for theta eqn
+ssqv          :       :  PHY  :   OUT : REAL(nvl,nip)     : source/sink for qv eqn
+ssqw          :       :  PHY  :   OUT : REAL(nvl,nip)     : source/sink for qw eqn (UNUSED)
+rn2d          :       :  PHY  :   OUT : REAL(nip)         : accumulated total precipitation/rainfall
+rc2d          :       :  PHY  :   OUT : REAL(nip)         : accumulated convective precipitation/rainfall
+pw2d          :       :  DYN  :   OUT : REAL(nip)         : precipitable water
+sw2d          :       :  PHY  :   OUT : REAL(nip)         : downward short-wave radiation flux
+lw2d          :       :  PHY  :   OUT : REAL(nip)         : downward long-wave radiation flux
+CallPhysics   :       : ATM?  : IN    : INTEGER           : physics time-step interval
+CallRadiation :       : ATM?  : IN    : INTEGER           : radiation time-step interval
+qmstr         :       :  PHY  : INOUT : REAL(14*24*numphr): diagnostics
+qmstd         :       :  PHY  : INOUT : REAL(14*24*numphr): diagnostics
+
+
+
+List of a few Fields *PRIVATE* to "DYN" Component
+
+ACTUAL        : DUMMY : OWNER :INTENT : TYPE              : NAME
+--------------+-------+-------+-------+-------------------+-------------------------------------------------
+vor           :       : DYN   :       : REAL(nvl,nip)     : relative vorticity (s^-1)
+
+
+List of a few Fields *PRIVATE* to "PHY" Component
+
+ACTUAL        : DUMMY : OWNER :INTENT : TYPE              : NAME
+--------------+-------+-------+-------+-------------------+-------------------------------------------------
+
+
+NOTES:  
+
+rh3d:  Passed in to physics() but not accessed.  
+mp3d:  Passed in to physics() but not accessed.  
+tk3d:  Not used anywhere *yet*!  Set only in output().  
+qs3d:  Not used anywhere *yet*!  Not set anywhere either!  
+ph3d:  Only ph3d(1,:) are communicated between components.  All levels are
+read in init(), levels ph3d(2:nvl,:) are overwritten.  These levels are 
+overwritten again in diag().  
+init.F90
+      ph3d(ivl,ipn)=ph3d(ivl-1,ipn)-tr(ivl,ipn,1)*(ex3d(ivl,ipn)&
+                   -ex3d(ivl-1,ipn))
+diag.F90
+      ph3d(ivl,ipn)=ph3d(ivl-1,ipn)-tr(ivl,ipn,1)*(ex3d(ivl,ipn)&
+                   -ex3d(ivl-1,ipn))
+
+tr3d:  Jin says this belongs to DYN.  
+trdp:  Jin says this belongs to DYN.  
+
+

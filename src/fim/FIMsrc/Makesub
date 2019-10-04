@@ -1,0 +1,49 @@
+# Makesub
+
+SHELL = /bin/sh
+
+include macros.make
+
+all:
+	(cd icosio && $(MAKE) CPP="$(CPP)" CPP_FLAGS="$(CPP_FLAGS)" \
+	FFLAGS="$(ICOSIO_FFLAGS)" FC="$(FC)" GPTL_FFLAGS="$(GPTL_FFLAGS)") || \
+	(echo "Make failure in icosio/" && exit 1)
+
+	(cd sys_share && $(MAKE) MAKE=$(MAKE) FC=$(FC) FFLAGS="$(PREP_FFLAGS)") || \
+	(echo "make failure in sys_share/" && exit 1)
+
+	(cd utils && $(MAKE) $(GMAKEMINUSJ) MAKE=$(MAKE) FC=$(FCserial) \
+	FFLAGS="$(PREP_FFLAGS)" BINDIR=$(BINDIR) FREEFLAG=$(FREEFLAG) \
+	STATIC_FLAG=$(STATIC_FLAG)) || \
+	(echo "make failure in utils/" && exit 1)
+
+	(cd cntl && $(MAKE) MAKE=$(MAKE) FC=$(FC) FFLAGS="$(PREP_FFLAGS)") || \
+	(echo "make failure in cntl/" && exit 1)
+
+	(cd bacio && $(MAKE) $(GMAKEMINUSJ) MAKE=$(MAKE) CC=$(CC) FC=$(FC) \
+	FOPT="$(PREP_FFLAGS)" FREEFLAG=$(FREEFLAG) FIXEDFLAG=$(FIXEDFLAG) \
+	COPT="$(CFLAGS)") || \
+	(echo "make failure in bacio/" && exit 1)
+
+	(cd w3 && $(MAKE) $(GMAKEMINUSJ) MAKE=$(MAKE) FC=$(FC) FCserial=$(FCserial) \
+	FFLAGS="$(PREP_FFLAGS)" FREEFLAG=$(FREEFLAG) FIXEDFLAG=$(FIXEDFLAG) \
+	LIBDIR=$(LIBDIR)) || \
+	(echo "make failure in w3/" && exit 1)
+
+	(cd prep && $(MAKE) MAKE=$(MAKE) FC=$(FC) FCserial=$(FCserial) \
+	FFLAGS="$(PREP_FFLAGS)" SP_FFLAGS="$(SP_FFLAGS)" \
+	FFLAGS_NO_DEBUG="$(FFLAGS_NO_DEBUG)" BYTE_SWAP_FLAG=$(BYTE_SWAP_FLAG) \
+	FREEFLAG=$(FREEFLAG) FIXEDFLAG=$(FIXEDFLAG) CFLAGS="$(CFLAGS)" \
+	SMS=$(SMS)) || \
+	(echo "make failure in prep/" && exit 1)
+
+#JR Compile post before fim because fim links in stuff from post
+
+	(cd post && $(MAKE) MAKE=$(MAKE) FC=$(FCserial) FFLAGS="$(POST_FFLAGS)" \
+	INCNETCDF=$(INCNETCDF) LIBNETCDF="$(LIBNETCDF)") || \
+	(echo "make failure in post/" && exit 1)
+
+	(cd fim && $(MAKE) MAKE=$(MAKE) FC=$(FC) FFLAGS="$(FIM_FFLAGS)" \
+	COLFLAGS="$(COL_FFLAGS)" FREEFLAG=$(FREEFLAG) SMS=$(SMS) \
+	LINKFLAGS="$(LINKFLAGS)" LINKLIBS="$(LINKLIBS)" NEMS=$(NEMS)) || \
+	(echo "make failure in fim/" && exit 1)

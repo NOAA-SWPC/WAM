@@ -1,0 +1,80 @@
+#!/bin/ksh
+
+# Set ISDIR
+if [ "$IS" -eq 1 ]; then
+  ISDIR="NAT"
+elif [ "$IS" -eq 2 ]; then
+  ISDIR="PRS"
+else
+  echo "Unsupported vertical coordinate option: $IS"
+  exit 1
+fi
+
+# Set the path to the run directory
+workdir=${POST}/fim/${ISDIR}/grib1/pop_${T}
+
+# Move pre-existing workdir to a new name with a time stamp
+if [ -d $workdir ]; then
+  timestamp=`/bin/ls -ld --time-style=+%Y%m%d%H%M%S $workdir | awk '{print $6}'`
+  /bin/mv $workdir $workdir.$timestamp
+fi
+
+if [[ -z "$functions_sourced" ]]
+then
+  test -n "$WFM" && prefix=$FIM_HOME/FIMrun || prefix=.
+  . $prefix/functions.ksh # Most function definitions can be found here.
+fi
+
+# Create post dir, enter it and copy in needed files
+mkdir -p $workdir
+cd $workdir
+cp $PREP/FIMnamelist .
+cp $FIM_HOME/FIMwfm/fim_gribtable .
+cp $SRCDIR/bin/pop .
+
+get_nl_value_unquoted $workdir/FIMnamelist ISOBARICnamelist isobaric_levels_file ISOBARIC_LEVELS_FILE
+
+if [ -f "$POST/$ISOBARIC_LEVELS_FILE" ]; then
+  cp $POST/$ISOBARIC_LEVELS_FILE . 
+else
+  echo "$POST/$ISOBARIC_LEVELS_FILE not found: aborting" 
+  exit 1
+fi
+
+# Set variables
+datestr=`echo $yyyymmddhhmm | sed 's/^\([0-9]\{4\}\)\([0-9]\{2\}\)\([0-9]\{2\}\)\([0-9]\{2\}\)\([0-9]\{2\}\)/\1\/\2\/\3 \4\:\5/'`
+yyjjjhhmm=`date +%y%j%H%M -d "$datestr"`
+
+# Link files
+(. $FIM_HOME/FIMrun/functions.ksh ; linksafe $PREP/glvl.dat; linksafe $PREP/icos_grid_info_level.dat)
+
+# Modify the namelist
+nlh="$FIM_HOME/FIMwfm/xml/namelist/namelistHandler.rb"
+$nlh FIMnamelist POSTnamelist datadir "'$FIM'"
+$nlh FIMnamelist POSTnamelist delta_t $FCST_INTERVAL
+$nlh FIMnamelist POSTnamelist is $IS
+$nlh FIMnamelist POSTnamelist nsmooth_var "$SMOOTH_VAR"
+$nlh FIMnamelist POSTnamelist t1 $T
+$nlh FIMnamelist POSTnamelist t2 $T
+$nlh FIMnamelist POSTnamelist var_list "$VAR_LIST"
+
+# Run pop
+./pop # run pop in foreground
+status=$?
+if [ $status != 0 ]; then
+  echo "pop${GLVL}_${NVL} failed"
+  exit 1
+fi
+
+# Move the output to the output dir
+filename=`printf "$POST/fim/$ISDIR/grib1/pop_$T/${yyjjjhhmm}%04d" $T`
+mv $filename $POST/fim/$ISDIR/grib1
+
+# Check to see if all the output made it to the output dir
+filename=`printf "$POST/fim/${ISDIR}/grib1/${yyjjjhhmm}%04d" $T`
+if [ ! -s "$filename" ]; then
+  echo "ERROR: Output file, '$filename', is missing or is empty!"
+  exit 1
+fi
+
+exit 0

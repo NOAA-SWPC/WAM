@@ -1,0 +1,62 @@
+#!/bin/ksh -v
+
+# This file started the same as batchTemplate, but modified to exclude
+# running the prep portion because that has already happened in a restart
+# run. Added the code (below) to modify contents of FIMnamelist to do a 
+# restart, and rename previous stdout file as well as FIMnamelist.
+
+CONTEXT="batchTemplate-restart"
+
+. ./functions.ksh # Most function definitions can be found here.
+
+ksh_insist # Ensure that we are running in ksh93
+
+let "stime=$(date +%s)"
+print "Starting batchTemplate-fim at $(date)"
+
+# Run batchTemplate-setup if it has not already been run.
+# It provides settings for things like $PREP, $FIM, etc.
+
+test -z "$batchTemplate_setup_ran" && xsource ./batchTemplate-setup
+
+# Save off previous FIMnamelists and stdout files to preserve the history of the run
+#JR Don't add "|| fail" to these "mv" cmds in case a previous restart already moved the files
+
+mv ./FIMnamelist ./FIMnamelist.$$
+mv $PREP/FIMnamelist $PREP/FIMnamelist.$$
+mv $FIM/FIMnamelist $FIM/FIMnamelist.$$
+mv $FIM/stdout $FIM/stdout.$$
+mv $POST/FIMnamelist $POST/FIMnamelist.$$
+
+#JR CRITICAL!!!! The value of $fimnamelist as provided by batchTemplate-setup is
+#JR WRONG at this point in the run, since things like MTNVARFILE and GFSLTLNFILE 
+#JR may have been modified to change the value of things like no_such_file!!! The 
+#JR most up-to-date FIMnamelist is currently in $PREP. Edit that one here to change
+#JR the value of readrestart.
+
+#JR Before running batchTemplate-fim, ensure FIMnamelist is set up to do a restart.
+#JR Also: save the existing FIMnamelist in the fim/ directory to keep a trail of
+#JR bread crumbs. 
+
+#JR vapor doesn't have a case-insensitive sed, so assume case-sensitivity here!!!
+re='\(^[ \t]*[Rr][Ee][Aa][Dd][Rr][Ee][Ss][Tt][Aa][Rr][Tt][ \t]*=[ \t]*\).*'
+sed "s/$re/\1 .true./" $PREP/FIMnamelist.$$ > sed.tmp || fail
+mv -f sed.tmp FIMnamelist || fail
+
+#JR CRITICAL to cp FIMnamelist to $PREP because batchTemplate-fim copies it from
+#JR there to $FIM!!!
+cp FIMnamelist $PREP  || fail "Cannot cp $fimnamelist $PREP"
+
+xsource ./batchTemplate-fim
+let "etime=$(date +%s)"
+let "delta=$etime-$stime"
+print "batchTemplate-fim took $delta seconds"
+
+let "stime=$etime"
+print "Starting batchTemplate-post at $(date)"
+xsource ./batchTemplate-post
+let "etime=$(date +%s)"
+let "delta=$etime-$stime"
+print "batchTemplate-post took $delta seconds"
+
+return 0

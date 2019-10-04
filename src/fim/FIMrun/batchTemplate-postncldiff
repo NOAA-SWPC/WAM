@@ -1,0 +1,88 @@
+#!/bin/ksh
+
+if [ "${NCORES}x" == "x" ]; then
+  if [ "${NSLOTS}x" == "x" ]; then
+    echo "ERROR: Cannot determine how many cores are available on this node"
+    exit 1
+  else
+    NCORES=${NSLOTS}
+  fi
+fi
+echo "Assuming there are $NCORES cores available on this node"
+
+# Build array of grid names and specs to process
+grididx=1
+for grid in ${GRID_NAMES}; do
+  grid_names[${grididx}]=${grid}
+  grid_specs[${grididx}]=`echo -n ${GRID_SPECS} | cut -d: -f ${grididx}`
+  echo "${grid_names[${grididx}]}  ${grid_specs[${grididx}]}"
+  (( grididx=grididx+1 ))
+done
+
+# Build array of cases to process out of grid names, grid specs, and the forecast time range
+T1=`echo $T1 | sed 's/^0\{1,2\}\(.*\)/\1/'`
+T2=`echo $T2 | sed 's/^0\{1,2\}\(.*\)/\1/'`
+echo "T1=$T1"
+echo "T2=$T2"
+t=$T1
+caseidx=0
+while [ $t -le $T2 ]; do
+  echo "Generating cases for forecast time ${t}"
+  grididx=1
+  while [ ${grididx} -le ${#grid_names[*]} ]; do
+    echo "  Domain ${grid_names[${grididx}]}:${grid_specs[${grididx}]}"
+    case="$t:${grid_names[${grididx}]}:${grid_specs[${grididx}]}"
+    cases[${caseidx}]=$case
+    (( caseidx=caseidx+1 ))
+    (( grididx=grididx+1 ))
+  done
+  (( t=t+${FCST_INTERVAL} ))
+done
+
+# Run all the ncl diffs
+n=0
+caseidx=0
+unset case_pids
+unset case_logfiles
+while [ $caseidx -lt ${#cases[*]} ]; do  # Loop over all cases
+  jobs=0
+  startidx=$caseidx
+  (( endidx=$startidx -1 ))
+  # Fork a batch of cases off in the background
+  # Batch size is equal to the number of cores on the node
+  while [ $caseidx -lt ${#cases[*]} -a $jobs -lt $NCORES ]; do 
+
+    export T=`echo ${cases[${caseidx}]} | cut -d: -f 1`
+    export GRID_NAME=`echo -n ${cases[${caseidx}]} | cut -d: -f 2`
+    export GRID_SPEC=`echo -n ${cases[${caseidx}]} | cut -d: -f 3`
+
+    # Run ncldiff here
+    echo "$jobs: Running ncldiff: $T:$GRID_NAME:$GRID_SPEC"
+    ${FIM_HOME}/FIMrun/batchTemplate-ncldiff > ${FIM_HOME}/FIMwfm/log/ncldiff/ncldiff_NAT_${MEMBER_ID}_${GRID_NAME}_${T}_${yyyymmddhhmm}.log 2>&1 &
+    case_pids[${caseidx}]=$!
+    case_logfiles[${caseidx}]=${FIM_HOME}/FIMwfm/log/ncldiff/ncldiff_NAT_${MEMBER_ID}_${GRID_NAME}_${T}_${yyyymmddhhmm}.log
+    (( jobs=jobs+1 ))
+    (( caseidx=caseidx+1 ))
+    (( endidx=endidx+1 ))
+  done
+  (( n=n+1 ))
+
+  # Wait for the cases to finish before doing another batch
+  waitidx=$startidx
+  while [ $waitidx -le $endidx ]; do
+    if [ ${case_pids[${waitidx}]} -ne 0 ]; then
+      echo "Waiting for ncldiff ${cases[${waitidx}]} pid=${case_pids[${waitidx}]}..."
+      wait ${case_pids[${waitidx}]}
+      status=$?
+      if [ ${status} -ne 0 ]; then
+        echo "Ncldiff ${cases[${waitidx}]} failed!  Exit status=${status}"
+        echo "See log at ${case_logfiles[${waitidx}]}"
+        exit ${status}
+      fi
+    fi
+    (( waitidx=waitidx+1 ))
+  done
+
+done
+
+exit 0

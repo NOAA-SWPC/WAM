@@ -1,0 +1,45 @@
+#!/bin/ksh
+
+# Set ISDIR
+if [ $IS -eq 1 ]; then
+  ISDIR="NAT"
+elif [ $IS -eq 2 ]; then
+  ISDIR="PRS"
+else
+  echo "Unsupported vertical coordinate option: $IS"
+  exit 1
+fi
+
+# Set the path to the run directory
+postdir=${FIM_HOME}/FIMrun/fim_${GLVL}_${NVL}_${PES}_${yyyymmddhhmm}/post_${MEMBER_ID}/fim/${ISDIR}/grib1
+workdir=${FIM_HOME}/FIMrun/fim_${GLVL}_${NVL}_${PES}_${yyyymmddhhmm}/post_${MEMBER_ID}/${GRID_NAME}/${ISDIR}/grib1
+
+# Create grid dir
+if [ ! -d ${workdir} ]; then
+  mkdir -p ${workdir}
+fi
+
+# Change to the post dir
+cd ${postdir}
+
+#Get yyjjjHHMM
+datestr=`echo ${yyyymmddhhmm} | sed 's/^\([0-9]\{4\}\)\([0-9]\{2\}\)\([0-9]\{2\}\)\([0-9]\{2\}\)\([0-9]\{2\}\)/\1\/\2\/\3 \4\:\5/'`
+yyjjjhhmm=`date +%y%j%H%M -d "${datestr}"`
+
+# Interpolate onto grid specified by $GRID_SPEC
+file=`printf "${yyjjjhhmm}%04d" ${T}`
+${COPYGB} -g"${GRID_SPEC}" -x ${file} ${workdir}/${file}
+error=$?
+if [ ${error} -ne 0 ]; then
+  echo "ERROR: ${COPYGB} -g'${GRID_SPEC}' -x ${file} ${workdir}/${file} failed!  Exit status=${error}"
+  exit ${error}
+fi
+
+# Check to make sure all files were interpolated
+file=`printf "${yyjjjhhmm}%04d" ${T}`
+if [ ! -s "${workdir}/${file}" ]; then
+  echo "ERROR: ${workdir}/${file} is missing!"
+  exit 1
+fi
+
+exit 0

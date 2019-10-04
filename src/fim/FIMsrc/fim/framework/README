@@ -1,0 +1,17 @@
+
+Subdirectories for ESMF componentization:  
+
+ncep_share  NCEP NEMS ATM component and top-level bits of DYN and PHYS 
+            components.  FIM components re-use much of this code.  For now, 
+            include entire code.  Later, use svn "externals definitions" to 
+            replace this directory with a link to the NCEP repository.  That 
+            is provided we can solve security policy issues and drill a "safe" 
+            hole in the firewall protecting the NCEP repository.  John 
+            Schneider is not completely pessimistic about an eventual 
+            policy solution...  
+
+components  FIM-specific component code.  This re-uses as much of ncep_share 
+            as is practical.  
+
+doc         Related documents.  
+

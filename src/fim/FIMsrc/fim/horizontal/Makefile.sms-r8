@@ -1,0 +1,67 @@
+SHELL = /bin/sh
+# Makefile for parallel (SMS) horizontal FIM
+SMS=/whome/jacquesm/sms-2.9.1.20
+#FLAGS = $(FFLAGS) $(FREEFLAG) -I $(SMS)/include -DVERBOSE
+FLAGS = $(FFLAGS) $(FREEFLAG) -I $(SMS)/include
+
+include FIM_HORIZONTAL_OBJS
+include FIM_HORIZONTAL_OBJS_TOP
+OBJS = $(OBJS_BASE) $(OBJS_TOP)
+
+PINCLUDES = $(INCLUDES:.inc=.inc.SMS ) 
+LIBSMS    = -L$(SMS)/lib -lsms
+LIBS      = $(LIBSMS)
+
+#HALOSIZE will be passed to SMS and to both init.F90 and module_decomp.F90
+NGRIDPTS := $(shell echo "10*(2^$(G))^2+2            "|bc )
+HALOSIZE := $(shell echo "6*sqrt($(NGRIDPTS)/$(P))+45"|bc )
+#
+NIP      := $(shell echo "$(NGRIDPTS)+2*$(HALOSIZE)+1   "|bc )
+PPP = $(SMS)/bin/ppp
+PPP_FLAGS  = --r8 --Fmodule=module_decomp --comment --FreeFormat --HaloSize=$(HALOSIZE) --GlobalSize=$(NIP) $*_cpp.f
+PPP_FLAGS1 = --r8                         --comment --FreeFormat --HaloSize=$(HALOSIZE) --GlobalSize=$(NIP) $*_cpp.f
+PPP_HEADER_FLAGS = --header --comment
+
+CPP=/lib/cpp
+#CPP_FLAGS=-traditional -P -C -D HALO_SIZE=$(HALOSIZE) -DVERBOSE
+CPP_FLAGS=-traditional -P -C -D HALO_SIZE=$(HALOSIZE) 
+
+# ---------------------------------------------------------------------------
+
+.SUFFIXES:
+.SUFFIXES: .o .F90 .f .f90
+
+.F90.o  :
+	$(CPP) $(CPP_FLAGS) $*.F90 > $*_cpp.f
+	$(PPP) $(PPP_FLAGS)
+	$(FC) -c $(FLAGS) $*_cpp_sms.f
+	mv $*_cpp_sms.o $*.o
+
+
+.f90.o  :
+	$(FC) -c $(FLAGS) $*.f90
+
+all: $(FIMEXE)
+
+include FIM_HORIZONTAL_DEPENDENCIES
+
+machine.o: machine.f
+	$(FC) -c $(COLFFLAGS) $<
+physcons_v.o : physcons_v.F90 machine.o
+	$(FC) -c $(COLFFLAGS) $<
+funcphys_v.o : funcphys_v.F90 machine.o physcons_v.o
+	$(FC) -c $(COLFFLAGS) $<
+module_control.o: module_control.F90
+	$(CPP) $(CPP_FLAGS) $*.F90 > $*_cpp.f
+	$(PPP) $(PPP_FLAGS1) 
+	$(FC) -c $(FLAGS)  $*_cpp_sms.f
+	mv $*_cpp_sms.o $*.o
+module_decomp.o: module_decomp.F90 module_control.o
+	$(CPP) $(CPP_FLAGS) $*.F90 > $*_cpp.f
+	$(PPP) $(PPP_FLAGS1) 
+	$(FC) -c $(FLAGS)  $*_cpp_sms.f
+	mv $*_cpp_sms.o $*.o
+
+$(FIMEXE): $(OBJS)
+	   $(FC) -o $(FIMEXE) $(FLAGS) $(OBJS) -L$(SMS)/lib -lsms
+

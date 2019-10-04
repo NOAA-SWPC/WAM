@@ -1,0 +1,8 @@
+
+bilinear_init(grid_file1, n1, grid_file2, n2)
+INTEGER :: n1, n2
+CHARACTER *(*) :: grid_file1, grid_file2
+
+bilinear_interp (grid1, grid2)
+REAL grid1(n1), grid2(n2)
+

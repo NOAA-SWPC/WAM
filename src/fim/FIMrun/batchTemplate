@@ -1,0 +1,30 @@
+#!/bin/ksh
+
+CONTEXT="batchTemplate"
+
+. ./functions.ksh # Most function definitions can be found here.
+
+ksh_insist # Ensure that we are running in ksh93
+
+let "stime=$(date +%s)"
+print "Starting batchTemplate-prep at $(date)"
+xsource ./batchTemplate-prep
+let "etime=$(date +%s)"
+let "delta=$etime-$stime"
+print "batchTemplate-prep took $delta seconds"
+
+let "stime=$etime"
+print "Starting batchTemplate-fim at $(date)"
+xsource ./batchTemplate-fim
+let "etime=$(date +%s)"
+let "delta=$etime-$stime"
+print "batchTemplate-fim took $delta seconds"
+
+let "stime=$etime"
+print "Starting batchTemplate-post at $(date)"
+xsource ./batchTemplate-post
+let "etime=$(date +%s)"
+let "delta=$etime-$stime"
+print "batchTemplate-post took $delta seconds"
+
+return 0

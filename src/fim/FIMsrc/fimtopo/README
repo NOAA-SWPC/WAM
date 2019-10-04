@@ -1,0 +1,21 @@
+
+			     FIMsrc/fimtopo
+			      Mike Fiorino
+				20091026
+
+Tthis is the standalone code to make analyze 5' wrf global topo to the fim icos
+grid.
+
+Files:
+======
+
+Makefile    # uses ifort to make
+const.mod   # module from compile with constants (built)
+fimtopo.f90 # main program with all modules
+fimtopo.nl  # namelist
+fimtopo.o   # (built)
+fimtopo.x   # application (built)
+libmf.mod   # module from compile with utility subroutines (built)
+
+This code was added to prep/ss2icos/mktopo.f90 to make wrf topo during the fim
+run.

@@ -1,0 +1,333 @@
+#!/bin/ksh
+
+CONTEXT="batchTemplate-postall"
+
+#Check SGE system variables for core count
+if [ "${NCORES}x" == "x" ]; then
+  if [ "${NSLOTS}x" == "x" ]; then
+    #Check PBS system variables for core count
+    if [[ -n "$PBS_NNODES" ]]; then
+      NCORES=$PBS_NNODES
+    else
+    #Otherwise, assume 4 cores as the greatest common factor
+    echo "ERROR: Cannot determine how many cores are available on this node"
+    NCORES=4
+    fi
+  else
+    NCORES=${NSLOTS}
+  fi
+fi
+echo "Assuming there are $NCORES cores available on this node"
+
+$BINDIR/get_gribout | grep "gribout:" | sed 's/^.*://' | read GRIBOUT || \
+  fail "Could not get GRIBOUT."
+
+# Set these variables from FIMnamelist if they are not already in the
+# environment.
+nlh="$FIM_HOME/FIMwfm/xml/namelist/namelistHandler.rb"
+test -z "$IS" && IS=$($nlh FIMnamelist POSTnamelist is)
+test -z "$SMOOTH_VAR" && SMOOTH_VAR=$($nlh FIMnamelist POSTnamelist nsmooth_var)
+test -z "$VAR_LIST" && VAR_LIST=$($nlh FIMnamelist POSTnamelist var_list)
+
+# Export variables
+export GLVL IS NVL PES SMOOTH_VAR SRCDIR VAR_LIST
+
+# Build array of grid names and specs to process
+grididx=1
+for grid in ${GRID_NAMES}; do
+  grid_names[${grididx}]=${grid}
+  grid_specs[${grididx}]=`echo -n ${GRID_SPECS} | cut -d: -f ${grididx}`
+  echo "${grid_names[${grididx}]}  ${grid_specs[${grididx}]}"
+  (( grididx=grididx+1 ))
+done
+
+# Build array of cases to process out of grid names, grid specs, and the forecast time range
+T1=`echo $T1 | sed 's/^0\{1,2\}\(.*\)/\1/'`
+T2=`echo $T2 | sed 's/^0\{1,2\}\(.*\)/\1/'`
+test -z "$T1" && T1=0
+test -z "$T2" && T2=0
+echo "T1=$T1"
+echo "T2=$T2"
+t=$T1
+caseidx=0
+while [ $t -le $T2 ]; do
+  echo "Generating cases for forecast time ${t}"
+  grididx=1
+  while [ ${grididx} -le ${#grid_names[*]} ]; do
+    echo "  Domain ${grid_names[${grididx}]}:${grid_specs[${grididx}]}"
+    case="$t:${grid_names[${grididx}]}:${grid_specs[${grididx}]}"
+    cases[${caseidx}]=$case
+    (( caseidx=caseidx+1 ))
+    (( grididx=grididx+1 ))
+  done
+  (( t=t+${FCST_INTERVAL} ))
+done
+
+# Run all the pops
+n=0
+caseidx=0
+unset case_pids
+unset case_logfiles
+
+# User can choose to skip pop (e.g. when rerunning only part of postall)
+get_nl_value_unquoted $fimnamelist WFMnamelist run_pop RUN_POP 
+if [[ "$RUN_POP" != "F" ]] # T or undefined
+then
+  while [ $caseidx -lt ${#cases[*]} ]; do  # Loop over all cases
+    jobs=0
+    startidx=$caseidx
+    (( endidx=$startidx -1 ))
+    # Fork a batch of cases off in the background
+    # Batch size is equal to the number of cores on the node
+    while [ $caseidx -lt ${#cases[*]} -a $jobs -lt $NCORES ]; do 
+  
+      export T=`echo ${cases[${caseidx}]} | cut -d: -f 1`
+      export GRID_NAME=`echo -n ${cases[${caseidx}]} | cut -d: -f 2`
+      export GRID_SPEC=`echo -n ${cases[${caseidx}]} | cut -d: -f 3`
+
+      # Run pop here
+      if [[ "${GRID_NAME}" == "fim" && "${GRIBOUT}" == "FALSE" ]]; then
+        echo "$jobs: Running pop: $T:$GRID_NAME:$GRID_SPEC"
+        # Export variables provided by batchTemplate-setup and needed by batchTemplate-pop
+        export FIM POST PREP
+        ${FIM_HOME}/FIMrun/batchTemplate-pop > ${FIM_HOME}/FIMwfm/log/pop/pop_NAT_${MEMBER_ID}_${T}_${yyyymmddhhmm}.log 2>&1 &
+        status=$?
+        if [ ${status} -ne 0 ]; then
+          echo "pop FIM failed!  Exit status=${status}"
+          echo "See log at  ${FIM_HOME}/FIMwfm/log/pop/pop_NAT_${MEMBER_ID}_${T}_${yyyymmddhhmm}.log "
+          return ${status}
+        fi
+        case_pids[${caseidx}]=$!
+        case_logfiles[${caseidx}]=${FIM_HOME}/FIMwfm/log/pop/pop_NAT_${MEMBER_ID}_${T}_${yyyymmddhhmm}.log
+        (( jobs=jobs+1 ))
+      else
+        case_pids[${caseidx}]=0
+      fi
+      (( caseidx=caseidx+1 ))
+      (( endidx=endidx+1 ))
+    done
+    (( n=n+1 ))
+  
+    # Wait for the cases to finish before doing another batch
+    waitidx=$startidx
+    while [ $waitidx -le $endidx ]; do
+      if [ ${case_pids[${waitidx}]} -ne 0 ]; then
+        echo "Waiting for pop ${cases[${waitidx}]} pid=${case_pids[${waitidx}]}..."
+        wait ${case_pids[${waitidx}]}
+        status=$?
+        if [ ${status} -ne 0 ]; then
+          echo "pop ${cases[${waitidx}]} failed!  Exit status=${status}"
+          echo "See log at ${case_logfiles[${waitidx}]}"
+          return ${status}
+        fi
+      fi
+      (( waitidx=waitidx+1 ))
+    done
+  done
+fi
+
+get_nl_value_unquoted $fimnamelist WFMnamelist run_interp RUN_INTERP 
+if [[ "$RUN_INTERP" != "F" ]] # T or undefined
+then
+  # Run all the interps
+  n=0
+  caseidx=0
+  unset case_pids
+  unset case_logfiles
+  while [ $caseidx -lt ${#cases[*]} ]; do  # Loop over all cases
+    jobs=0
+    startidx=$caseidx
+    (( endidx=$startidx -1 ))
+    # Fork a batch of cases off in the background
+    # Batch size is equal to the number of cores on the node
+    while [ $caseidx -lt ${#cases[*]} -a $jobs -lt $NCORES ]; do 
+  
+      export T=`echo ${cases[${caseidx}]} | cut -d: -f 1`
+      export GRID_NAME=`echo -n ${cases[${caseidx}]} | cut -d: -f 2`
+      export GRID_SPEC=`echo -n ${cases[${caseidx}]} | cut -d: -f 3`
+  
+      # Run interp here
+      if [ "${GRID_NAME}" != "fim" ]; then
+        echo "$jobs: Running interp: $T:$GRID_NAME:$GRID_SPEC"
+        ${FIM_HOME}/FIMrun/batchTemplate-interp > ${FIM_HOME}/FIMwfm/log/interp/interp_NAT_${MEMBER_ID}_${GRID_NAME}_${T}_${yyyymmddhhmm}.log 2>&1 &
+        case_pids[${caseidx}]=$!
+        case_logfiles[${caseidx}]=${FIM_HOME}/FIMwfm/log/interp/interp_NAT_${MEMBER_ID}_${GRID_NAME}_${T}_${yyyymmddhhmm}.log
+        (( jobs=jobs+1 ))
+      else
+        case_pids[${caseidx}]=0
+      fi
+      (( caseidx=caseidx+1 ))
+      (( endidx=endidx+1 ))
+    done
+    (( n=n+1 ))
+  
+    # Wait for the cases to finish before doing another batch
+    waitidx=$startidx
+    while [ $waitidx -le $endidx ]; do
+      if [ ${case_pids[${waitidx}]} -ne 0 ]; then
+        echo "Waiting for interp ${cases[${waitidx}]} pid=${case_pids[${waitidx}]}..."
+        wait ${case_pids[${waitidx}]}
+        status=$?
+        if [ ${status} -ne 0 ]; then
+          echo "Interp ${cases[${waitidx}]} failed!  Exit status=${status}"
+          echo "See log at ${case_logfiles[${waitidx}]}"
+          return ${status}
+        fi
+      fi
+      (( waitidx=waitidx+1 ))
+    done
+  done
+fi
+
+get_nl_value_unquoted $fimnamelist WFMnamelist run_grib12 RUN_GRIB12
+if [[ "$RUN_GRIB12" != "F" ]] # T or undefined
+then
+  # Run all the grib12s
+  n=0
+  caseidx=0
+  unset case_pids
+  unset case_logfiles
+  while [ $caseidx -lt ${#cases[*]} ]; do  # Loop over all cases
+    jobs=0
+    startidx=$caseidx
+    (( endidx=$startidx -1 ))
+    # Fork a batch of cases off in the background
+    # Batch size is equal to the number of cores on the node
+    while [ $caseidx -lt ${#cases[*]} -a $jobs -lt $NCORES ]; do 
+
+      export T=`echo ${cases[${caseidx}]} | cut -d: -f 1`
+      export GRID_NAME=`echo -n ${cases[${caseidx}]} | cut -d: -f 2`
+      export GRID_SPEC=`echo -n ${cases[${caseidx}]} | cut -d: -f 3`
+
+      # Run grib12 here
+      echo "$jobs: Running grib12: $T:$GRID_NAME:$GRID_SPEC"
+      ${FIM_HOME}/FIMrun/batchTemplate-grib12 > ${FIM_HOME}/FIMwfm/log/grib12/grib12_NAT_${MEMBER_ID}_${GRID_NAME}_${T}_${yyyymmddhhmm}.log 2>&1 &
+      case_pids[${caseidx}]=$!
+      case_logfiles[${caseidx}]=${FIM_HOME}/FIMwfm/log/grib12/grib12_NAT_${MEMBER_ID}_${GRID_NAME}_${T}_${yyyymmddhhmm}.log
+      (( jobs=jobs+1 ))
+      (( caseidx=caseidx+1 ))
+      (( endidx=endidx+1 ))
+    done
+    (( n=n+1 ))
+
+    # Wait for the cases to finish before doing another batch
+    waitidx=$startidx
+    while [ $waitidx -le $endidx ]; do
+      if [ ${case_pids[${waitidx}]} -ne 0 ]; then
+        echo "Waiting for grib12 ${cases[${waitidx}]} pid=${case_pids[${waitidx}]}..."
+        wait ${case_pids[${waitidx}]}
+       status=$?
+        if [ ${status} -ne 0 ]; then
+          echo "Grib12 ${cases[${waitidx}]} failed!  Exit status=${status}"
+          echo "See log at ${case_logfiles[${waitidx}]}"
+          return ${status}
+        fi
+      fi
+      (( waitidx=waitidx+1 ))
+    done
+  done
+fi
+
+get_nl_value_unquoted $fimnamelist WFMnamelist run_tracker RUN_TRACKER
+if [[ "$RUN_TRACKER" != "F" ]] # T or undefined
+then
+  # Run all the trackers
+  n=0
+  caseidx=0
+  unset case_pids
+  unset case_logfiles
+  while [ $caseidx -lt ${#cases[*]} ]; do  # Loop over all cases
+    jobs=0
+    startidx=$caseidx
+    (( endidx=$startidx -1 ))
+    # Fork a batch of cases off in the background
+    # Batch size is equal to the number of cores on the node
+    while [ $caseidx -lt ${#cases[*]} -a $jobs -lt $NCORES ]; do 
+
+      export T=`echo ${cases[${caseidx}]} | cut -d: -f 1`
+      export GRID_NAME=`echo -n ${cases[${caseidx}]} | cut -d: -f 2`
+      export GRID_SPEC=`echo -n ${cases[${caseidx}]} | cut -d: -f 3`
+
+      # Run tracker here
+      if [ "${GRID_NAME}" == "fim" ]; then
+        echo "$jobs: Running tracker: $T:$GRID_NAME:$GRID_SPEC"
+        ${FIM_HOME}/FIMrun/batchTemplate-tracker > ${FIM_HOME}/FIMwfm/log/tracker/tracker_NAT_${MEMBER_ID}_${T}_${yyyymmddhhmm}.log 2>&1 &
+        case_pids[${caseidx}]=$!
+        case_logfiles[${caseidx}]=${FIM_HOME}/FIMwfm/log/tracker/tracker_NAT_${MEMBER_ID}_${T}_${yyyymmddhhmm}.log
+        (( jobs=jobs+1 ))
+      else
+        case_pids[${caseidx}]=0
+      fi
+      (( caseidx=caseidx+1 ))
+      (( endidx=endidx+1 ))
+    done
+    (( n=n+1 ))
+
+    # Wait for the cases to finish before doing another batch
+    waitidx=$startidx
+    while [ $waitidx -le $endidx ]; do
+      if [ ${case_pids[${waitidx}]} -ne 0 ]; then
+        echo "Waiting for tracker ${cases[${waitidx}]} pid=${case_pids[${waitidx}]}..."
+        wait ${case_pids[${waitidx}]}
+        status=$?
+        if [ ${status} -ne 0 ]; then
+          echo "tracker ${cases[${waitidx}]} failed!  Exit status=${status}"
+          echo "See log at ${case_logfiles[${waitidx}]}"
+          return ${status}
+        fi
+      fi
+      (( waitidx=waitidx+1 ))
+    done
+  done
+fi
+
+get_nl_value_unquoted $fimnamelist WFMnamelist run_ncl RUN_NCL
+if [[ "$RUN_NCL" != "F" ]] #RUN_NCL=T or RUN_NCL undefined
+then
+  # Run all the ncls
+  n=0
+  caseidx=0
+  unset case_pids
+  unset case_logfiles
+  while [ $caseidx -lt ${#cases[*]} ]; do  # Loop over all cases
+    jobs=0
+    startidx=$caseidx
+    (( endidx=$startidx -1 ))
+    # Fork a batch of cases off in the background
+    # Batch size is equal to the number of cores on the node
+    while [ $caseidx -lt ${#cases[*]} -a $jobs -lt $NCORES ]; do 
+
+      export T=`echo ${cases[${caseidx}]} | cut -d: -f 1`
+      export GRID_NAME=`echo -n ${cases[${caseidx}]} | cut -d: -f 2`
+      export GRID_SPEC=`echo -n ${cases[${caseidx}]} | cut -d: -f 3`
+
+      # Run ncl here
+      echo "$jobs: Running ncl: $T:$GRID_NAME:$GRID_SPEC"
+      ${FIM_HOME}/FIMrun/batchTemplate-ncl > ${FIM_HOME}/FIMwfm/log/ncl/ncl_NAT_${MEMBER_ID}_${GRID_NAME}_${T}_${yyyymmddhhmm}.log 2>&1 &
+      case_pids[${caseidx}]=$!
+      case_logfiles[${caseidx}]=${FIM_HOME}/FIMwfm/log/ncl/ncl_NAT_${MEMBER_ID}_${GRID_NAME}_${T}_${yyyymmddhhmm}.log
+      (( jobs=jobs+1 ))
+      (( caseidx=caseidx+1 ))
+      (( endidx=endidx+1 ))
+    done
+    (( n=n+1 ))
+
+    # Wait for the cases to finish before doing another batch
+    waitidx=$startidx
+    while [ $waitidx -le $endidx ]; do
+      if [ ${case_pids[${waitidx}]} -ne 0 ]; then
+        echo "Waiting for ncl ${cases[${waitidx}]} pid=${case_pids[${waitidx}]}..."
+        wait ${case_pids[${waitidx}]}
+        status=$?
+        if [ ${status} -ne 0 ]; then
+          echo "Ncl ${cases[${waitidx}]} failed!  Exit status=${status}"
+          echo "See log at ${case_logfiles[${waitidx}]}"
+          return ${status}
+        fi
+      fi
+      (( waitidx=waitidx+1 ))
+    done
+  done
+fi
+
+return 0

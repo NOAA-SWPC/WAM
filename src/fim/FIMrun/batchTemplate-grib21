@@ -1,0 +1,49 @@
+#!/bin/ksh
+
+IS=1
+# Set ISDIR
+if [ $IS -eq 1 ]; then
+  ISDIR="NAT"
+elif [ $IS -eq 2 ]; then
+  ISDIR="PRS"
+else
+  echo "Unsupported vertical coordinate option: $IS"
+  exit 1
+fi
+
+# Set the path to the run directory
+grib1dir=${FIM_HOME}/FIMrun/fim_${GLVL}_${NVL}_${PES}_${yyyymmddhhmm}/post_${MEMBER_ID}/${GRID_NAME}/${ISDIR}/grib1
+grib2dir=${FIM_HOME}/FIMrun/fim_${GLVL}_${NVL}_${PES}_${yyyymmddhhmm}/post_${MEMBER_ID}/${GRID_NAME}/${ISDIR}/grib2
+
+# Create grib1 dir
+if [ ! -d ${grib1dir} ]; then
+  mkdir -p ${grib1dir}
+fi
+
+# Change to the grib1 dir
+cd ${grib2dir}
+
+#Get yyjjjHHMM
+datestr=`echo ${yyyymmddhhmm} | sed 's/^\([0-9]\{4\}\)\([0-9]\{2\}\)\([0-9]\{2\}\)\([0-9]\{2\}\)\([0-9]\{2\}\)/\1\/\2\/\3 \4\:\5/'`
+yyjjjhhmm=`date +%y%j%H%M -d "${datestr}"`
+
+
+# Convert grib2 file to grib1
+file="${yyjjjhhmm}0${T}"
+echo "T: ${T} file: ${file}"
+echo "cmd: ${CNVGRIB} -p40 -g21 ${grib2dir}/${file} ${grib1dir}/${file}"
+
+${CNVGRIB} -p40 -g21 ${grib2dir}/${file} ${grib1dir}/${file}
+error=$?
+if [ ${error} -ne 0 ]; then
+  echo "ERROR: ${CNVGRIB} -p40 -g21 ${grib2dir}/${file} ${grib1dir}/${file} failed!  Exit status=${error}"
+  exit ${error}
+fi
+
+# Check to make sure all files were converted
+if [ ! -s "${grib1dir}/${file}" ]; then
+  echo "ERROR: ${grib1dir}/${file} is missing!"
+  exit 1
+fi
+
+exit 0

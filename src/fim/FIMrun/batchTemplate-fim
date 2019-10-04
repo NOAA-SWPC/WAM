@@ -1,0 +1,275 @@
+#!/bin/ksh
+
+# NOTE: When run by Workflow Manager, this script's output can be found in
+# FIMwfm/logs/fim. Also see FIMwfm/logs/workflow for general WFM messages.
+
+CONTEXT="batchTemplate-fim"
+
+# Source functions.ksh if needed.
+
+if [[ -z "$functions_sourced" ]]
+then
+  test -n "$WFM" && prefix=$FIM_HOME/FIMrun || prefix=.
+  . $prefix/functions.ksh # Most function definitions can be found here.
+fi
+
+ksh_insist # Ensure that we are running in ksh93
+
+# For WFM runs, enter the appropriate FIMrun directory.
+
+if [[ -n "$WFM" && -n "$FIM_HOME" ]]
+then
+  cd $FIM_HOME/FIMrun || fail "Cannot cd to $FIM_HOME/FIMrun."
+fi
+
+# Run batchTemplate-setup if it has not already been run.
+
+test -z "$batchTemplate_setup_ran" && xsource ./batchTemplate-setup
+
+# Enter the appropriate run directory (as defined by batchTemplate-setup).
+
+FIMRUN="$PWD"
+cd $DIR || fail "Cannot cd to $DIR."
+
+# Preserve a pre-existing WFM fim dir by renaming with a timestamp.
+
+if [[ -n "$WFM" && -d "$FIM" ]]
+then
+  ls -ld --time-style=+%Y%m%d%H%M%S $FIM | awk '{print $6}' | \
+    read timestamp || fail "Cannot ls $FIM."
+  test -z "$timestamp" && fail "Cannot determine timestamp for $FIM."
+  mv $FIM $FIM.$timestamp || fail "Cannot move $FIM -> $FIM.$timestamp."
+fi
+
+# Make the fim directory if it doesn't already exist (which it will
+# if this is a restart run)
+
+if [[ ! -d $FIM ]]
+then
+mkdir $FIM || fail "Cannot make directory $FIM."
+fi
+
+# If a pre-existing fim directory was identified, link its contents.
+
+if [[ -d "$FIMDIR" ]]
+then
+  linksafe $FIMDIR/* $FIM
+else
+
+  # Copy needed items.
+  
+  if [[ -d "$PREPDIR" ]]
+  then
+    cp $fimnamelist $FIM/$NLFILE || \
+      fail "Cannot copy $fimnamelist -> $FIM/$NLFILE."
+  else
+    cp $PREP/$NLFILE $FIM || fail "Cannot copy $PREP/$NLFILE -> $FIM."
+  fi
+  # NEMS configuration files
+#TODO:  At present, FIMnamelist must be kept in sync with fim.configure 
+#TODO:  by hand.  Automate.  
+  cp ../model_configure $FIM || \
+    fail "Cannot copy ../model_configure -> $FIM"
+  cp ../atmos.configure $FIM || \
+    fail "Cannot copy ../atmos.configure -> $FIM"
+  cp ../fim.configure.G${GLVL} $FIM/fim.configure || \
+    fail "Cannot copy ../fim.configure.G${GLVL} -> $FIM/fim.configure"
+
+  if [[ -f "../$smsnamelist" ]]
+  then
+    cp ../$smsnamelist $FIM/SMSnamelist || \
+      fail "Cannot copy $smsnamelist -> $FIM/SMSnamelist."
+  fi
+
+  # Enter the fim directory.
+  
+  cd $FIM || fail "Cannot cd to $FIM."
+
+  # Link items.
+  
+  linksafe $BINDIR/$FIMEXE
+#TBH:  $NEMSX is full path to NEMS executable (/foo/bar/NEMS.x)
+  if [[ -n "$NEMSX" ]]
+  then
+    linksafe $NEMSX
+    FIMEXEBASE=$(basename $NEMSX)
+  fi
+
+  #JR fim will need the gribtable if post is being run as a part of the model proper
+  cp ../$fimgribtable $FIM || \
+    fail "Cannot copy ../$fimgribtable -> $FIM"
+
+#JR Need $INFO_FILE in $FIM in case post is being run as part of fim
+  test -f "$INFO_FILE" || linksafe $PREP/$INFO_FILE
+
+  # For ensemble runs, we overwrote these variables, so restore them
+  if [[ "$WFM" == "ENSEMBLE" ]]
+  then
+    sanlFile=$sanlFilename
+    sfcanlFile=$sfcanlFilename
+  fi
+  get_nl_value_unquoted $fimnamelist PREPnamelist gfsltln_file GFSLTLNFILE
+  test -z "$GFSLTLNFILE" && fail "Could not get gfsltln filename from $fimnamelist."
+  get_nl_value_unquoted $fimnamelist PREPnamelist aerosol_file AEROSOLFILE
+  test -z "$AEROSOLFILE" && fail "Could not get aerosol filename from $fimnamelist."
+  get_nl_value_unquoted $fimnamelist PREPnamelist co2_2008_file CO2_2008FILE
+  test -z "$CO2_2008FILE" && fail "Could not get co2_2008 filename from $fimnamelist."
+  get_nl_value_unquoted $fimnamelist PREPnamelist co2_glb_file CO2_GLBFILE
+  test -z "$CO2_GLBFILE" && fail "Could not get co2_glb filename from $fimnamelist."
+  get_nl_value_unquoted $fimnamelist ISOBARICnamelist isobaric_levels_file ISOBARIC_LEVELS_FILE
+  test -z "$ISOBARIC_LEVELS_FILE" && fail "Could not get isobaric_levels_file filename from $fimnamelist."
+
+  for file in $LATLON_FILE $GLVL_FILE $sanlFile $GFSLTLNFILE gfsfc.dat \
+    theta_coor.txt dpsig.txt top_grid $AEROSOLFILE $CO2_2008FILE $CO2_GLBFILE sst_dat ocean_bcs_ltln \
+    $ISOBARIC_LEVELS_FILE
+  do
+    linksafe $PREP/$file
+  done
+
+  # If COMPARE_VAR is enabled, link two DecompInfo*.dat files; otherwise link
+  # link only one.
+  
+  for taskcount in $taskcounts
+  do
+    decompfile="$PREP/DecompInfo_$taskcount.dat"
+    linksafe $decompfile
+  done # for taskcount in $taskcounts
+
+  endian_big 82
+  endian_little 30
+  
+  chem_fim_setup
+
+  # Sets environment variables (including MPIRUNCMD) from FIMnamelist's
+  # SYSTEMnamelist.
+
+  export_nl $fimnamelist SYSTEMnamelist
+
+  if [[ "$parallelism" == "serial" ]]
+  then # serial run
+    print "$CONTEXT on host $(hostname) running: ./$FIMEXEBASE" >stdout
+    print "Current directory is $PWD" >>stdout
+    ./$FIMEXEBASE >>stdout 2>&1 || fail "./$FIMEXEBASE failed."
+    print "\n$FIMEXEBASE finished\n"
+  elif [[ "$parallelism" == "parallel" ]]
+  then # parallel run
+
+    # Get number of cores for mpirun.
+    
+    $BINDIR/get_num_cores | grep "num_cores_mpirun:" | sed 's/^.*://' | read PES_ARG || fail "Could not get num_cores_mpirun."
+
+    # Set PES_ARG and MPIRUNENV depending on target.
+    
+    case "$FC" in
+	    "bluefire")
+	    PES_ARG=""
+	    MPIRUNENV=""
+	    ;;
+	    "debug")
+	    PES_ARG=$PES_ARG
+	    MPIRUNENV="$(endian_big 82) $(endian_little 30)"
+	    ;;
+	    "frostintel")
+	    PES_ARG=$PES_ARG
+	    MPIRUNENV=""
+	    ;;
+	    "jaguargnu") 
+	    PES_ARG=$PES_ARG
+	    MPIRUNENV=""
+	    ;;
+	    "jaguarintel") 
+	    PES_ARG=$PES_ARG
+	    MPIRUNENV=""
+	    ;;
+	    "lahey") 
+	    PES_ARG=$PES_ARG
+	    MPIRUNENV="$(endian_big 82) $(endian_little 30)"
+	    ;;
+	    "linuxpcgnu") 
+	    PES_ARG=$PES_ARG
+	    MPIRUNENV=""
+	    ;;
+	    "macgnu") 
+	    PES_ARG=$PES_ARG
+	    MPIRUNENV=""
+	    ;;
+	    "mvapich") 
+	    PES_ARG=$PES_ARG
+	    MPIRUNENV="$(endian_big 82) $(endian_little 30)"
+	    ;;
+	    "nems")
+	    PES_ARG=$PES_ARG
+	    MPIRUNENV="$(endian_big 82) $(endian_little 30)"
+	    ;;
+	    "openmpi")
+	    PES_ARG=$PES_ARG
+	    MPIRUNENV=""
+	    ;;
+	    "ranger")
+	#JR This is a GUESS!
+	    PES_ARG=$PES_ARG
+	    MPIRUNENV=""
+	    ;;
+	    "serial")
+	    PES_ARG=""
+	    MPIRUNENV=""
+	    ;;
+	    "vapor")
+	    PES_ARG=""
+	    MPIRUNENV=""
+	    ;;
+	    "devccs")
+	    PES_ARG=""
+	    MPIRUNENV=""
+	    ;;
+	    *)
+	      print "$0: Unknown build configuration: $FC"
+	      exit 1
+	      ;;
+    esac
+
+    # The exit status of some MPI run commands is unreliable, so disable trapping.
+    
+    trap_off
+    
+    # Run FIM (PES_ARG may be blank).
+    
+    print "$CONTEXT on host $(hostname) running: $MPIRUNCMD $PES_ARG $MPIRUNENV ./$FIMEXEBASE" > stdout
+    print "Current directory is $PWD" >> stdout
+    $MPIRUNCMD $PES_ARG $MPIRUNENV ./$FIMEXEBASE >> stdout 2>&1
+
+    # Re-enable error trapping.
+    
+    trap_on
+
+    # Check for completion messages in stdout file.
+    
+    fimstatus="fail"
+    # normal completion message
+    grep 'Program exited normally' stdout && fimstatus="ok"
+    # NEMS completion message
+    grep 'PROGRAM nems      HAS ENDED' stdout && fimstatus="ok"
+
+    if [[ "$fimstatus" == "fail" ]]
+    then
+      fail "$FIMEXEBASE failed."
+    else
+      print "\n$FIMEXEBASE finished\n"
+    fi
+
+  else # neither "serial" or "parallel" was specified
+    fail "Parallelism error."
+    
+  fi # if serial/parallel
+
+  endian_reset
+
+fi # if [[ -d "$FIMDIR" ]]
+
+cat stdout || fail "Cannot cat stdout."
+
+cd $FIMRUN || fail "Cannot cd to $FIMRUN."
+
+print "\nDone with fim\n"
+
+return 0

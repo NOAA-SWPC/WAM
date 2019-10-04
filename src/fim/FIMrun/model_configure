@@ -1,0 +1,48 @@
+#######################
+####  Model Core  #####
+#######################
+
+core: fim                   # Introduce ourselves to the NEMS
+
+
+#################################
+####  Specify the I/O tasks  ####
+#################################
+
+quilting:              .false.    # Do you want asynchronous quilting/history writes?
+read_groups:           0
+read_tasks_per_group:  0
+write_groups:          0
+write_tasks_per_group: 0
+
+
+#################################
+#####  Forecast Start Time  #####
+#################################
+
+start_year:   2007
+start_month:  07
+start_day:    17
+start_hour:   00
+start_minute: 0
+start_second: 0
+
+tstart:       0.            # The starting forecast hour
+
+
+#############################################################
+#####  Forecast Length / Restarting / Output Frequency  #####
+#############################################################
+
+nhours_fcst:      24   # Length of the forecast (hours)
+
+
+##########################
+####  Ensemble flags  ####
+##########################
+
+ENS_SPS:            .FALSE.
+total_member:       1
+RUN_CONTINUE:       .FALSE.
+PE_MEMBER01:        0
+

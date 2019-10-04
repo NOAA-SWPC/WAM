@@ -1,0 +1,131 @@
+NCEP GFS Physics Driver/Wrapper 
+----------------------------------------------------------
+
+April 12, 2016
+
+NGGPS Distribution v 2.1.0
+
+The NEMS and GSM trunk is updated to included this physics driver.
+
+https://svnemc.ncep.noaa.gov/projects/nems/trunk
+
+Changes since previous release (Hang Lei and Patrick Tripp):
+
+The additonal nems/branches/PhysDrvI branch has arguments for grrad and gbphys relating to new convection schemes. See the source code for additional details.
+
+The additonal nems/branches/GMTB branch is prepared for GMTB under nggps project.
+
+Ozone physics has been disabled in src/atmos/phys/gbphys.f. The call to ozphys is commented out.
+
+This package for NGGPS contains the entire NEMS under version control. It is from the nems_slg_shoc development branch that has been recently updated from the NEMS trunk. It has been tested with the regression test scripts (partially), and with the parallel production scripts on WCOSS which are provided in this release.
+
+It has been extensively tested on WCOSS. It also builds on Theia but has not been recently tested there. Although it should work fine after some recent fixes. It was previously heavily tested on Zeus which was a similar system and ran fine.
+
+The driver can build and run in GSM under the NEMS framework, and it can build and run as a standalone driver with only a minimal set of components. It has been extensively tested on WCOSS, and builds on Theia with only minimal testing.
+
+The standalone test driver is under branch directory /standalone.
+
+See the README in phys_drv/standalone for additional documentation on the standalone driver.
+
+The repositories are available on the EMC subversion server:
+
+NEMS
+https://svnemc.ncep.noaa.gov/projects/nems/branches/PhysDrvI
+
+GSM
+https://svnemc.ncep.noaa.gov/projects/gsm/branches/PhysDrvI
+
+(src/atmos/gsm is an svn:external repository.)
+
+cd phys_drv/src/atmos
+
+svn checkout https://svnemc.ncep.noaa.gov/projects/gsm/branches/PhysDrvI ./gsm
+
+A gsm directory will then be created - src/atmos/gsm
+
+Language features and overview: 
+
+Much of the code utilizes modern Fortran standards up to F2003 and should be compatible with current Fortran compiler implementations. Model data is encapsulated into several Derived Data Types (DDT) with Type Bound Procedures. Most of the model arguments are pointers into the actual arrays that are allocated and managed externally to the driver.  The DDTs serve as containers of the passed arguments and are organized into several DDTs to provide some structure and organization to the data. One goal and constraint of this development was to minimize changes to GFS/GSM code.
+
+
+Listing of primary source contents:
+
+standalone/
+    README - read this for further instructions
+    make.sh - make script
+    makefile - makefile for the required prerequisites and executable test driver
+
+src/atmos/phys
+    nuopc_physics.F90 - physics driver, DDTs, wrapper subroutines
+        ddts and type bound procedures
+
+        nuopc_phys_init()  - initialize radiation and physics parameters
+        nuopc_rad_run() - run the radiation component (grrad)
+
+        nuopc_rad_update() - wrapper for the rad_update call, used for updating solar related fields between timesteps.
+
+        nuopc_phys_run() - run the remaining physics components (gbphys)
+        use_nuopc = .true. -  enable to the use of the driver
+        debug = toggle debug messages at compile time
+
+        There are additional savein/saveout/readin/readout routines that are used by the standalone driver
+	These routines can be used for other verification and debug purposes also.
+
+        More documentation is in the source code.
+
+    grrad.f -  radiation subroutine called by nuopc_rad_run
+    gbphys.f - physics subroutine called by nuopc_physics_run
+
+src/atmos/gsm/phys
+
+    gfs_physics_initialize_mod.f - calls nuopc_phys_init()
+        This is an esmf registered routine.
+
+    gfs_physics_run_mod.f - calls do_physics_one_step, passes in mdl_param from init
+        This is an esmf registered routine.
+        
+    do_physics_one_step.f - calls gloopr and gloopb, passes mdl_param
+        
+    gloopr.f - fills the DDT containers and calls nuopc_rad_run
+       
+    gloopb.f - fills the DDT containers and calls nuopc_phys_run
+
+    gfs_physics_internal_state_mod.f - added the "model_parameters" DDT to the internal state so that it could remain in scope and persist between the ESMF registered initialize and run phases. Model parameters only needs to be set once in the initialize step. The ddt is then passed to the run phase.
+
+
+The currently defined DDTs are as follows:
+
+tbd_data         : arguments that still need to be categorized.
+state_fields_in  : input states for physics
+state_fields_out : output states for physics
+sfc_properties   : surface properties
+diagnostics      : diagnostic fluxes and other fields
+interface_fields : fields used for coupling to land/ocean
+cloud_properties : cloud related fields
+radiation_tendencies : radiation fields
+dynamic_parameters : model parameters that change (used to be part of model_parameters but these change frequently)
+model_parameters : paramters that are set once in the initialize phase
+
+The type bound procedures subroutines follow after the type definitions in nuopc_physics.F90
+
+To run the GSM under NEMS:
+
+To run the gfs go to phys_drv/tests:
+
+edit the rt.conf file and comment out the other tests.
+
+All regression tests have been applied to this modification before commit back to trunk.
+
+You might need to edit make additional changes to the run scripts.
+
+export QUEUE=debug
+
+You might also need to change your ptmp location.
+
+export PTMP=$dprefix1/nems/ptmp
+
+Run the regression test script.
+
+rt.sh -f -l test.conf
+
+The rt.sh will build the NEMS using "gmake gsm" under src/ top level directory. 

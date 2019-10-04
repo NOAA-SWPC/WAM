@@ -1,0 +1,241 @@
+#!/bin/ksh
+
+# Usage: llsubmitfim [directory]
+#
+#TODO:  Need a better naming convention since "llsubmitfim" 
+#TODO:  addresses LoadLeveler-specific and devccs site-specific 
+#TODO:  issues.  
+#
+# submits FIM job to LoadLeveler on devccs (cirrus/stratus)
+#
+# If directory argument is present, assume we are running via test automation, cd 
+# to the specified directory, set the sync option, submit FIM job to LoadLeveler and wait 
+# until it finishes.
+#
+#	All other variables are set the FIMnamelist file.  
+
+#TODO:  Remove duplication with other *fim job submission scripts!  
+
+CONTEXT="llsubmitfim"
+
+# Source shared-functions code & set up tracing
+. ./functions.ksh # Most function definitions can be found here.
+set +o xtrace # comment out for verbose trace (ksh93 required)
+
+ksh_check # Verify that ksh93 is running/available.
+
+if [[ "$#" -eq 0 ]] # Not a test-suite run
+then
+  sync=""
+elif [[ "$#" -eq 1 ]] # Test-suite run
+then
+  test -d "$1" || fail "Run directory not found: $1."
+  cd $1 || fail "Cannot cd to $1."
+  sync="-s"
+else
+  fail "Too many arguments."
+fi
+
+set_fimnamelist
+
+FIMSETUP="fim_setup.ksh"
+
+# Make sure FIMnamelist exists
+test -f "$fimnamelist" || \
+  fail "Please \"cp ${fimnamelist}.default $fimnamelist\" and edit the latter \
+appropriately."
+
+# Get SRCDIR & make absolute
+get_srcdir # This must always come before any other get_* calls
+cd $SRCDIR || fail "Cannot cd to $SRCDIR"
+SRCDIR="$PWD"
+cd -
+
+# Set up run directory
+rundir="llsubmitfim_$$"
+mkdir $rundir || fail "Cannot make directory $rundir"
+print "Made directory $rundir"
+copyfiles $PWD $rundir || fail "Cannot copy contents of $PWD -> $rundir"
+copyfiles $SRCDIR/bin $rundir || \
+  fail "Cannot copy contents of $SRCDIR/bin -> $rundir"
+cp $SRCDIR/$FIMSETUP $rundir || \
+  fail "Cannot cpy $SRCDIR/$FIMSETUP -> $rundir."
+cd $rundir || fail "Cannot cd to $rundir."
+
+ksh_fix # Modify run scripts to use ksh93, if necessary.
+
+# Get number of cores to ask for (on IBM this is the number of cores to pass to MPI)
+./get_num_cores | grep "num_cores_mpirun:" | sed 's/^.*://' | read N || \
+  fail "Could not get num_cores_mpirun."
+
+get_from_nl ComputeTasks as PES
+
+# Find out if we'll run serial or parallel and set up appropriately
+get_from_nl Parallelism as parallelism
+if [[ "$parallelism" == "parallel" ]]
+then
+  FIM="fim"
+  ParaSuffix="$PES"
+  if (( PES <= 0 )) ; then
+    fail "ComputeTasks must be positive"
+  fi
+else
+  FIM="fimS"
+  ParaSuffix="S"
+fi
+
+# Set up run-time environment
+get_fc || fail "$0: Could not set FC."
+xsource_notrace ./$FIMSETUP $FC
+
+# Determine other runtime parameters
+get_from_nl GLVL
+get_from_nl NVL
+# HH:MM:SS
+./GetQueueTime | read QT || fail "GetQueueTime failed"
+
+# Choose a run queue
+Qgroup="mtb"
+#Qclass="mtb"
+Qclass="debug"
+
+# Do COMPARE_VAR setup
+compare_var_setup
+
+#JR Currently use_task_geometry must be false. Allocation of cores to compute tasks
+#JR and write tasks is handled internally to FIM
+use_task_geometry="no"
+
+# Set up "task geometry"
+# Map MPI tasks to IBM nodes using "LSB_PJL_TASK_GEOMETRY"
+# See ./set_task_geometry.ksh for details.  
+# Set mctpn = "maximum compute tasks per node"
+# For the moment, limit mctpn to number of cores per node.  
+#TODO:  Try (( mctpn = 2 * cpn )) for SMT once hybrid MPI-OpenMP works. 
+#TODO:  SMT references:  http://www.cisl.ucar.edu/docs/bluefire/be_quickstart.html#smt
+#TODO:                   https://userdocs.rdhpcs.noaa.gov/NCEP/
+#if [[ $use_task_geometry == "yes" ]]
+#then
+#  (( mctpn = cpn ))
+#  task_geometry=$( ./set_task_geometry.ksh $compute_tasks $nwt $mwtpn $mctpn )
+#  if (( $? != 0 )) ; then
+#    fail "task_geometry"
+#  fi
+#fi
+
+#TODO:  turn on #@task_geometry for devccs if applicable and see notes below
+
+## site-specific additions to $ENV_SETUP
+#  cat >> env_setup.ksh << EOF2
+## Doris Pan says we do not need TARGET_CPU_LIST anymore...
+## TARGET_CPU_LIST from NEMS_r6890/job/runglobal
+##export TARGET_CPU_LIST="-1"
+#export MP_LABELIO="yes"
+#EOF2
+
+#TODO:  fix $llnode to match #@task_geometry
+#TODO:  replace #@total_tasks=$N with task_geometry
+
+# Get number of nodes for llsubmit
+./get_num_cores | grep "tot_nodes:" | sed 's/^.*://' | read tot_nodes || fail "Could not get tot_nodes."
+
+# Thanks to Doris Pan for much helpful advice about these site-specific settings for vapor.  
+# Doris Pan says:  For runs that use all (or most) cores on a node, use the following 
+# settings:  
+#   #@ node_usage=not_shared 
+#   # do not set #@blocking
+#   #@ node_resources = ConsumableMemory (110GB)
+#   # do not set #@resources
+#   #@ node = <number of nodes needed>
+# FOR non-SMT MPI-only runs with 32 tasks per node:  
+#   #@ task_affinity=core(1)
+# FOR SMT MPI-only runs with 64 tasks per node:  
+#   #@ task_affinity=cpu(1)
+#TODO:  fully implement the above rules
+case $Qclass in
+ "debug")
+          llnode_usage="#@ node_usage = shared"
+          llnode="##@ node = 1"
+          llblocking="#@ blocking=unlimited"
+          llresources="#@ resources= ConsumableMemory (1GB)"
+          lltask_affinity="#@ task_affinity=cpu(1)"
+          ;;
+   "mtb")
+          llnode_usage="#@ node_usage = not_shared"
+          llnode="#@ node = $tot_nodes"
+          llblocking="##@ blocking=unlimited"
+          llresources="#@ node_resources= ConsumableMemory(110GB)"
+          lltask_affinity="#@ task_affinity=cpu(1)"
+          ;;
+       *)
+          fail "Unknown queue class: $Qclass"
+          ;;
+esac
+
+cat > ll_preamble <<EOF
+#!/bin/ksh
+#
+# LoadLeveler wrapper for $FC build of FIM
+#
+#
+#@ output = fim${glvl}_${nvl}_${ParaSuffix}.\$(jobid).out
+#@ error = fim${glvl}_${nvl}_${ParaSuffix}.\$(jobid).err
+##@ job_name = fim${glvl}_${nvl}_${ParaSuffix}.\$(jobid)
+#@ job_type = parallel
+$lltask_affinity
+$llnode_usage
+#@ total_tasks = $N
+$llnode
+$llblocking
+$llresources
+#@ class = $Qclass
+#@ group = $Qgroup
+#@ wall_clock_limit = $QT
+#@ parallel_threads = 1
+###@ preferences = Feature == "dev"
+#@ network.MPI = sn_all,not_shared,us
+### use this for vapor
+###@ account_no=MTB013-RES
+### use this for devccs
+#@ account_no=NAM-T2O
+#@ queue
+#
+EOF
+
+# LoadLeveler-specific wrappers for batchTemplate and batchTemplate-restart
+cp ll_preamble btwrapper.init  || fail "cp ll_preamble btwrapper.init failed"
+cp ll_preamble btwrapper.restart  || fail "cp ll_preamble btwrapper.restart failed"
+
+echo "./batchTemplate" >> btwrapper.init || fail "echo ./batchTemplate >> btwrapper.init failed"
+echo "./batchTemplate-restart" >> btwrapper.restart || fail "echo ./batchTemplate >> btwrapper.restart failed"
+
+chmod a+x btwrapper.init btwrapper.restart || fail "chmod btwrapper.init btwrapper.restart failed"
+
+# Diagnostics
+
+check_nems
+
+./get_num_cores | grep "num_cores_donothing:" | sed 's/^.*://' | read dnt || \
+  fail "Could not get num_cores_donothing."
+
+./get_num_cores | grep "num_nodes_wt:" | sed 's/^.*://' | read num_nodes_wt || \
+  fail "Could not get num_nodes_wt."
+
+./get_num_cores | grep "num_cores_notattached:" | sed 's/^.*://' | read num_cores_notattached || \
+  fail "Could not get num_cores_notattached."
+
+./get_num_cores | grep "num_cores_batch:" | sed 's/^.*://' | read num_cores_batch || \
+  fail "Could not get num_cores_batch."
+
+print "Submitting job to queue $Q"
+print "compute tasks:      $PES"
+print "write tasks:        $nwt (write nodes: $num_nodes_wt)"
+print "do_nothing tasks:   $dnt"
+print "total core request: $num_cores_batch (no partial nodes)"
+print "cores unattached:   $num_cores_notattached"
+
+SUBMIT_CMD="llsubmit"
+
+$SUBMIT_CMD $sync btwrapper.init || fail "$SUBMIT_CMD failed"
+
+return 0

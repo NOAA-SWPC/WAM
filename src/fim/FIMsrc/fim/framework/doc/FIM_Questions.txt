@@ -1,0 +1,11 @@
+
+FIM Questions
+
+  Why use real*4 and real*8 instead of real(sp) and real(dp)?  
+
+  Why are hybgen and pi2dp caled twice each time-step?  
+    Answer:  Disagreement between Jin and Rainer.  The first set of calls 
+             has been removed in the latest version.  
+
+
+

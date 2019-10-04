@@ -1,0 +1,174 @@
+#!/bin/ksh
+
+# Usage: bsubfim [directory]
+#
+#TODO:  Need a better naming convention since "bsubfim" 
+#TODO:  addresses LSF-specific and bluefire site-specific 
+#TODO:  issues.  
+#
+# submits FIM job to LSF on bluefire
+#
+# If directory argument is present, assume we are running via test automation, cd 
+# to the specified directory, set the sync option, submit FIM job to LSF and wait
+# until	it finishes.
+#
+#	All other variables are set the FIMnamelist file.  
+
+#TODO:  Remove duplication with other ?subfim scripts!  
+
+CONTEXT="bsubfim"
+
+# Source shared-functions code & set up tracing
+. ./functions.ksh # Most function definitions can be found here.
+set +o xtrace # comment out to enable verbose bsubfim trace
+
+ksh_check # Verify that ksh93 is running/available.
+
+if [[ "$#" -eq 0 ]] # Not a test-suite run
+then
+  sync=""
+elif [[ "$#" -eq 1 ]] # Test-suite run
+then
+  test -d "$1" || fail "Run directory not found: $1."
+  cd $1 || fail "Cannot cd to $1."
+  sync="-K"
+else
+  fail "Too many arguments."
+fi
+
+set_fimnamelist
+
+FIMSETUP="fim_setup.ksh"
+
+# Make sure FIMnamelist exists
+test -f "$fimnamelist" || \
+  fail "Please \"cp ${fimnamelist}.default $fimnamelist\" and edit the latter \
+appropriately."
+
+# Get SRCDIR & make absolute
+get_srcdir # This must always come before any other get_* calls
+cd $SRCDIR || fail "Cannot cd to $SRCDIR"
+SRCDIR="$PWD"
+cd -
+
+# Set up run directory
+rundir="bsubfim_$$"
+mkdir $rundir || fail "Cannot make directory $rundir"
+print "Made directory $rundir."
+copyfiles $PWD $rundir || fail "Cannot copy contents of $PWD -> $rundir"
+copyfiles $SRCDIR/bin $rundir || \
+  fail "Cannot copy contents of $SRCDIR/bin -> $rundir"
+cp $SRCDIR/$FIMSETUP $rundir || \
+  fail "Cannot cpy $SRCDIR/$FIMSETUP -> $rundir."
+cd $rundir || fail "Cannot cd to $rundir."
+
+ksh_fix # Modify run scripts to use ksh93, if necessary.
+
+# Get number of cores to ask for (on IBM this is the number of cores to pass to MPI)
+./get_num_cores | grep "num_cores_mpirun:" | sed 's/^.*://' | read N || \
+  fail "Could not get num_cores_mpirun."
+
+get_from_nl ComputeTasks as PES
+
+# Find out if we'll run serial or parallel and set up appropriately
+get_from_nl Parallelism as parallelism
+if [[ "$parallelism" == "parallel" ]]
+then
+  FIM="fim"
+  ParaSuffix="$PES"
+  if (( PES <= 0 )) ; then
+    fail "ComputeTasks must be positive"
+  fi
+else
+  FIM="fimS"
+  ParaSuffix="S"
+fi
+
+# Set up run-time environment
+get_fc || fail "$0: Could not set FC."
+xsource_notrace ./$FIMSETUP $FC
+
+# Determine other runtime parameters
+get_from_nl GLVL
+get_from_nl NVL
+# for bluefire IBM, strip ":SS" off of "HH:MM:SS" in $QT
+./GetQueueTime | cut -f-2 -d":" | read QT || fail "GetQueueTime failed"
+
+# Choose a run queue
+#Q="regular"
+Q="debug"
+
+# Do COMPARE_VAR setup
+compare_var_setup
+
+#JR Currently use_task_geometry must be false. Allocation of cores to compute tasks
+#JR and write tasks is handled internally to FIM
+# If use_task_geometry is enabled, uncomment the following section
+use_task_geometry="no"
+
+## Set up "task geometry"
+## Map MPI tasks to IBM nodes using "LSB_PJL_TASK_GEOMETRY"
+## See ./set_task_geometry.ksh for details.  
+## Set mctpn = "maximum compute tasks per node"
+## For the moment, limit mctpn to number of cores per node.  
+##TODO:  Try (( mctpn = 2 * cpn )) for SMT once hybrid MPI-OpenMP works. 
+##TODO:  SMT reference:  http://www.cisl.ucar.edu/docs/bluefire/be_quickstart.html#smt
+#if [[ $use_task_geometry == "yes" ]]
+#then
+#  (( mctpn = cpn ))
+#  task_geometry=$( ./set_task_geometry.ksh $PES $nwt $mwtpn $mctpn )
+#  if (( $? != 0 )) ; then
+#    fail "task_geometry"
+#  fi
+#  sed -i 's:\(SYSTEMnamelist.*$\):\1\n! Set automatically by bsubfim\n  LSB_PJL_TASK_GEOMETRY="$task_geometry":' FIMnamelist
+#fi
+
+# Diagnostics
+
+check_nems
+
+./get_num_cores | grep "num_cores_donothing:" | sed 's/^.*://' | read dnt || \
+  fail "Could not get num_cores_donothing."
+
+./get_num_cores | grep "num_nodes_wt:" | sed 's/^.*://' | read num_nodes_wt || \
+  fail "Could not get num_nodes_wt."
+
+./get_num_cores | grep "num_cores_notattached:" | sed 's/^.*://' | read num_cores_notattached || \
+  fail "Could not get num_cores_notattached."
+
+./get_num_cores | grep "num_cores_batch:" | sed 's/^.*://' | read num_cores_batch || \
+  fail "Could not get num_cores_batch."
+
+print "Submitting job to queue $Q"
+print "compute tasks:      $PES"
+print "write tasks:        $nwt (write nodes: $num_nodes_wt)"
+print "do_nothing tasks:   $dnt"
+print "total core request: $num_cores_batch (no partial nodes)"
+print "cores unattached:   $num_cores_notattached"
+
+SUBMIT_CMD="bsub"
+SUBMIT_ARGS="-P 46660020 \
+  -n $N \
+  -J fim${GLVL}_${NVL}_${ParaSuffix} \
+  -o fim${GLVL}_${NVL}_${ParaSuffix}.o%J \
+  -e fim${GLVL}_${NVL}_${ParaSuffix}.e%J \
+  -q $Q \
+  -W $QT \
+  $sync \
+  -R 'span[ptile=64]'"
+
+# Create script for later potential submission to restart the job
+cat > bsubfim.restart <<EOF
+#!/bin/ksh
+$SUBMIT_CMD $SUBMIT_ARGS < batchTemplate-restart || fail "$SUBMIT_CMD failed"
+EOF
+chmod 755 bsubfim.restart
+
+# span[ptile=64] below says to use 64 MPI tasks per node, which implies SMT
+
+$SUBMIT_CMD $SUBMIT_ARGS < batchTemplate || fail "$SUBMIT_CMD failed"
+
+# Note:  
+# not needed when task geometry is used in LSF.  
+
+return 0

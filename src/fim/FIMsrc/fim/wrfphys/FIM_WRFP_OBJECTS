@@ -1,0 +1,22 @@
+# wrfphys objects
+
+OBJS = \
+  libmassv.o \
+  module_cu_g3.o \
+  module_cu_gd.o \
+  module_cumulus_driver.o \
+  module_microphysics_driver.o \
+  module_mp_gsfcgce.o \
+  module_mp_kessler.o \
+  module_mp_lin.o \
+  module_mp_morr_two_moment.o \
+  module_mp_thompson.o \
+  module_mp_thompson07.o \
+  module_mp_wdm5.o \
+  module_mp_wdm6.o \
+  module_mp_wsm3.o \
+  module_mp_wsm5.o \
+  module_mp_wsm6.o \
+  module_set_wrfphys.o \
+  module_wrfphys_prep_fim.o \
+  module_wrfphysvars.o

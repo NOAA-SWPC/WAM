@@ -1,0 +1,7 @@
+'../fim/'      !Pathname  - path to where the variables are
+5              !Nvars     - the number of variables to process (max 5)
+up vp hg tm rp !Var       - variables
+2              !Ntimes    - the number of output times to process
+12 24          !Time      - output times (hours)
+2              !NumLevels - the number of pressure levels to output
+1000 850       !Pressure  - pressure levels (mb)

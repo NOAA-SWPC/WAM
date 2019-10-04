@@ -1,0 +1,196 @@
+#!/bin/ksh
+
+# Make sure we are using GMT time zone for time computations
+export TZ="GMT"
+
+# Set up paths to system commands
+MKDIR=/bin/mkdir
+LN=/bin/ln
+ECHO=/bin/echo
+RM=/bin/rm
+CAT=/bin/cat
+CUT=/bin/cut
+TR=/usr/bin/tr
+DATE=/bin/date
+TAIL=/usr/bin/tail
+SORT="/bin/sort -n"
+#WGRIB="/share/home/01033/harrop/wgrib/wgrib"
+#WGRIB="/work/01033/harrop/wgrib/wgrib"
+WGRIB=/opt/grads/2.0.a2/bin/wgrib
+WC=/usr/bin/wc
+UNIQ=/usr/bin/uniq
+AWK=/bin/awk
+GRIBTAB=''
+
+# Set up arrays of fields and corresponding levels needed
+set -A fields \
+       HGT    \
+       UGRD   \
+       UGRD   \
+       UGRD   \
+       UGRD   \
+       UGRD   \
+       VGRD   \
+       VGRD   \
+       VGRD   \
+       VGRD   \
+       VGRD   \
+       TMP    \
+       ACPCP  \
+       NCPCP  \
+       MSLMA
+
+set -A levels \
+       "500 mb" \
+       "850 mb" \
+       "700 mb" \
+       "250 mb" \
+       "200 mb" \
+       "hybrid lev 1" \
+       "850 mb" \
+       "700 mb" \
+       "250 mb" \
+       "200 mb" \
+       "hybrid lev 1" \
+       "700 mb" \
+       "sfc"    \
+       "sfc"    \
+       "MSL"
+
+# Set up paths to executables
+GRBINDEX=${TRACKER}/bin/grbindex
+GETTRK=${TRACKER}/bin/gettrk
+
+# Set up the work directory and cd into it
+workdir=${FIM_HOME}/FIMrun/fim_${GLVL}_${NVL}_${PES}_${yyyymmddhhmm}/tracker_${MEMBER_ID}/${T}
+${RM} -rf ${workdir}
+${MKDIR} -p ${workdir}
+cd ${workdir}
+
+# Extract initialization time components
+YYYY=`${ECHO} ${yyyymmddhhmm} | ${CUT} -c1-4`
+MM=`${ECHO} ${yyyymmddhhmm} | ${CUT} -c5-6`
+DD=`${ECHO} ${yyyymmddhhmm} | ${CUT} -c7-8`
+HH=`${ECHO} ${yyyymmddhhmm} | ${CUT} -c9-10`
+YY=`${DATE} -u +%y -d "${MM}/${DD}/${YYYY}"`
+JJJ=`${DATE} -u +%j -d "${MM}/${DD}/${YYYY}"`
+
+# Generate the ATCFNAME for this member
+ATCFNAME=`echo ${ATCFNAME} | sed "s/NN/${MEMBER_ID}/"`
+
+# Extract fields needed by tracker for each output time and concatenate them together to produce a big forecast file
+fcst_file=./${yyyymmddhhmm}.grib.${ATCFNAME}
+rm -f ${fcst_file}
+typeset -Z4 fcst
+fcst=0
+while [ ${fcst} -le ${T} ]; do
+
+  # Get name of the post file
+  postfile=${FIM_HOME}/FIMrun/fim_${GLVL}_${NVL}_${PES}_${yyyymmddhhmm}/post_${MEMBER_ID}/fim/NAT/grib1/${YY}${JJJ}${HH}00${fcst}
+
+  # Extract fields from the post file and append them to the fcst_file
+  ${WGRIB} -v ${postfile} | egrep "(HGT:500 mb|UGRD:500 mb|UGRD:850 mb|UGRD:700 mb|UGRD:250 mb|UGRD:200 mb|UGRD:hybrid lev 1:|VGRD:500 mb|VGRD:850 mb|VGRD:700 mb|VGRD:250 mb|VGRD:200 mb|VGRD:hybrid lev 1:|TMP:700 mb|ACPCP:sfc|NCPCP:sfc|MSLMA:MSL)" | ${WGRIB} -i ${postfile} -append -grib -o ${fcst_file}
+
+  (( fcst = ${fcst} + ${FCST_INTERVAL} ))
+  
+done
+
+# Run grbindex to get a grib index file
+${GRBINDEX} ${fcst_file} ${fcst_file}.ix
+
+# Extract the tcvital record
+#tcvital=${TCVITALS}/syndat_tcvitals.${YYYY}
+#tcvital=${TCVITALS}/${yyyymmddhhmm}.tcvitals
+#tcvital=${TCVITALS}/tcvitals.${yyyymmddhhmm}*
+tcvital=${TCVITALS}/tcvitals.${YYYY}${MM}${DD}${HH}.txt
+${CAT} ${tcvital} | grep "${YYYY}${MM}${DD} ${HH}00" | ${SORT} | ${UNIQ} > tcvital.txt
+
+# Create link for output track
+${LN} -s track.${yyyymmddhhmm}.${ATCFNAME} fort.64
+
+# Determine the length of the forecast
+fcst_length=`${WGRIB} ${fcst_file} | ${CUT} -d":" -f 9 | ${CUT} -d"=" -f 2 | ${SORT} | ${TAIL} -1`
+
+# Generate a list of forecast times to process based on what's in the input grib file
+i=0
+while [ ${i} -lt 65 ]; do
+  (( fcst = i * 6 ))
+  if [ ${fcst} -gt ${fcst_length} ]; then 
+    itmphrs[i]=99
+  else
+    itmphrs[i]=${fcst}
+  fi
+  (( i=i+1 ))
+done
+
+# Generate stswitch based on how many storms there are in the tcvital file
+nstorms=`${CAT} tcvital.txt | ${AWK} '{print $2}' | ${SORT} | ${UNIQ} | ${WC} -l`
+
+i=0
+while [ ${i} -lt 15 ]; do
+  if [ ${i} -lt ${nstorms} ]; then
+    stswitch[i]=1
+  else
+    stswitch[i]=3
+  fi
+  (( i=i+1 ))
+done
+
+# Generate the namelist
+${CAT} <<EOF > namelist
+&datein 
+  inp%byy=${YY},
+  inp%bmm=${MM},
+  inp%bdd=${DD},
+  inp%bhh=${HH}, 
+  inp%model=7
+/
+&stormlist
+  stswitch = ${stswitch[*]}
+/
+&fhlist 
+  itmphrs = ${itmphrs[*]}
+/
+&atcfinfo 
+  atcfnum=81,
+  atcfname='${ATCFNAME}',
+  atcfymdh=${YYYY}${MM}${DD}${HH}
+/
+&phaseinfo 
+  phaseflag='n',
+  phasescheme='cps'
+/
+&structinfo
+  structflag='n',
+  ikeflag='n'
+/
+
+EOF
+
+# Create an empty track file
+touch track.${yyyymmddhhmm}.${ATCFNAME}
+
+# Run gettrk
+${RM} -f fort.11
+${RM} -f fort.12
+${RM} -f fort.31
+${LN} -s ${fcst_file} fort.11
+${LN} -s ${fcst_file}.ix fort.31
+${LN} -s tcvital.txt fort.12
+${GETTRK} < namelist
+error=$?
+if [ ${error} -ne 0 ]; then
+  ${ECHO} "ERROR: ${GETTRK} crashed  Exit status=${error}"
+  exit ${error}
+fi
+
+# Create individual track files for each storm
+stormids=`${CAT} track.${yyyymmddhhmm}.${ATCFNAME} | ${AWK} '{print $1 $2}' | ${TR} -d , | ${SORT} | ${UNIQ}`
+${ECHO} $stormids
+for storm in ${stormids[*]}; do
+  area=`${ECHO} ${storm} | ${CUT} -c1-2`
+  num=`${ECHO} ${storm} | ${CUT} -c3-4`
+  ${AWK} "/${area}, ${num}/" track.${yyyymmddhhmm}.${ATCFNAME} > ${area}${num}-${yyyymmddhhmm}.tracker.${ATCFNAME}
+done
+
+exit 0

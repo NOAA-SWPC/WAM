@@ -1,0 +1,416 @@
+#!/bin/ksh -l
+#dis
+#dis    Open Source License/Disclaimer, Forecast Systems Laboratory
+#dis    NOAA/OAR/FSL, 325 Broadway Boulder, CO 80305
+#dis
+#dis    This software is distributed under the Open Source Definition,
+#dis    which may be found at http://www.opensource.org/osd.html.
+#dis
+#dis    In particular, redistribution and use in source and binary forms,
+#dis    with or without modification, are permitted provided that the
+#dis    following conditions are met:
+#dis
+#dis    - Redistributions of source code must retain this notice, this
+#dis    list of conditions and the following disclaimer.
+#dis
+#dis    - Redistributions in binary form must provide access to this
+#dis    notice, this list of conditions and the following disclaimer, and
+#dis    the underlying source code.
+#dis
+#dis    - All modifications to this software must be clearly documented,
+#dis    and are solely the responsibility of the agent making the
+#dis    modifications.
+#dis
+#dis    - If significant modifications or enhancements are made to this
+#dis    software, the FSL Software Policy Manager
+#dis    (softwaremgr@fsl.noaa.gov) should be notified.
+#dis
+#dis    THIS SOFTWARE AND ITS DOCUMENTATION ARE IN THE PUBLIC DOMAIN
+#dis    AND ARE FURNISHED "AS IS."  THE AUTHORS, THE UNITED STATES
+#dis    GOVERNMENT, ITS INSTRUMENTALITIES, OFFICERS, EMPLOYEES, AND
+#dis    AGENTS MAKE NO WARRANTY, EXPRESS OR IMPLIED, AS TO THE USEFULNESS
+#dis    OF THE SOFTWARE AND DOCUMENTATION FOR ANY PURPOSE.  THEY ASSUME
+#dis    NO RESPONSIBILITY (1) FOR THE USE OF THE SOFTWARE AND
+#dis    DOCUMENTATION; OR (2) TO PROVIDE TECHNICAL SUPPORT TO USERS.
+#dis
+#dis
+
+##########################################################################
+#
+#Script Name: ncl.ksh
+# 
+#     Author: Christopher Harrop
+#             Forecast Systems Laboratory
+#             325 Broadway R/FST
+#             Boulder, CO. 80305
+#
+#   Released: 10/30/2003
+#    Version: 1.0
+#    Changes: None
+#
+# Purpose: This script generates NCL graphics from wrf output.  
+#
+#               EXE_ROOT = The full path of the ncl executables
+#          MOAD_DATAROOT = Top level directory of wrf output and
+#                          configuration data.
+#             START_TIME = The cycle time to use for the initial time. 
+#                          If not set, the system clock is used.
+#              FCST_TIME = The two-digit forecast that is to be ncled
+# 
+# A short and simple "control" script could be written to call this script
+# or to submit this  script to a batch queueing  system.  Such a "control" 
+# script  could  also  be  used to  set the above environment variables as 
+# appropriate  for  a  particular experiment.  Batch  queueing options can
+# be  specified on the command  line or  as directives at  the top of this
+# script.  A set of default batch queueing directives is provided.
+#
+##########################################################################
+
+# Set the SGE queueing options 
+#$ -S /bin/ksh
+#$ -pe serial 1
+#$ -l h_rt=1:00:00
+#$ -N ncl_rr
+#$ -j y
+#$ -V
+
+# Make sure we are using GMT time zone for time computations
+export TZ="GMT"
+export MODL=${MODL}
+export NCL_HOME=${NCL_HOME}
+export UDUNITS2_XML_PATH=${NCARG_ROOT}/lib/ncarg/udunits/udunits2.xml
+
+
+# Execute module command to use newest version of NCL
+#module switch ncarg ncl
+
+# Set up paths to shell commands
+LS=/bin/ls
+LN=/bin/ln
+RM=/bin/rm
+MKDIR=/bin/mkdir
+CP=/bin/cp
+MV=/bin/mv
+ECHO=/bin/echo
+CAT=/bin/cat
+GREP=/bin/grep
+CUT=/bin/cut
+AWK="/bin/gawk --posix"
+SED=/bin/sed
+DATE=/bin/date
+BC=/usr/bin/bc
+#NCL=${NCARG_ROOT}/bin/ncl
+#NCL=/misc/whome/wrfruc/ncl-4.3.1/bin/ncl
+NCL=ncl
+#CTRANS=/misc/whome/dtcrt/CT2007/ncl-4.3.0_32/bin/ctrans
+CTRANS=ctrans
+PS2PDF=/usr/bin/ps2pdf
+CONVERT=/usr/bin/convert
+#CONVERT=/whome/harrop/ImageMagick/bin/convert
+MONTAGE=/usr/bin/montage
+#MONTAGE=/whome/harrop/ImageMagick/bin/montage
+PATH=${NCARG_ROOT}/bin:${PATH}
+
+#. /work/01033/harrop/jettools.sh
+
+# Set ID
+if [ ! "${ID}" ]; then
+  ID=""
+fi
+
+# Set ISDIR
+if [ ${IS} -eq 1 ]; then
+  ISDIR="NAT"
+elif [ ${IS} -eq 2 ]; then
+  ISDIR="PRS"
+else
+  echo "Unsupported vertical coordinate option: ${IS}"
+  exit 1
+fi
+
+# Location of NCL graphics scripts
+#NCL_ROOT=${FIM_HOME}/FIMwfm/ncl/fimalldiff
+
+typeset -Z3 FCST_TIME
+
+# Get yyjjjHHMM
+datestr=`echo ${yyyymmddhhmm} | sed 's/^\([0-9]\{4\}\)\([0-9]\{2\}\)\([0-9]\{2\}\)\([0-9]\{2\}\)\([0-9]\{2\}\)/\1\/\2\/\3 \4\:\5/'`
+yyjjjhhmm=`date +%y%j%H%M -d "${datestr}"`
+
+# Generate the ATCFNAME for this member
+#ATCFNAME=`echo ${ATCFNAME} | sed 's/NN/${MEMBER_ID}/'`
+ATCFNAME=`echo ${ATCFNAME} | sed "s/NN/${MEMBER_ID}/"`
+
+FCST_TIME=${T}
+
+# Print run parameters
+${ECHO}
+${ECHO} "nclfimalldiff.ksh started at `${DATE}`"
+${ECHO}
+${ECHO} "          GLVL=${GLVL}"
+${ECHO} "           NVL=${NVL}"
+${ECHO} "           PES=${PES}"
+${ECHO} "     FCST_TIME=${FCST_TIME}"
+${ECHO} "         ISDIR=${ISDIR}"
+${ECHO} "      NCL_ROOT=${NCL_ROOT}"
+${ECHO} "          MODL=${MODL}"
+${ECHO} "      NCL_HOME=${NCL_HOME}"
+${ECHO}
+
+# Set up the work directory and cd into it
+workdir=${FIM_HOME}/FIMrun/fim_${GLVL}_${NVL}_${PES}_${yyyymmddhhmm}/ncldiff_${MEMBER_ID}/${GRID_NAME}/${ISDIR}_${FCST_TIME}
+${RM} -rf ${workdir}
+${MKDIR} -p ${workdir}
+cd ${workdir}
+
+# Link to input file
+# subtrack FIM - FIMX
+${LN} -s ${FIM_HOME_NO_X}/FIMrun/fim_${GLVL}_${NVL}_${PES_NO_X}_${yyyymmddhhmm}/post_${MEMBER_ID}/${GRID_NAME}/${ISDIR}/grib1/${yyjjjhhmm}0${FCST_TIME} fim.grb
+${ECHO} "fim.grb" > arw_file.txt
+${LN} -s ${FIM_HOME}/FIMrun/fim_${GLVL}_${NVL}_${PES}_${yyyymmddhhmm}/post_${MEMBER_ID}/${GRID_NAME}/${ISDIR}/grib1/${yyjjjhhmm}0${FCST_TIME} fim2.grb
+${ECHO} "fim2.grb" > arw_file2.txt
+#  ${ECHO} "${MODL}" > modl.txt
+
+# Setup domain file
+${ECHO} ${GRID_NAME} > domain.txt
+
+# Link to FIMX tracker file
+if [ -s ${FIM_HOME}/FIMrun/fim_${GLVL}_${NVL}_${PES}_${yyyymmddhhmm}/tracker_${MEMBER_ID}/${T}/track.${yyyymmddhhmm}.${ATCFNAME} ]; then
+  ${CAT} ${FIM_HOME}/FIMrun/fim_${GLVL}_${NVL}_${PES}_${yyyymmddhhmm}/tracker_${MEMBER_ID}/${T}/track.${yyyymmddhhmm}.${ATCFNAME} | ${SED} 's/\*\*\*/  0/' > ./track.${yyyymmddhhmm}
+ ${ECHO} ./track.${yyyymmddhhmm} > track_file.txt
+fi
+
+# Link to FIM tracker file
+if [ -s ${FIM_HOME_NO_X}/FIMrun/fim_${GLVL}_${NVL}_${PES_NO_X}_${yyyymmddhhmm}/tracker_${MEMBER_ID}/${T}/track.${yyyymmddhhmm}.${ATCFNAME} ]; then
+  ${CAT} ${FIM_HOME_NO_X}/FIMrun/fim_${GLVL}_${NVL}_${PES_NO_X}_${yyyymmddhhmm}/tracker_${MEMBER_ID}/${T}/track.${yyyymmddhhmm}.${ATCFNAME} | ${SED} 's/\*\*\*/  0/' > ./track2.${yyyymmddhhmm}
+ ${ECHO} ./track2.${yyyymmddhhmm} > track_file2.txt
+fi
+
+if [ "${ISDIR}" == "NAT" ]; then
+
+  set -A ncgms  sfc_temp  \
+                ua_wind   \
+                ua_wmag   \
+                sfc_pwtr  \
+                sfc_mslp  \
+                500_temp  \
+                700_temp  \
+                850_temp  \
+                925_temp  \
+                500_hgt   \
+                ua_rh     \
+                ua_rh8    \
+                ua_vort   \
+                sfc_shtfl \
+                sfc_lhtfl \
+                2m_temp   \
+                2ds_temp  \
+                2m_dewp   \
+                10m_wind  \
+                sfc_totp  \
+                sfc_acp   \
+                sfc_acpcp \
+                sfc_weasd \
+                ua_ceil   \
+                ua_ctop
+
+  set -A pngs sfc_temp.png  \
+              ua_wind-0.png \
+              ua_wind-1.png \
+              ua_wmag-0.png \
+              ua_wmag-1.png \
+              sfc_pwtr.png  \
+              sfc_mslp.png  \
+              500_temp.png  \
+              700_temp.png  \
+              850_temp.png  \
+              925_temp.png  \
+              500_hgt.png   \
+              ua_rh.png     \
+              ua_rh8.png    \
+              ua_vort.png   \
+              sfc_shtfl.png \
+              sfc_lhtfl.png \
+              2m_temp.png   \
+              2ds_temp.png  \
+              2m_dewp.png   \
+              10m_wind.png  \
+              sfc_totp.png  \
+              sfc_acp.png   \
+              sfc_acpcp.png \
+              sfc_weasd.png \
+              ua_ceil.png   \
+              ua_ctop.png
+
+#  set -A monpngs montage.png
+
+  set -A webnames temp_sfc  \
+                  wind_850  \
+                  wind_250  \
+                  wmag_850  \
+                  wmag_250  \
+                  pwtr_sfc  \
+                  mslp_sfc  \
+                  temp_500  \
+                  temp_700  \
+                  temp_850  \
+                  temp_925  \
+                  hgt_500   \
+                  rh_500    \
+                  rh_850    \
+                  vort_500  \
+                  shtfl_sfc \
+                  lhtfl_sfc \
+                  temp_2m   \
+                  temp_2ds  \
+                  dewp_2m   \
+                  wind_10m  \
+                  totp_sfc  \
+                  3hap_sfc  \
+                  acpcp_sfc \
+                  weasd_sfc \
+                  ceil      \
+                  ctop
+
+#  set -A webmon montage
+
+fi
+
+ncl_error=0
+
+# Run the NCL scripts for each plot
+i=0
+while [ ${i} -lt ${#ncgms[@]} ]; do
+
+  plot=${ncgms[${i}]}
+  ${ECHO} "Starting fim_${plot}.ncl at `${DATE}`"
+  ${NCL} < ${NCL_ROOT}/fim_${plot}.ncl
+  error=$?
+  if [ ${error} -ne 0 ]; then
+    ${ECHO} "ERROR: ${plot} crashed!  Exit status=${error}"
+    ncl_error=${error}
+  fi
+  ${ECHO} "Finished fim_${plot}.ncl at `${DATE}`"
+
+  (( i=i + 1 ))
+
+done
+
+# Run ctrans on all the .ncgm files to translate them into Sun Raster files
+# NOTE: ctrans ONLY works for 32-bit versions of NCL
+i=0
+while [ ${i} -lt ${#ncgms[@]} ]; do
+
+  plot=${ncgms[${i}]}
+  ${ECHO} "Starting ctrans for ${plot}.ncgm at `${DATE}`"
+  
+  # normal image
+  ${CTRANS} -d sun ${plot}.ncgm -resolution 1132x906 > ${plot}.ras
+  error=$?
+  if [ ${error} -ne 0 ]; then
+    ${ECHO} "ERROR: ctrans ${plot}.ncgm crashed!  Exit status=${error}"
+    ncl_error=${error}
+  fi
+
+#  if [ "${ISDIR}" == "NAT" ]; then
+#
+#    # montage image
+#    ${CTRANS} -d sun ${plot}.ncgm -resolution 2176x1360 > ${plot}_mon.ras
+#    error=$?
+#    if [ ${error} -ne 0 ]; then
+#      ${ECHO} "ERROR: ctrans ${plot}.ncgm crashed!  Exit status=${error}"
+#      ncl_error=${error}
+#    fi
+#    ${CONVERT} -trim -border 30x12 -bordercolor black ${plot}_mon.ras ${plot}_mon.ras
+#    error=$?
+#    if [ ${error} -ne 0 ]; then
+#      ${ECHO} "ERROR: convert ${plot}_mon.ras crashed!  Exit status=${error}"
+#      ncl_error=${error}
+#    fi
+#
+#  fi
+
+  ${ECHO} "Finished ctrans for ${plot}.ncgm at `${DATE}`"
+
+  (( i=i + 1 ))
+ 
+done
+
+# Convert the .ras files into .png files
+i=0
+while [ ${i} -lt ${#ncgms[@]} ]; do
+
+  plot=${ncgms[${i}]}
+  ${ECHO} "Starting convert for ${plot}.ras at `${DATE}`"
+
+  # normal image
+  ${CONVERT} -colors 128 -trim -border 25x25 -bordercolor black ${plot}.ras ${plot}.png
+  error=$?
+  if [ ${error} -ne 0 ]; then
+    ${ECHO} "ERROR: convert ${plot}.ras crashed!  Exit status=${error}"
+    ncl_error=${error}
+  fi
+
+#  if [ "${ISDIR}" == "NAT" ]; then
+#    # montage image
+#    ${CONVERT} ${plot}_mon.ras ${plot}_mon.png
+#    error=$?
+#    if [ ${error} -ne 0 ]; then
+#      ${ECHO} "ERROR: convert ${plot}_mon.ras crashed!  Exit status=${error}"
+#      ncl_error=${error}
+#    fi
+#  fi
+
+  ${ECHO} "Finished convert for ${plot}.ras at `${DATE}`"
+
+  (( i=i + 1 ))
+  
+done
+
+#if [ "${ISDIR}" == "NAT" ]; then 
+#  
+#  # put together the montage images
+#  # -geometry formerly 1240x775+20+1
+#  ${MONTAGE} ua_wind_mon-1.png sfc_pwtr_mon.png ua_temp_mon-0.png sfc_totp_mon.png -tile 2x2 -geometry 1240x775+21+4 -background black montage.png
+#  error=$?
+#  if [ ${error} -ne 0 ]; then
+#    ${ECHO} "ERROR: montage crashed!  Exit status=${error}"
+#    ncl_error=${error}
+#  fi
+#  
+#fi
+
+# Copy png files to their proper names
+i=0
+while [ ${i} -lt ${#pngs[@]} ]; do
+  pngfile=${pngs[${i}]}
+  webfile=${FIM_HOME}/FIMrun/fim_${GLVL}_${NVL}_${PES}_${yyyymmddhhmm}/ncldiff_${MEMBER_ID}/${GRID_NAME}/${webnames[${i}]}_f${FCST_TIME}.png
+  ${MV} ${pngfile} ${webfile}
+  (( i=i + 1 ))
+done
+
+#if [ "${ISDIR}" == "NAT" ]; then 
+#  
+#  # Copy montage files to their proper names
+#  i=0
+#  while [ ${i} -lt ${#monpngs[@]} ]; do
+#    pngfile=${monpngs[${i}]}
+#    webfile=${FIM_HOME}/FIMrun/fim_${GLVL}_${NVL}_${PES}_${yyyymmddhhmm}/ncldiff_${MEMBER_ID}/${GRID_NAME}/${webmon[${i}]}_f${FCST_TIME}.png
+#    ${MV} ${pngfile} ${webfile}
+#    (( i=i + 1 ))
+#  done  
+#  
+#fi
+
+# Remove the workdir
+cd ../
+${RM} -rf ${workdir}
+
+# Hack to prevent errors for analysis file from crashing the whole thing
+if [ ${FCST_TIME} -eq 0 ]; then
+  ncl_error=0
+fi
+
+${ECHO} "nclfimx.ksh completed at `${DATE}`"
+
+exit ${ncl_error}

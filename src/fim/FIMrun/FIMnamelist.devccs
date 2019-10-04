@@ -1,0 +1,209 @@
+ &QUEUEnamelist
+   ComputeTasks = '64'                    ! Number of compute tasks for FIM (S for Serial)
+   MaxQueueTime = '00:15:00'              ! Run time for complete job (HH:MM:SS) [ Ignored by WFM ]
+   SRCDIR  = '/gpfs/t3/global/save/wx20tbh/FIM/FIM_r1910/FIMsrc_devccs/'          ! FIM source location * MUST BE SET * [ WFM: use absolute pathname! ]
+   PREPDIR = 'nodir'                      ! If exists, use for prep otherwise calculate prep
+   FIMDIR  = 'nodir'                      ! If exists, use for FIM otherwise calculate FIM
+   DATADIR = '/gpfs/t2c/global/noscrub/wx20tbh/fimdata/'                   ! Location of gfsltln and global_mtnvar files
+   DATADR2 = '/gpfs/t2c/global/noscrub/wx20tbh/fimdata/'                   ! Location of the sanl file and the sfcanl file
+   chem_datadir = '/gpfs/t2c/global/noscrub/wx20tbh/fimdata/'              ! Location of chemistry data files
+/
+ &TOPOnamelist
+   topodatfile = '/gpfs/t2c/global/noscrub/wx20tbh/fimdata/wrf5mintopo.dat'
+/
+ &CNTLnamelist
+   glvl                = 5            ! Grid level
+   SubdivNum           = 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 2 ! Subdivision numbers for each recursive refinement(2: bisection, 3: trisection, etc.)
+   nvl                 = 38           ! Number of atmospheric layers 
+/
+ &PREPnamelist
+   curve               = 2                  ! 0: ij order, 1: Hilbert curve order (only for all-bisection refinement), 2:ij block order, 3: Square Layout
+   NumCacheBlocksPerPE = 1                  ! Number of cache blocks per processor. Only applies to ij block order
+   alt_topo            = .true.             ! if true, use alternate srf.height field
+   aerosol_file      = 'climaeropac_global.txt'     ! filename relative to DATADIR
+   co2_2008_file     = 'co2historicaldata_2008.txt' ! filename relative to DATADIR
+   co2_glb_file      = 'co2historicaldata_glob.txt' ! filename relative to DATADIR
+!JR Currently MUST set these 2 on vapor or FIM will not run
+   gfsltln_file      = 'gfsltln_t382.dat'       ! filename relative to DATADIR; date < 201007281200
+   mtnvar_file       = 'global_mtnvar.t382'     ! filename relative to DATADIR; date < 201007281200
+/
+ &DIAGnamelist
+   PrintIpnDiag      = -1             ! ipn at which to print diagnostics (-1 means no print)
+   PrintDiagProgVars = 12             ! Hourly increment to print diagnostic prognosis variables (-1=>none, 0=>every step)
+   PrintDiagNoise    =  1             ! Hourly increment to print diagnostic gravity wave noise  (-1=>none, 0=>every step)
+   PrintDiags        = .false.        ! True means print diagnostic messages
+/
+ &MODELnamelist
+   nts               =  0             ! number of time steps
+   UpdateSST         = .false.        ! True means update sst and sea ice by reading in a file during integration
+   rleigh_light        = 0.0          ! rayleigh damping time scale (days^-1) if top-layer wind < 100 m/s
+   rleigh_heavy        = 0.5          ! rayleigh damping time scale (days^-1) if top-layer wind > 100 m/s
+   veldff_bkgnd        = 1.           ! diffusion velocity (=diffusion/mesh size)
+   ptop                = 50.          ! pressure (Pa) at top of model domain
+   thktop              = 50.          ! min.thknss (Pa) of uppermost model layer
+   intfc_smooth        = 50.          ! [diffusivity/mesh size] (m/s) for intfc smoothing (0 = no smoothing)
+   slak                = 0.5          ! intfc movement retardation coeff (1 = no retardation)
+   pure_sig            = .false.      ! if true, use GFS sigma-p coordinate
+   digifilt          = .false.        ! DFI - digital filter initalization
+   tfiltwin          = 5400           ! 1/2 length duration of DFI (s)
+   wts_type          = 3              ! type of digital filter (1=Lanczos,2=Hamming,3=Dolph)
+/
+ &PHYSICSnamelist
+   PhysicsInterval   =  180           ! Interval in seconds to call non-radiation physics (0=every step)
+   RadiationInterval =  3600          ! Interval in seconds to call radiation physics (0=every step)
+   SSTInterval       =  86400         ! Interval in seconds to call update_sst (0=every step)
+   GravityWaveDrag   = .true.         ! True means calculate gravity wave drag
+   ras               = .false.        ! false means call SAS
+   num_p3d           =  4             ! 4 means call Zhao/Carr/Sundqvist Microphysics
+/
+ &TIMEnamelist
+  yyyymmddhhmm = "200707170000"       ! date of the model run
+/
+ &OUTPUTnamelist
+   ArchvTimeUnit     =  'hr'          ! ts:timestep; mi:minute; hr:hour; dy:day; mo:month
+   TotalTime         =  24            ! Total integration time in ArchvTimeUnit
+   ArchvIntvl        =  3             ! Archive interval in ArchvTimeUnit
+   readrestart       = .false.        ! True means start by reading restart file (rpointer)
+   restart_freq      =  240           ! Restart interval in ArchvTimeUnit
+   PrintMAXMINtimes  = .true.         ! True means print MAX MIN routine times, false means print for each PE
+   TimingBarriers    = .false.        ! True means turn on timed barriers to measure task skew, set to .false. for production runs
+   FixedGridOrder    = .false.        ! True: always output in the same order(IJ), False: order determined by curve. Does not apply to IJorder
+/
+ &ISOBARICnamelist
+    isobaric_levels_file = "output_isobaric_levs.txt" ! file containing pressure levels, in FIMrun directory
+ /
+
+!
+! WRITETASKnamelist is used to optionally create a separate group of
+! FIM-specific write tasks to speed up FIM model output by overlapping disk
+! writes with computation. By default this feature is turned off. When enabled,
+! write tasks intercept FIM output and write to disk while the main compute
+! tasks continue with model computation. In NEMS lingo, write tasks are called
+! "quilt" tasks.
+!
+! WRITETASKnamelist is ignored for a serial run.
+!
+ &WRITETASKnamelist
+   abort_on_bad_task_distrib = .true. ! Abort FIM when node names are not as expected
+   cpn = 64                            ! Number of cores per node
+   debugmsg_on = .false.              ! Print verbose debug messages
+   max_write_tasks_per_node = 7       ! Maximum number of write tasks to place on a single node
+   num_write_tasks = 0                ! Use: 0 = no write tasks, 1 = one, 21 = one write task per output file
+   root_own_node = .false.             ! whether root process has node to himself
+/
+!
+! Namelist file for post processing
+! 
+! Ning Wang, June 2007
+!
+  &POSTnamelist
+!
+! input and output specifications:
+!
+  datadir = "../fim"
+  outputdir = "."
+!  input = "/tg2/projects/fim/jlee/PREP/mdrag5h.dat"
+  input = ""
+!  if input has content, it overwrites the datadir
+!  output = "/p72/fim/wang/nc_files/mdrag5h.nc"
+  output = ""
+!  if output has content, it overwrites the outputdir
+  output_fmt = "grib"         ! "nc" --netCDF file, "grib" --GRIB file
+  multiple_output_files = .true. !  -- multiple grib outputfiles (assumed true when post in fim)
+!
+! grid specifications:
+!
+  gribtable = "fim_gribtable" ! only used by grib output file(s)
+  grid_id = 228               ! 228(144, 73), 45(288, 145), 
+                              ! 3(360, 181), 4(720, 361); only for grib output file. 
+  mx = 720                    ! only used by netcdf output file
+  my = 360                    ! only used by netcdf output file
+  latlonfld = .true.          ! true -- create lat lon field in grib output file
+!
+! post processing specifications:
+!
+  is = 1                      ! interpolation scheme:
+                              ! 0 -- no interpolation: native grid;
+                              ! 1 -- horizontal interpo. on native vertical coord.;
+                              ! 2 -- horizontal interpo. + vertical interpo. on std. pressure levels;
+                              ! 3 -- horizontal interpo. + vertical interpo. on 10mb inc. pressure levels;
+  vres = 111                  ! only used in vertical interpolation
+  mode = "linear"             ! step or linear interpolation for vertical column
+!
+! variable specifications:
+!
+! var_list = 'mp3d', 'th3d', 'us3d', 'vs3d', 'rn2d', 'rc2d', 'sw2d', 'lw2d', 'ts2d'
+  var_list    = 'td3D', 'us3D', 'vs3D', 'ph3D', 'pr3D', 'sw2D', 'lw2D', 'ms2D', 'sn2D'
+  nsmooth_var = 1,      1,      1,      2,      2,      0,      0,      1,      0
+  fimout = .true.    ! whether to write FIM binary output files
+  gribout = .false.  ! whether to write GRIB output files from FIM
+! These settings are *required* for real-time fim runs.  
+! However, they break the test suite.  
+! We will update the test suite shortly and restore these settings.  
+! Until then please use FIMnamelist.realtime for real-time runs.  
+!  t1          = 0
+!  t2          = 24
+!  delta_t     = 6
+/
+
+&chemwrf
+  chem_opt  = 0 ! chem option, 0=off, 300=on
+  chemdt    = 30.
+  kemit     = 1
+  DUST_OPT        =           1,
+  DMSEMIS_OPT     =           1,
+  SEAS_OPT        =           0,
+  BIO_EMISS_OPT   =           0,
+  BIOMASS_BURN_OPT        =   1,
+  PLUMERISEFIRE_FRQ       =   30,
+  EMISS_INPT_OPT  =           1,
+  GAS_BC_OPT      =           0,
+  GAS_IC_OPT      =           0,
+  AER_BC_OPT      =           0,
+  AER_IC_OPT      =           0,
+/
+
+&wrfphysics
+  mp_physics                = 0,    ! 0=off, 2=on
+  cu_physics                = 0,    ! 0=off, 3=on
+/
+
+! gptlnl modifies the behavior of the GPTL timing library, if enabled
+
+&gptlnl
+ print_method = 'full_tree' ! print full call tree
+! utr          = 'nanotime'  ! fastest available underlying timer (Intel processors only)
+! eventlist   = 'PAPI_FP_OPS','GPTL_CI' ! PAPI-based counters (only if PAPI is available)
+/
+
+!
+! System specific parameters for MPI, task geometry, etc.
+!
+ &SYSTEMnamelist
+  MPIRUNCMD='poe'             ! MPIRUNCMD should be defined as follows:
+                              ! SGE 'mpirun -np' || torque 'aprun -n' || intel 'mpiexec_mpt -n'  
+                              ! load-leveler 'poe' || NCAR 'mpirun.lsf /usr/local/bin/launch'
+! Vapor-specific requirement
+  MP_LABELIO="yes"
+/
+
+! Everything below this line is of interest only to Workflow Manager users
+
+&WFMnamelist
+  max_run_time_prep='00:05:00'
+  max_run_time_fim='00:30:00'
+  max_run_time_pop='00:30:00'
+  batch_size='3'
+  ac_model_name='FIMXDC'
+  stats_model_name='FIMX'
+  sounding_model_name='FIMX'
+  ncl_model_name='FIMX'
+  ncl_diff_model_name='FIM-FIMX'
+  realtime='F'
+  ! Post processing: run the following tasks? (set to F to disable)
+  run_pop='T' ! Other post processing relies on pop to run
+  run_interp='T'
+  run_grib12='T'
+  run_tracker='T'
+  run_ncl='T'
+/

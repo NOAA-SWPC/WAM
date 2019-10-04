@@ -1,0 +1,34 @@
+# column_chem objects
+
+OBJS = \
+  module_aer_opt_out.o \
+  module_aer_ra.o \
+  module_chem_plumerise_scalar.o \
+  module_data_rrtmgaeropt.o \
+  module_chem_prep_fim.o \
+  module_ctrans_grell.o \
+  module_cu_g3.o \
+  module_data_gocart_chem.o \
+  module_data_gocart_dust.o \
+  module_data_gocart_seas.o \
+  module_data_sorgam.o \
+  module_dry_dep_driver.o \
+  module_gocart_aerosols.o \
+  module_gocart_chem.o \
+  module_gocart_dmsemis.o \
+  module_gocart_drydep.o \
+  module_gocart_dust.o \
+  module_gocart_dust_afwa.o \
+  module_gocart_opt.o \
+  module_gocart_seasalt.o \
+  module_gocart_settling.o \
+  module_optical_averaging.o \
+  module_optical_driver.o \
+  module_peg_util.o \
+  module_phot_mad.o \
+  module_plumerise1.o \
+  module_species_decs.o \
+  module_vash_settling.o \
+  module_vertmx_wrf.o \
+  module_wetdep_ls.o \
+  module_zero_plumegen_coms.o

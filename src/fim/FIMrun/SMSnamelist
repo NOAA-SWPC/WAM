@@ -1,0 +1,21 @@
+!------------------------------------------------------------------------------
+! SMSnamelist is an optional file used to control SMS run-time options.  If 
+! it is not present SMS will use default values for all options.  
+!------------------------------------------------------------------------------
+   !---------------------------------------------------------------------------
+   ! When compare_var_on==.true., execute two copies of the SMS program.  The 
+   ! first copy uses compare_var_ntasks_1 tasks.  The second copy uses 
+   ! compare_var_ntasks_2 tasks.  The total number of MPI tasks assigned to 
+   ! SMS must equal compare_var_ntasks_1+compare_var_ntasks_2.  Results are 
+   ! cross-checked whenever a COMPARE_VAR directive is encountered.  If a 
+   ! difference is found, the program will exit with an error message.  
+   !---------------------------------------------------------------------------
+ &SMSnamelist
+   compare_var_on = .false.,
+   compare_var_ntasks_1 = 0,
+   compare_var_ntasks_2 = 0
+/
+!------------------------------------------------------------------------------
+! See the SMSnamelist file in the SMS source for additional options not 
+! normally used by FIM.  
+!------------------------------------------------------------------------------

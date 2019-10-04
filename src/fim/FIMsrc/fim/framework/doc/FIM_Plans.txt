@@ -1,0 +1,100 @@
+
+Plans for FIM-related Work
+
+
+ESMF
+  Separate output from computation
+    Remove computation of rh3d and tk3d from output()
+  Define DYN and PHY components
+    INIT
+      Trivial at present
+    RUN
+      Figure out how best to adapt to NCEP event loop
+        NCEP event loop:  
+          WRT (first time only)
+          DYN
+          CPL DYN->PHY
+          PHY
+          CPL PHY->DYN
+          WRT
+        Current FIM event loop:  
+          WRT (first time only)
+          DYN
+          CPL DYN->PHY
+          PHY
+          CPL PHY->DYN
+          WRT
+        One-phase DYN is required
+          Decide how to re-arrange FIM event loop to match NCEP event loop
+      Decide how to use ESMF Time Manager, Alarms, etc.
+    FINAL
+      Trivial at present
+  Define Import and Export states
+     DYN -> PHY
+       Import
+       Export
+     PHY -> DYN
+       Import
+       Export
+  Design, code, and test DYN and PHY components without ESMF
+  Design, code, and test DYN and PHY components with ESMF
+
+
+I/O
+  Support additional file formats
+    NetCDF
+    Parallel NetCDF
+    HDF5
+    PHDF5
+    grib1
+    grib2
+  Support output cache tasks ("quilt" output in NCEP parlance)
+  Investigate re-use of other ESMF I/O components
+  Other possible features
+    Support additional file modes
+      One file per MPI task on write
+        Requires automatic re-assembler like AM2
+    Flexible run-time specification (like CAM)
+
+
+CF
+  Add metadata to support CF conventions
+    Add to Import and Export states for use by I/O components
+  Test using Rosalyn Hatcher's CF checker
+  Support short and long names and XLAT-XLONG a la WRF
+    Full support may require use of Balaji's grid description ideas in CF
+
+
+Unit Testing
+  Use Fruit?  
+  Use AutoTest?  
+    Make it work more reliably
+    Extend test-oracle definition (use yaml?)
+
+
+Tools?  
+  Subversion?  
+  GForge?  
+  Wiki?  
+  Bug Tracker?  
+
+
+Performance
+  Characterize imbalance
+    Measure current imbalance
+    Predict future imbalance
+    Predict benefits of various load balancing schemes
+      Candidate schemes include
+        Load balancing via multiple regions per MPI task
+          Pairs of regions on opposite sides of globe (as in CWB GFS)
+          Pairs of regions in temperate vs. tropical/polar regions (as in 
+          CWB GFS)
+
+
+Minor fixes
+  Update comment in physics in dp3d declaration
+  Remove literal constants from calls
+  Get rid of array sections of 4D arrays passed into profout()
+  
+
+

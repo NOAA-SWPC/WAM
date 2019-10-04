@@ -1,0 +1,151 @@
+#!/bin/ksh -v
+
+# Note: When run by Workflow Manager, this script's output can be found in
+# FIMwfm/logs/pop. Also see FIMwfm/logs/workflow for general WFM messages.
+
+CONTEXT="batchTemplate-post"
+
+# Source functions.ksh if needed.
+
+if [[ -z "$functions_sourced" ]]
+then
+  test -n "$WFM" && prefix=$FIM_HOME/FIMrun || prefix=.
+  . $prefix/functions.ksh # Most function definitions can be found here.
+fi
+
+ksh_insist # Ensure that we are running in ksh93
+
+# The fim output files produced by COMPARE_VAR-enabled runs cannot be (reliably)
+# processed by pop, so don't try.
+
+if [[ "$COMPARE_VAR_ON" == ".true." ]]
+then
+  print "COMPARE_VAR is enabled: skipping post..."
+  return 0
+fi
+
+# For WFM runs, enter the appropriate FIMrun directory.
+
+if [[ -n "$WFM" && -n "$FIM_HOME" ]]
+then
+  cd $FIM_HOME/FIMrun || fail "Cannot cd to $FIM_HOME/FIMrun."
+fi
+
+# Run batchTemplate-setup if it has not already been run.
+
+test -z "$batchTemplate_setup_ran" && xsource ./batchTemplate-setup
+
+# Run batchTemplate-FIMY_ENKF-files if appropriate.
+
+print $PWD | grep -v "/FIMYENS/" | grep -q "/FIMY/" && xsource ./batchTemplate-FIMY_ENKF-files
+
+# Enter the appropriate run directory (as defined by batchTemplate-setup).
+
+FIMRUN="$PWD"
+cd $DIR || fail "Cannot cd to $DIR."
+
+# Make the post directory. For WFM runs, the post directory should already
+# exist except for the first incremental batch and mkdir's -p option exits
+# with success if the directory already exists.
+
+mkdir -p $POST || fail "Cannot make directory $POST."
+
+# Copy namelist from the appropriate fim directory.
+
+if [[ -d "$FIMDIR" ]]
+then
+  cp $fimnamelist $POST/$NLFILE || \
+    fail "Cannot copy $fimnamelist -> $POST/$NLFILE."
+else
+  cp $FIM/$NLFILE $POST || fail "Cannot copy $FIM/$NLFILE -> $POST."
+fi
+
+cp $fimgribtable $POST/fim_gribtable || \
+  fail "Cannot copy $fimgribtable $POST/fim_gribtable."
+
+cp $reduceinput $POST/REDUCEinput || \
+  fail "Cannot copy $reduceinput $POST/REDUCEinput."
+
+# Enter the post directory.
+
+cd $POST || fail "Cannot cd to $POST."
+
+get_nl_value_unquoted $fimnamelist ISOBARICnamelist isobaric_levels_file ISOBARIC_LEVELS_FILE
+cp $PREP/$ISOBARIC_LEVELS_FILE $POST/$ISOBARIC_LEVELS_FILE || \
+  fail "Cannot copy $ISOBARIC_LEVELS_FILE $POST/$ISOBARIC_LEVELS_FILE."
+
+# Link files.
+
+test -f pop || linksafe $BINDIR/pop
+test -f reduce || linksafe $BINDIR/reduce
+test -f "$INFO_FILE" || linksafe $PREP/$INFO_FILE
+
+$BINDIR/get_gribout | grep "gribout:" | sed 's/^.*://' | read GRIBOUT || \
+  fail "Could not get gribout."
+
+$BINDIR/get_gribout | grep "fimout:" | sed 's/^.*://' | read FIMOUT || \
+  fail "Could not get fimout."
+
+
+# For WFM runs, for now just run as always, regardless of the value of gribout.
+# Will soon want to modify post/postall for WFM case to not run pop
+
+if [[ -n "$WFM" ]]
+then
+# do WFM post sequence
+  if [[ "$GRIBOUT" == "TRUE" ]]
+  then 
+    FIM_POST_GRIB1_DIR=$POST/fim/NAT/grib1
+    if [[ ! -d "$FIM_POST_GRIB1_DIR" ]]
+    then
+      fail "$FIM_POST_GRIB1_DIR should have been created by batchTemplate-setup - NOT HERE!!!!"
+    fi
+    # not fimy_enkf
+    print $PWD | grep -v "/FIMYENS/" | grep -q "/FIMY/"
+    if [[ $? -eq 1 ]]; then
+
+      # mv grib files to post directory
+      T1=$(print $T1 | sed 's/^0\{1,2\}\(.*\)/\1/')
+      T2=$(print $T2 | sed 's/^0\{1,2\}\(.*\)/\1/')
+      test -z "$T1" && T1=0
+      test -z "$T2" && T2=0
+      print "T1=$T1"
+      print "T2=$T2"
+      t=$T1
+      #Get yyjjjHHMM
+      datestr=$(print ${yyyymmddhhmm} | sed 's/^\([0-9]\{4\}\)\([0-9]\{2\}\)\([0-9]\{2\}\)\([0-9]\{2\}\)\([0-9]\{2\}\)/\1\/\2\/\3 \4\:\5/')
+      yyjjjhhmm=$(date +%y%j%H%M -d "${datestr}")
+      while [ $t -le $T2 ]; do
+         # Move the output to the post dir
+        filename=$(printf "${yyjjjhhmm}%04d" $t)
+        print "file to be moved to post: $filename"
+        mv $DIR/fim_$MEMBER_ID/$filename $FIM_POST_GRIB1_DIR/$filename
+        (( t=t+${FCST_INTERVAL} ))
+      done
+    fi
+  fi # not FIMY_ENKF
+  if [[ "$FIMOUT" == "TRUE" || "$GRIBOUT" == "TRUE" ]]
+  then
+    xsource $FIM_HOME/FIMrun/batchTemplate-postall
+  else
+    fail "cannot run batchTemplate-postall when GRIBOUT == FALSE and FIMOUT == FALSE"
+  fi
+else
+# qsubfim case: if gribout was set, just link the grib files.
+# Otherwise, run pop as before to create the grib files.
+  if [[ "$GRIBOUT" == "TRUE" ]]
+  then
+    ln -s ../fim/[0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9][0-9] .
+  elif [[ "$FIMOUT" == "TRUE" ]]
+  then
+    ./pop || fail "pop failed."
+  else
+    fail "cannot run pop when FIMOUT == FALSE."
+  fi
+fi
+
+cd $FIMRUN || fail "Cannot cd to $FIMRUN."
+
+print "\npop finished\n"
+
+return 0

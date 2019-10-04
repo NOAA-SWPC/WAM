@@ -1,0 +1,121 @@
+#!/bin/ksh -fvx
+
+# Usage: runfim [directory]
+#
+# runs fim on a machine with MPI but not a batch system
+#
+# If directory argument is present, assume we are running via test automation, cd 
+# to the specified directory, set the sync option, submit FIM job to SGE and wait
+# until	it finishes.
+#
+#	All other variables are set the FIMnamelist file.  
+
+#TODO:  Remove duplication with other ?subfim scripts!  
+
+CONTEXT="runfim"
+
+# Source shared-functions code & set up tracing
+. ./functions.ksh # Most function definitions can be found here.
+set +o xtrace # comment out to enable verbose qsubfim trace
+
+ksh_check # Verify that ksh93 is running/available.
+
+if [[ "$#" -eq 0 ]] # Not a test-suite run
+then
+  sync="no"
+elif [[ "$#" -eq 1 ]] # Test-suite run
+then
+  test -d "$1" || fail "Run directory not found: $1."
+  cd $1 || fail "Cannot cd to $1."
+  sync="yes"
+else
+  fail "Too many arguments."
+fi
+
+set_fimnamelist
+
+FIMSETUP="fim_setup.ksh"
+
+# Make sure FIMnamelist exists
+test -f "$fimnamelist" || \
+  fail "Please \"cp ${fimnamelist}.default $fimnamelist\" and edit the latter \
+appropriately."
+
+# Get SRCDIR & make absolute
+get_srcdir # This must always come before any other get_* calls
+cd $SRCDIR || fail "Cannot cd to $SRCDIR"
+SRCDIR="$PWD"
+cd -
+
+# Set up run directory
+rundir="runfim_$$"
+mkdir $rundir || fail "Cannot make directory $rundir"
+print "Made directory $rundir."
+copyfiles $PWD $rundir || fail "Cannot copy contents of $PWD -> $rundir"
+copyfiles $SRCDIR/bin $rundir || \
+  fail "Cannot copy contents of $SRCDIR/bin -> $rundir"
+cp $SRCDIR/$FIMSETUP $rundir || \
+  fail "Cannot cpy $SRCDIR/$FIMSETUP -> $rundir."
+cd $rundir || fail "Cannot cd to $rundir."
+
+ksh_fix # Modify run scripts to use ksh93, if necessary.
+
+# Get number of cores to ask for
+./get_num_cores | grep "num_cores_batch:" | sed 's/^.*://' | read N || \
+  fail "Could not get num_cores_batch."
+
+get_pes
+
+# Find out if we'll run serial or parallel and set up appropriately
+./GetParallelism | read parallelism || fail "GetParallelism failed."
+if [[ "$parallelism" == "parallel" ]]
+then
+  FIM="fim"
+  ParaSuffix="$PES"
+else
+  FIM="fimS"
+  ParaSuffix="S"
+fi
+
+# Set up run-time environment
+get_fc || fail "$0: Could not set FC."
+xsource_notrace ./$FIMSETUP $FC
+
+# Determine other runtime parameters
+get_glvl
+get_nvl
+# HH:MM:SS
+./GetQueueTime | read QT || fail "GetQueueTime failed"
+
+# No batch system so no run queue
+
+
+# Do COMPARE_VAR setup
+compare_var_setup
+
+
+# Diagnostics
+
+check_nems
+
+./get_num_cores | grep "num_cores_donothing:" | sed 's/^.*://' | read dnt || \
+  fail "Could not get num_cores_donothing."
+
+./get_num_cores | grep "num_nodes_wt:" | sed 's/^.*://' | read num_nodes_wt || \
+  fail "Could not get num_nodes_wt."
+
+print "compute tasks:      $PES"
+print "write tasks:        $nwt (write nodes: $num_nodes_wt)"
+print "do_nothing tasks:   $dnt"
+
+# Create script for later potential submission to restart the job
+cat > runfim.restart <<EOF
+#!/bin/ksh
+. ./batchTemplate-restart || fail "./batchTemplate-restart failed"
+EOF
+chmod 755 runfim.restart
+
+# Run prep, fim, and post
+. ./batchTemplate || fail "./batchTemplate failed"
+
+return 0

@@ -1,0 +1,117 @@
+#!/bin/ksh
+
+# This script builds the fim system. For best results, start with the default
+# module setup. See function usage below for usage. If no argument is specified,
+# the default "openmpi" build is assumed.
+#
+# Argument meanings are:
+#
+#   bluefire     - build with default -q64 settings on bluefire
+#   debug        - build with ifort+mvapich, debugging on
+#   frostintel   - frost+intel
+#   jaguargnu    - jaguar+gnu
+#   jaguarintel  - jaguar+intel
+#   lahey        - build with lahey+mvapich
+#   linuxpcgnu   - gfortran+mpich on PC-linux
+#   macgnu       - gfortran+mpich on Mac
+#   mvapich      - build with ifort+mvapich
+#   nems         - build FIM within the NCEP top-level ESMF components (ifort+mvapich)
+#   openmpi      - build with ifort+openmpi (makefim's default)
+#   ranger       - build with intel/10.1-mvapich-1.0.1 on ranger.tacc.utexas.edu
+#   serial       - build ifort+openmpi, serial
+#   vapor        - build with default -q64 settings on vapor
+#   devccs       - build with default -q64 settings on devccs (cirrus or stratus)
+#
+# See fim_setup.ksh for specific compiler & MPI version numbers.
+
+function fail { test -n $1 && print $1; exit 1; }
+
+function usage
+{
+  cat << EOF
+
+usage: makefim [debug,linuxpcgnu,macgnu,lahey,mvapich,openmpi,nems,serial,ranger,vapor,devccs,bluefire,jaguarintel,jaguargnu,frostintel]
+   or: makefim [debug,linuxpcgnu,macgnu,lahey,mvapich,openmpi,ranger,vapor,devccs,bluefire,jaguarintel,jaguargnu,frostintel] [serial]
+   or: makefim [serial] [debug,linuxpcgnu,macgnu,lahey,mvapich openmpi,ranger,vapor,devccs,bluefire,jaguarintel,jaguargnu,frostintel]
+
+EOF
+  fail
+}
+
+function check
+{
+  case $FTNMPI in
+      "bluefire") ;;
+      "debug") ;;
+      "frostintel") ;;
+      "jaguargnu") ;;
+      "jaguarintel") ;;
+      "lahey") ;;
+      "linuxpcgnu") ;;
+      "macgnu") ;;
+      "mvapich") ;;
+      "nems") test ! -z $P && test $P == "S" && fail "\nSerial nems build is not supported.\n";;
+      "openmpi") ;;
+      "ranger") ;;
+      "serial") FTNMPI="openmpi"; P="S";;
+      "vapor") ;;
+      "devccs") ;;
+      *) usage;;
+  esac
+}
+
+# avoid accidental inheritance of env
+unset P
+
+#Determine location of gnu make
+MAKE=not_found
+for x in gnumake gmake make
+do
+p=$(which $x 2>/dev/null)
+if [[ -n $p && -x $p ]]
+then
+ MAKE="$x"
+ break
+fi
+done
+
+test $MAKE == "not_found" && fail "gnu make not found"
+
+case $# in
+  0)
+    print "default parallel build"
+    FTNMPI="openmpi"
+    ;;
+  1)
+    case $1 in
+         "clean") touch macros.make; $MAKE clean; return $?;;
+      "cleanall") touch macros.make; $MAKE cleanall; return $?;;
+               *) FTNMPI=$1;;
+    esac
+    ;;
+  2)
+    P="S"
+    test $1 == "serial" && FTNMPI=$2
+    test $2 == "serial" && FTNMPI=$1
+    ;;
+  *)
+    fail "\nonly 0, 1, or 2 arguments are supported.\n"
+    ;;
+esac
+
+check
+cd ..
+#TBH Hack since IBM does not include rsync in default path
+#TBH rsync -au FIMsrc/ FIMsrc_$FTNMPI
+cp -rf FIMsrc/ FIMsrc_$FTNMPI
+cd FIMsrc_$FTNMPI
+
+#JR If a macros.make.$FTNMPI file exists, use it.
+#JR Otherwise the empty placeholder created by 
+#JR "touch macros.make" above will be used.
+test -f macros.make.$FTNMPI && cp macros.make.$FTNMPI macros.make
+
+. ./fim_setup.ksh $FTNMPI
+print "$FTNMPI $P build"
+$MAKE $FTNMPI P=$P MAKE=$MAKE
+return $?

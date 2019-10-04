@@ -1,0 +1,127 @@
+#!/bin/ksh
+
+# Usage: qsubfim [directory]
+#
+# submits FIM job to SGE
+#
+# If directory argument is present, assume we are running via test automation
+# and cd to the specified directory before submitting the job.
+#
+#	All other variables are set the FIMnamelist file.  
+
+# TODO Remove duplication with other ?subfim scripts!  
+
+CONTEXT="qsubfim"
+
+# Source shared-functions code & set up tracing
+. ./functions.ksh # Most function definitions can be found here.
+set +o xtrace # Comment out to enable verbose qsubfim trace.
+
+ksh_check # Verify that ksh93 is running/available.
+
+test "$#" -gt 1 && fail "Too many arguments."
+
+if [[ "$#" -eq 1 ]] # assume this is a test-suite run
+then
+  rundir="$1"
+  test -d "$rundir" || fail "Run directory not found: $rundir."
+  cd "$rundir" || fail "Cannot cd to $rundir."
+  Q="debug"
+else
+  Q="ncomp"
+fi
+
+set_fimnamelist
+
+FIMSETUP="fim_setup.ksh"
+
+# Make sure FIMnamelist exists
+test -f "$fimnamelist" || \
+  fail "Please \"cp ${fimnamelist}.default $fimnamelist\" and edit the latter \
+appropriately."
+
+# Get SRCDIR
+get_srcdir # This must always come before any other get_* calls
+
+# Set up run directory
+rundir="qsubfim_$$"
+mkdir $rundir || fail "Cannot make directory $rundir."
+print "Made directory $rundir"
+copyfiles $PWD $rundir || fail "Cannot copy contents of $PWD -> $rundir."
+copyfiles $SRCDIR/bin $rundir || \
+  fail "Cannot copy contents of $SRCDIR/bin -> $rundir."
+cp $SRCDIR/$FIMSETUP $rundir || \
+  fail "Cannot cpy $SRCDIR/$FIMSETUP -> $rundir."
+cd $rundir || fail "Cannot cd to $rundir."
+
+ksh_fix # Modify run scripts to use ksh93, if necessary.
+
+# Get number of cores to ask for
+./get_num_cores | grep "num_cores_batch:" | sed 's/^.*://' | read N || \
+  fail "Could not get num_cores_batch.  $(./get_num_cores)"
+
+# Find out if we'll run serial or parallel and set up appropriately
+get_from_nl ComputeTasks as PES || fail "$0: Could not set PES."
+get_from_nl Parallelism as parallelism || fail "$0: Could not set parallelism."
+if [[ "$parallelism" == "parallel" ]]
+then
+  FIM="fim"
+  ParaSuffix="$PES"
+else
+  FIM="fimS"
+  ParaSuffix="S"
+fi
+
+# Set up run-time environment
+get_fc || fail "$0: Could not set FC."
+xsource_notrace ./$FIMSETUP $FC
+
+# Determine other runtime parameters
+get_from_nl GLVL
+get_from_nl NVL
+./GetQueueTime | read QT || fail "GetQueueTime failed."
+
+# Do COMPARE_VAR setup
+compare_var_setup
+
+# Diagnostics
+
+check_nems
+
+./get_num_cores | grep "num_cores_donothing:" | sed 's/^.*://' | read dnt || \
+  fail "Could not get num_cores_donothing."
+
+./get_num_cores | grep "num_nodes_wt:" | sed 's/^.*://' | read num_nodes_wt || \
+  fail "Could not get num_nodes_wt."
+
+./get_num_cores | grep "num_cores_notattached:" | sed 's/^.*://' | read num_cores_notattached || \
+  fail "Could not get num_cores_notattached."
+
+print "Submitting job to queue $Q:"
+print "compute tasks:      $PES"
+print "write tasks:        $nwt (write nodes: $num_nodes_wt)"
+print "do_nothing tasks:   $dnt"
+print "total core request: $N (no partial nodes)"
+print "cores unattached:   $num_cores_notattached"
+
+# Craig Tierney says "use this one"
+SUBMIT_CMD="/usr/local/esrl/bin/qsub"
+SUBMIT_ARGS="-A fim \
+  -cwd \
+  -j y \
+  -l h_rt=$QT \
+  -N fim${GLVL}_${NVL}_${ParaSuffix} \
+  -pe $Q $N \
+  -r y"
+
+# Create script for later potential submission to restart the job
+cat > qsubfim.restart <<EOF
+#!/bin/ksh
+$SUBMIT_CMD $SUBMIT_ARGS batchTemplate-restart || fail "$SUBMIT_CMD failed"
+EOF
+chmod 755 qsubfim.restart
+
+# Submit the job
+$SUBMIT_CMD $SUBMIT_ARGS batchTemplate || fail "$SUBMIT_CMD failed."
+
+return 0

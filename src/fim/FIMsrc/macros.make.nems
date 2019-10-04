@@ -1,0 +1,81 @@
+# Target being built (i.e. as defined by makefim <target>)
+MAKEFIM_TARGET = nems
+
+# Preprocessor and flags
+CPP = /lib/cpp
+CPP_FLAGS = -C -P
+
+# Number of parallel tasks for gmake (NOTE: horizontal/ still must be serial)
+GMAKEMINUSJ = -j8
+
+# Record control word flag (currently required only by gfortran: specifies 4-byte RCW)
+RCWFLAG =
+
+# Optimization flags
+OPTFLAGS =
+
+# Load flags. In most cases this can be empty due to the use of MPI compiler wrappers
+LDFLAGS =
+
+# cpp ifdef for Fortran name-mangling (needed when linebuf_stdout.c is enabled). Options are:
+# FORTRAN_UNDERSCORING = -DFORTRANUNDERSCORE
+# FORTRAN_UNDERSCORING = -DFORTRANDOUBLEUNDERSCORE
+# FORTRAN_UNDERSCORING = 
+FORTRAN_UNDERSCORING = -DFORTRANUNDERSCORE
+
+# To turn on debugging, set DEBUG=yes. When DEBUG=yes, default optimization level is -O0
+# but it can be changed here
+DEBUG = no
+ifeq ($(DEBUG),yes)
+  OPTFLAGS = -g -O0
+endif
+
+# gfortran doesn't provide all degree-based trig functions as intrinsics
+# Most compilers provide these and it is safe to set NEED_SINDCOSD = no
+NEED_SINDCOSD = no
+
+# To enable attaching a debugger such as gdb or ddd to a running process, set ATTACH_DEBUGGER = yes
+ATTACH_DEBUGGER = no
+
+# Whether to enable FIM profiling using GPTL.
+USE_GPTL = no
+ifeq ($(USE_GPTL),yes)
+# Set include path for GPTL
+  GPTL_CPPFLAGS = -I<path_to_gptl_includes>
+# For auto-profiling of MPI functions, set USE_PMPI=yes. The name of the GPTL
+# library in this case is libgptl_pmpi.a. Otherwise the name is libgptl.a
+  USE_PMPI = yes
+  ifeq ($(USE_PMPI),yes)
+    GPTL_LDFLAGS = -L<path_to_gptl_lib> -lgptl_pmpi
+# When auto-profiling the MPI layer, set HAVE_IARGCGETARG=yes if the Fortran
+# compiler supports functions iargc and getarg.
+    HAVE_IARGCGETARG = no
+  else
+    GPTL_LDFLAGS = -L<path_to_gptl_lib> -lgptl
+  endif
+# AUTOINST=yes enables function-level compiler-generated auto-profiling,
+  AUTOINST = yes
+  ifeq ($(AUTOINST),yes)
+    GPTL_FFLAGS = -finstrument-functions -g -O2
+    GPTL_LDFLAGS += -finstrument-functions
+  endif
+# If GPTL was built with PAPI support, add the required flags
+  HAVE_PAPI = no
+  ifeq ($(HAVE_PAPI),yes)
+    GPTL_LDFLAGS += -lpapi
+  endif
+# Need to call GPTL init and print functions manually when GPTL enabled and HAVE_IARGCGETARG
+# isn't set. These functions are called automatically from GPTL MPI wrappers when 
+# HAVE_IARGCGETARG is set
+  ifneq ($(HAVE_IARGCGETARG),yes)
+    GPTL_CPPFLAGS += -DMANUALGPTL
+  endif
+endif
+
+# SMS library location
+ifeq ($(USE_GPTL),yes) # use an SMS with auto-profiling enabled
+  SMS = /home/hender/SMS/jet-intel-mvapich_r226_intel_11.1.072_mvapich2_1.4.1
+else
+  SMS = /home/hender/SMS/jet-intel-mvapich_r226_intel_11.1.072_mvapich2_1.4.1
+endif
+

@@ -1,0 +1,217 @@
+#!/bin/ksh
+
+CONTEXT="batchTemplate-setup"
+
+# Source functions.ksh if needed.
+
+if [[ -z "$functions_sourced" ]]
+then
+  test -n "$WFM" && prefix=$FIM_HOME/FIMrun || prefix=.
+  . $prefix/functions.ksh # Most function definitions can be found here.
+fi
+
+ksh_insist # Ensure that we are running in ksh93
+
+xsource ./chem_functions.ksh
+
+# Set fimnamelist to the absolute pathname of our FIMnamelist. If we're running
+# via WFM, this should already be set, in which case we retain the preset value.
+# Otherwise, we're running via qsubfim and use FIMnamelist in the current
+# qsubfim_* directory.
+
+test -n "$NLFILE" && fimnamelist="$NLFILE" || set_fimnamelist
+
+# From here on, NLFILE refers to the standard filename of FIM's namelist file,
+# and fimnamelist refers to the absolute path to the run's master version of
+# that file.
+
+NLFILE="FIMnamelist"
+
+# If the FIMnamelist has been copied to the prep dir, use the copy there
+# For WFM runs, this keeps us from continuing to read the copy in the FIMrun dir,
+# which could be overwritten at any time
+
+if [[ -n "$WFM" && "$(context_peek)" != "batchTemplate-prep" ]]
+then # PREP and RUNDIR are as assigned below
+  RUNDIR="$FIM_HOME/FIMrun/fim_${GLVL}_${NVL}_${PES}_$yyyymmddhhmm"
+  PREP="$RUNDIR/prep_$MEMBER_ID"
+  test -r $PREP/$NLFILE && fimnamelist="$PREP/$NLFILE"
+fi
+
+print "Using FIMnamelist at $fimnamelist"
+
+# Read variable values from the FIMnamelist
+
+get_srcdir # Read SRCDIR - Always do this before any other reads
+get_from_nl GLVL # Read GLVL
+get_from_nl NVL # Read NVL
+get_fc # Read FC (i.e. BUILDCONFIG)
+
+if [[ -n "$WFM" ]] # WFM provides SRCDIR
+then
+  BINDIR="$SRCDIR/bin"
+  FIMSETUP="$SRCDIR/fim_setup.ksh"
+else
+  BINDIR="$PWD"
+  FIMSETUP="$BINDIR/fim_setup.ksh"
+fi
+
+# Set up run-time environment and print results via "verbose"
+
+xsource_notrace $FIMSETUP $FC "verbose"
+
+# Non-WFM runs need to set yyyymmddhhmm (which is exported as an environment
+# variable by WFM) to the value specified in the namelist.
+
+if [[ -z "$WFM" ]]
+then
+  get_nl_value_unquoted $fimnamelist TIMEnamelist yyyymmddhhmm yyyymmddhhmm
+  test -z "$yyyymmddhhmm" && fail "Cannot determine yyyymmddhhmm from $fimnamelist."
+  yyyymmddhhmm=$(print $yyyymmddhhmm | tr -d '"' | tr -d "'")
+fi
+
+get_from_nl DATADIR
+get_from_nl DATADR2
+get_from_nl FIMDIR
+get_from_nl PREPDIR
+get_from_nl Parallelism as parallelism
+
+chem_on && CHEMFLAG="true" || CHEMFLAG="false"
+
+# Put test on chemistry true and readrestart true in here because subroutine chem_init may not
+# successfully kill all MPI tasks in its similar test (because the write tasks don't execute
+# chem_init(). Delete the code in both spots when chemistry works with restart.
+
+if [[ "$CHEMFLAG" == "true" ]]
+then
+  get_nl_value $fimnamelist OUTPUTnamelist readrestart READRESTART
+  test "$READRESTART" != ".false." && \
+    fail "Cannot enable chemistry with READRESTART."
+fi
+
+print $(cd $fimnamelist_dir;$BINDIR/GetWriteTaskInfo | grep "max_write_tasks_per_node") | sed 's/^.*://' | \
+  read mwtpn || fail "Could not get max_write_tasks_per_node."
+
+# jdate binary gives no trailing newline => "read" fails => execute in subshell
+
+JDATE=$($BINDIR/jdate $yyyymmddhhmm) || \
+  fail "Cannot extract Julian date from $yyyymmddhhmm."
+
+print $JDATE | cut -c6-7 | read hh || \
+  fail "Cannot derive hours from Julian date $JDATE."
+test -z "$hh" && fail "Cannot determine hour from $JDATE."
+
+# Set variables
+
+yyyymmddhh=$(print $yyyymmddhhmm | cut -c1-10)
+sanlFile="${JDATE}.gfs.t${hh}z.sanl"
+sfcanlFile="${JDATE}.gfs.t${hh}z.sfcanl"
+if [[ "$WFM" == "ENSEMBLE" ]]
+then
+  print "Setting up environment variables for Ensemble Run"
+  sanlFilename=$sanlFile
+  sfcanlFilename=$sfcanlFile
+  if [[ "$MEMBER_ID" == "EM" ]]
+  then
+    print "This is the Ensemble Mean"
+    sfcanlFile=${DATADR2}/${yyyymmddhh}/ens20/sfcanl60_${yyyymmddhh}_ensmean
+    sanlFile=${DATADR2}/${yyyymmddhh}/ens20/sanl60_${yyyymmddhh}_ensmean
+  else
+    sfcanlFile=${DATADR2}/${yyyymmddhh}/ens20/sfcanl_${yyyymmddhh}_mem0${MEMBER_ID}
+    sanlFile=${DATADR2}/${yyyymmddhh}/ens20/sanl_${yyyymmddhh}_mem0${MEMBER_ID}
+  fi
+fi
+GMPIENVVAR="F_UFMTENDIAN"
+dpsig="../dpsig${NVL}.txt"
+fimgribtable="../fim_gribtable"
+REDUCE="../reduce"
+reduceinput="../REDUCEinput"
+smsnamelist="../SMSnamelist" # optional: controls SMS run-time options
+thetacoor="../theta_coor${NVL}.txt"
+topgrid="../top_grid"
+
+# Output subversion information for logging purposes.
+
+if [[ -x "$(whence svn)" ]]
+then
+  (cd $SRCDIR && svn info 2>/dev/null && svn diff --diff-cmd diff 2>/dev/null)
+fi
+
+get_from_nl ComputeTasks as PES
+compare_var_setup
+
+# Set various paths for WFM and non-WFM runs
+
+if [[ -n "$WFM" ]]
+then
+  RUNDIR="$FIM_HOME/FIMrun/fim_${GLVL}_${NVL}_${PES}_$yyyymmddhhmm"
+  PREP="$RUNDIR/prep_$MEMBER_ID"
+  FIM="$RUNDIR/fim_$MEMBER_ID"
+  POST="$RUNDIR/post_$MEMBER_ID"
+  COMPARE_VAR_ON="false"
+  DIR="$RUNDIR"
+else
+  if [[ "$parallelism" == "serial" ]]
+  then
+    DIR="$BINDIR/fim${GLVL}_${NVL}_S"
+  else
+    if [[ "$COMPARE_VAR_ON" == ".true." ]]
+    then
+      # a more descriptive directory name...  
+      DIR="$BINDIR/fim${GLVL}_${NVL}_cv.${COMPARE_VAR_NTASKS_1}.vs.${COMPARE_VAR_NTASKS_2}"
+    else
+      DIR="$BINDIR/fim${GLVL}_${NVL}_${PES}"
+    fi
+  fi
+  PREP="$DIR/prep"
+  FIM="$DIR/fim"
+  POST="$DIR/post"
+fi
+
+#JR Removed "rm -Rf $DIR" to enable restart to work.
+
+# Create run directory
+
+if [[ ! -d "$DIR" ]]
+then
+  mkdir $DIR || fail "Cannot make directory $DIR."
+fi
+
+# Make directory for where FIM might make GRIB1 files.
+if [[ -n "$WFM" && ! -d "$POST/fim/NAT/grib1" ]]
+then
+  mkdir -p "$POST/fim/NAT/grib1" || fail "Cannot make directory $POST/fim/NAT/grib1."
+fi
+
+# Which fim executable should be used?
+
+test "$parallelism" == "serial" && FIMEXEBASE="fimS" || FIMEXEBASE="fim"
+
+FIMEXE="$FIMEXEBASE"
+GRID_FILE="icos_grid_level.dat"      #intermediate file
+INFO_FILE="icos_grid_info_level.dat" #intermediate file
+LATLON_FILE="latlonIJ.dat"           #needed by fim for post
+GLVL_FILE="glvl.dat"                 #needed by fim
+GFSFC_FILE="gfsfc.dat"               #needed by fim
+
+check_nems
+
+# When COMPARE_VAR is enabled, $taskcounts iterates through numbers of MPI tasks
+# assigned to each concurrent run. Otherwise $taskcounts just contains $PES.  
+
+if  [[ "$COMPARE_VAR_ON" == ".true." ]]
+then
+  taskcounts="$COMPARE_VAR_NTASKS_1 $COMPARE_VAR_NTASKS_2"
+else
+  taskcounts="$PES"
+fi
+
+# The batchTemplate-[prep|fim|post] scripts check if batchTemplate_setup_ran is
+# set and only call batchTemplate-setup if it is not. So, if those scripts are 
+# sourced inline by batchTemplate, batchTemplate-setup is only called once. For
+# WFM runs, where batchTemplate-[prep|fim|post] are each called independently,
+# batchTemplate-setup is called to initialize each of them.
+
+batchTemplate_setup_ran=1
+
+return 0

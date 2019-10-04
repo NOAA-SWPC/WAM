@@ -1,0 +1,79 @@
+#!/bin/ksh
+
+# Note: When run by Workflow Manager, this script's output can be found in
+# FIMwfm/logs/pop. Also see FIMwfm/logs/workflow for general WFM messages.
+
+CONTEXT="batchTemplate-FIMY_ENKF-files"
+
+# Source functions.ksh if needed.
+
+if [[ -z "$functions_sourced" ]]
+then
+  test -n "$WFM" && prefix=$FIM_HOME/FIMrun || prefix=.
+  . $prefix/functions.ksh # Most function definitions can be found here.
+fi
+
+ksh_insist # Ensure that we are running in ksh93
+
+# Run batchTemplate-setup if it has not already been run.
+
+test -z "$batchTemplate_setup_ran" && xsource ./batchTemplate-setup
+
+# get files from run directory
+
+FIM_POST_GRIB1_DIR=$POST/fim/NAT/grib1
+print "in batchTemplate-FIMY_ENKF-files"
+print "ENKF_DIR: $ENKF_DIR"
+print "PREP: $PREP"
+print "RUNDIR: $RUNDIR"
+print "MEMBER_ID: $MEMBER_ID"
+if [[ ! -d "$PREP" ]]
+then
+  mkdir -p "$PREP" || fail "Cannot make directory $PREP."
+fi
+if [[ ! -d $RUNDIR/fim_$MEMBER_ID ]]
+then
+  mkdir -p "$RUNDIR/fim_$MEMBER_ID" || fail "Cannot make directory $RUNDIR/fim_$MEMBER_ID."
+fi
+
+get_nl_value_unquoted $fimnamelist ISOBARICnamelist isobaric_levels_file ISOBARIC_LEVELS_FILE
+
+cp "$ENKF_DIR/fim_C/$ISOBARIC_LEVELS_FILE" $RUNDIR/prep_$MEMBER_ID/$ISOBARIC_LEVELS_FILE || print "cannot copy $ENKF_DIR/prep_C/$ISOBARIC_LEVELS_FILE"
+cp "$ENKF_DIR/fim_C/$ISOBARIC_LEVELS_FILE" $RUNDIR/fim_$MEMBER_ID/$ISOBARIC_LEVELS_FILE || print "cannot copy $ENKF_DIR/fim_C/$ISOBARIC_LEVELS_FILE"
+cp "$ENKF_DIR/fim_C/FIMnamelist" $PREP/FIMnamelist || fail "cannot copy $ENKF_DIR/prep_C/FIMnamelist"
+cp "$PREP/FIMnamelist" $RUNDIR/fim_$MEMBER_ID/FIMnamelist || fail "cannot copy $PREP/FIMnamelist $RUNDIR/fim_$MEMBER_ID/FIMnamelist"
+cp "$ENKF_DIR/fim_C/fim_gribtable" $RUNDIR/fim_$MEMBER_ID/fim_gribtable || fail "cannot copy $ENKF_DIR/fim_C/fim_gribtable"
+cp "$ENKF_DIR/prep_C/icos_grid_info_level.dat" $RUNDIR/prep_$MEMBER_ID/icos_grid_info_level.dat || fail "cannot copy $ENKF_DIR/prep_C/icos_grid_info_level.dat"
+  # copy grib files
+ENKF_FILE=$ENKF_DIR/fim_C/$ENKF_FILE_NAME
+fcst=$T1
+typeset -Z3 tmp_fcst
+while [[ $fcst -le $T2 ]]
+do
+  tmp_fcst=$fcst
+  print "in grib loop: after format fcst: $fcst tmp_fcst: $tmp_fcst"
+  FILE_NAME=${ENKF_FILE}${tmp_fcst}
+  OUT_FILE_NAME=${ENKF_FILE_NAME}${tmp_fcst}
+  print "!!filename: $FILE_NAME out_file_name: $OUT_FILE_NAME"
+  if [[ -s $FILE_NAME ]]
+  then
+    cp $FILE_NAME $FIM_POST_GRIB1_DIR/$OUT_FILE_NAME
+  else
+    print "error $FILE_NAME does not exist"
+  fi
+  fcst=$(expr ${fcst} + 6)
+done
+
+  # copy fim files
+fcst=$T1
+while [[ $fcst -le $T2 ]]
+do
+  tmp_fcst=$fcst
+  print "after format fcst: $fcst tmp_fcst: $tmp_fcst"
+  str=fim_out*${tmp_fcst}hr
+    # find $ENKF_DIR/fim_C/ -name "fim_out*${tmp_fcst}hr" -exec cp {} $RUNDIR/fim_$MEMBER_ID \;
+  find $ENKF_DIR/fim_C/ -name "$str" -exec cp {} $RUNDIR/fim_$MEMBER_ID \;
+  fcst=$(expr ${fcst} + 6)
+done
+
+return 0
