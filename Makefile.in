@@ -154,9 +154,9 @@ am__uninstall_files_from_dir = { \
          $(am__cd) "$$dir" && rm -f $$files; }; \
   }
 am__installdirs = "$(DESTDIR)$(docdir)" "$(DESTDIR)$(datadir)" \
-	"$(DESTDIR)$(includedir)"
+	"$(DESTDIR)$(includedir)" "$(DESTDIR)$(includedir)"
 DATA = $(dist_doc_DATA) $(nodist_data_DATA)
-HEADERS = $(include_HEADERS)
+HEADERS = $(include_HEADERS) $(nodist_include_HEADERS)
 RECURSIVE_CLEAN_TARGETS = mostlyclean-recursive clean-recursive	\
   distclean-recursive maintainer-clean-recursive
 am__recursive_targets = \
@@ -366,6 +366,7 @@ dist_doc_DATA = README
 ACLOCAL_AMFLAGS = -I m4
 nodist_data_DATA = wam.mk
 include_HEADERS = include/wam_defs.h
+nodist_include_HEADERS = src/wamcap.$(FC_MODEXT)
 CLEANFILES = wam.mk
 all: all-recursive
 
@@ -465,6 +466,27 @@ install-includeHEADERS: $(include_HEADERS)
 uninstall-includeHEADERS:
 	@$(NORMAL_UNINSTALL)
 	@list='$(include_HEADERS)'; test -n "$(includedir)" || list=; \
+	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
+	dir='$(DESTDIR)$(includedir)'; $(am__uninstall_files_from_dir)
+install-nodist_includeHEADERS: $(nodist_include_HEADERS)
+	@$(NORMAL_INSTALL)
+	@list='$(nodist_include_HEADERS)'; test -n "$(includedir)" || list=; \
+	if test -n "$$list"; then \
+	  echo " $(MKDIR_P) '$(DESTDIR)$(includedir)'"; \
+	  $(MKDIR_P) "$(DESTDIR)$(includedir)" || exit 1; \
+	fi; \
+	for p in $$list; do \
+	  if test -f "$$p"; then d=; else d="$(srcdir)/"; fi; \
+	  echo "$$d$$p"; \
+	done | $(am__base_list) | \
+	while read files; do \
+	  echo " $(INSTALL_HEADER) $$files '$(DESTDIR)$(includedir)'"; \
+	  $(INSTALL_HEADER) $$files "$(DESTDIR)$(includedir)" || exit $$?; \
+	done
+
+uninstall-nodist_includeHEADERS:
+	@$(NORMAL_UNINSTALL)
+	@list='$(nodist_include_HEADERS)'; test -n "$(includedir)" || list=; \
 	files=`for p in $$list; do echo $$p; done | sed -e 's|^.*/||'`; \
 	dir='$(DESTDIR)$(includedir)'; $(am__uninstall_files_from_dir)
 
@@ -760,7 +782,7 @@ check: check-recursive
 all-am: Makefile $(DATA) $(HEADERS)
 installdirs: installdirs-recursive
 installdirs-am:
-	for dir in "$(DESTDIR)$(docdir)" "$(DESTDIR)$(datadir)" "$(DESTDIR)$(includedir)"; do \
+	for dir in "$(DESTDIR)$(docdir)" "$(DESTDIR)$(datadir)" "$(DESTDIR)$(includedir)" "$(DESTDIR)$(includedir)"; do \
 	  test -z "$$dir" || $(MKDIR_P) "$$dir"; \
 	done
 install: install-recursive
@@ -816,7 +838,7 @@ info: info-recursive
 info-am:
 
 install-data-am: install-dist_docDATA install-includeHEADERS \
-	install-nodist_dataDATA
+	install-nodist_dataDATA install-nodist_includeHEADERS
 
 install-dvi: install-dvi-recursive
 
@@ -863,7 +885,8 @@ ps: ps-recursive
 ps-am:
 
 uninstall-am: uninstall-dist_docDATA uninstall-includeHEADERS \
-	uninstall-local uninstall-nodist_dataDATA
+	uninstall-local uninstall-nodist_dataDATA \
+	uninstall-nodist_includeHEADERS
 
 .MAKE: $(am__recursive_targets) install-am install-strip
 
@@ -878,13 +901,14 @@ uninstall-am: uninstall-dist_docDATA uninstall-includeHEADERS \
 	install-dvi-am install-exec install-exec-am install-html \
 	install-html-am install-includeHEADERS install-info \
 	install-info-am install-man install-nodist_dataDATA \
-	install-pdf install-pdf-am install-ps install-ps-am \
-	install-strip installcheck installcheck-am installdirs \
-	installdirs-am maintainer-clean maintainer-clean-generic \
-	mostlyclean mostlyclean-generic pdf pdf-am ps ps-am tags \
-	tags-am uninstall uninstall-am uninstall-dist_docDATA \
-	uninstall-includeHEADERS uninstall-local \
-	uninstall-nodist_dataDATA
+	install-nodist_includeHEADERS install-pdf install-pdf-am \
+	install-ps install-ps-am install-strip installcheck \
+	installcheck-am installdirs installdirs-am maintainer-clean \
+	maintainer-clean-generic mostlyclean mostlyclean-generic pdf \
+	pdf-am ps ps-am tags tags-am uninstall uninstall-am \
+	uninstall-dist_docDATA uninstall-includeHEADERS \
+	uninstall-local uninstall-nodist_dataDATA \
+	uninstall-nodist_includeHEADERS
 
 
 wam.mk:

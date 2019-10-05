@@ -1,9 +1,8 @@
-!#include "../ESMFVersionDefine.h"
 #include "wam_defs.h"
 
 !-----------------------------------------------------------------------
 !
-      MODULE module_ATM_GRID_COMP
+      MODULE wamCap
 !
 !-----------------------------------------------------------------------
 !***  This module contains codes directly related to the ATM component.
@@ -44,24 +43,16 @@
         model_label_Advance         => label_Advance
       use module_CPLFIELDS
       use get_variables_for_WAM_IPE_coupling
-#ifdef WITH_NMMB_NUOPC
-      USE module_NMM_GRID_COMP,ONLY: nmm_grid
-#endif
-
-!
+ 
       USE module_ATM_INTERNAL_STATE,ONLY: ATM_INTERNAL_STATE            &
                                          ,WRAP_ATM_INTERNAL_STATE
-!
+
       USE module_NMM_GRID_COMP,ONLY: NMM_REGISTER
       USE module_GFS_GRID_COMP,ONLY: GFS_REGISTER
       USE module_FIM_GRID_COMP,ONLY: FIM_REGISTER
       USE module_GEN_GRID_COMP,ONLY: GEN_REGISTER   ! For the "Generic Core" gridded component.
-!
+
       USE module_ERR_MSG,ONLY: ERR_MSG,MESSAGE_CHECK
-!
-#ifdef ESMF_NETCDF
-  use netcdf
-#endif
 
 !-----------------------------------------------------------------------
 !
@@ -88,7 +79,7 @@
     type(InternalStateStruct), pointer :: wrap
   end type
 !
-      PUBLIC :: ATM_REGISTER
+      PUBLIC :: SetServices
 !
 !-----------------------------------------------------------------------
 !
@@ -109,7 +100,7 @@
 !#######################################################################
 !-----------------------------------------------------------------------
 !
-      SUBROUTINE ATM_REGISTER(ATM_GRID_COMP,RC_REG)
+      SUBROUTINE SetServices(ATM_GRID_COMP,RC_REG)
 !
 !-----------------------------------------------------------------------
 !***  Register the Init, Run, and Finalize routines of 
@@ -210,7 +201,7 @@
 !
 !-----------------------------------------------------------------------
 !
-      END SUBROUTINE ATM_REGISTER
+      END SUBROUTINE SetServices
 !
 !-----------------------------------------------------------------------
 !&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&&
@@ -1180,6 +1171,6 @@
 !
 !-----------------------------------------------------------------------
 !
-      END MODULE module_ATM_GRID_COMP
+      END MODULE wamCap
 !
 !-----------------------------------------------------------------------

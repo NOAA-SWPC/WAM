@@ -260,6 +260,7 @@ AC_CONFIG_FILES([Makefile
                  src/io/Makefile
                  src/nmm/Makefile
                  src/phys/Makefile
+                 src/post/Makefile
                  src/share/Makefile])
 AC_OUTPUT
 

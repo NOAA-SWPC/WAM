@@ -6,6 +6,7 @@ ACLOCAL_AMFLAGS = -I m4
 nodist_data_DATA = wam.mk
 
 include_HEADERS = include/wam_defs.h
+nodist_include_HEADERS = src/wamcap.$(FC_MODEXT)
 
 wam.mk:
 	@echo "# ESMF self-describing build dependency makefile fragment" > $(@)
