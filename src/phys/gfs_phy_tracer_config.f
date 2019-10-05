@@ -80,7 +80,7 @@ c
       gfs_phy_tracer%doing_GOCART = .false.
 
 ! initialize chem tracers
-      call gocart_tracer_config(me)
+!      call gocart_tracer_config(me)
 !      call gocart_tracer_config(gfs_phy_tracer,me)
 
 ! ntrac_met = number of met tracers
