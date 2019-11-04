@@ -265,6 +265,7 @@
         sinpm(:) = sin(phim(:))
 !
         z = 0.
+        skip=0
         do j=1,csize
           if (skip == 1) then
             skip = 0
@@ -319,6 +320,7 @@
         sinpm(:) = sin(phim(:))
 !
         z = 0.
+        skip=0
         jloop: do j=1,csize
           if (skip == 1) then
             skip = 0
@@ -383,6 +385,7 @@
 
           prevth0 = th0
           nlms = 0. ! whole array init 
+          skip=0
           do j=1,csize
             if (skip == 1) then
               skip = 0
@@ -620,7 +623,7 @@
           if (ix <= 1.or.ix >= nx) then
 !       write(iulog,"('>>> interpol_quad: ix out of range: nu=',i4,' ix=',i4)") nu,ix
             p(i) = 0.
-            continue
+            cycle
           endif
           x1 = x(ix)
           x0 = x(ix-1)

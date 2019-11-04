@@ -347,7 +347,7 @@
 
 !  compute ktemp 
 
-          do k=1,levs+1
+          do k=1,levs
 
 ! height in scale heights
             x = alog(1e5/prsi(1,k))

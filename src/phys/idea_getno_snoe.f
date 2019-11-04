@@ -234,7 +234,7 @@
 ! find interp latitude lat33 in degrees...
 !     
 ! VAY-2016: mlat-bug
-        do i=1,no_ny33
+        do i=1,no_ny33-1
           if(mlat.gt.lat33(i).and.mlat.lt.lat33(i+1)) then
             iref=i
             dl=(mlat-lat33(i))/(lat33(i+1)-lat33(i))
