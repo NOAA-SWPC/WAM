@@ -14,9 +14,9 @@ wam.mk:
 	@echo "ESMF_DEP_FRONT     = wamCap"                        >> $(@)
 	@echo "ESMF_DEP_INCPATH   = $(includedir)"                 >> $(@)
 	@echo "ESMF_DEP_CMPL_OBJS = "                              >> $(@)
-	@echo "ESMF_DEP_LINK_OBJS = $(libdir)/libwam.a"            >> $(@)
-	@echo "ESMF_DEP_SHRD_PATH = $(IPE_DEP_SHRD_PATH)"          >> $(@)
-	@echo "ESMF_DEP_SHRD_LIBS = $(IPE_DEP_SHRD_LIBS)"          >> $(@)
+	@echo "ESMF_DEP_LINK_OBJS = $(WAM_DEP_LINK_OBJS)"          >> $(@)
+	@echo "ESMF_DEP_SHRD_PATH = $(WAM_DEP_SHRD_PATH)"          >> $(@)
+	@echo "ESMF_DEP_SHRD_LIBS = $(WAM_DEP_SHRD_LIBS)"          >> $(@)
 	@echo
 	@echo "Finished generating ESMF self-describing build dependency makefile fragment:" $(@)
 	@echo

@@ -77,17 +77,23 @@ POST_INSTALL = :
 NORMAL_UNINSTALL = :
 PRE_UNINSTALL = :
 POST_UNINSTALL = :
+build_triplet = @build@
+host_triplet = @host@
 subdir = .
 DIST_COMMON = INSTALL NEWS README AUTHORS ChangeLog \
 	$(srcdir)/Makefile.in $(srcdir)/Makefile.am \
 	$(top_srcdir)/configure $(am__configure_deps) $(dist_doc_DATA) \
-	$(include_HEADERS) COPYING build-aux/ar-lib build-aux/depcomp \
+	$(include_HEADERS) COPYING build-aux/ar-lib \
+	build-aux/config.guess build-aux/config.sub build-aux/depcomp \
 	build-aux/install-sh build-aux/missing \
 	$(top_srcdir)/build-aux/ar-lib \
+	$(top_srcdir)/build-aux/config.guess \
+	$(top_srcdir)/build-aux/config.sub \
 	$(top_srcdir)/build-aux/install-sh \
 	$(top_srcdir)/build-aux/missing
 ACLOCAL_M4 = $(top_srcdir)/aclocal.m4
-am__aclocal_m4_deps = $(top_srcdir)/m4/ax_compiler_vendor.m4 \
+am__aclocal_m4_deps = $(top_srcdir)/m4/ax_blas.m4 \
+	$(top_srcdir)/m4/ax_compiler_vendor.m4 \
 	$(top_srcdir)/m4/ax_fortran_utils.m4 \
 	$(top_srcdir)/m4/ax_lib_esmf.m4 \
 	$(top_srcdir)/m4/ax_lib_nemsio.m4 \
@@ -236,6 +242,7 @@ AUTOCONF = @AUTOCONF@
 AUTOHEADER = @AUTOHEADER@
 AUTOMAKE = @AUTOMAKE@
 AWK = @AWK@
+BLAS_LIBS = @BLAS_LIBS@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
@@ -264,6 +271,7 @@ FCFLAGS_F90 = @FCFLAGS_F90@
 FCFLAGS_FIXED = @FCFLAGS_FIXED@
 FCFLAGS_FREE = @FCFLAGS_FREE@
 FCFLAGS_f = @FCFLAGS_f@
+FCLIBS = @FCLIBS@
 FC_AUTODOUBLE = @FC_AUTODOUBLE@
 FC_DEFINE = @FC_DEFINE@
 FC_LINE_LENGTH = @FC_LINE_LENGTH@
@@ -276,8 +284,6 @@ INSTALL_DATA = @INSTALL_DATA@
 INSTALL_PROGRAM = @INSTALL_PROGRAM@
 INSTALL_SCRIPT = @INSTALL_SCRIPT@
 INSTALL_STRIP_PROGRAM = @INSTALL_STRIP_PROGRAM@
-IPE_DEP_SHRD_LIBS = @IPE_DEP_SHRD_LIBS@
-IPE_DEP_SHRD_PATH = @IPE_DEP_SHRD_PATH@
 LDFLAGS = @LDFLAGS@
 LIBOBJS = @LIBOBJS@
 LIBS = @LIBS@
@@ -315,6 +321,9 @@ SET_MAKE = @SET_MAKE@
 SHELL = @SHELL@
 STRIP = @STRIP@
 VERSION = @VERSION@
+WAM_DEP_LINK_OBJS = @WAM_DEP_LINK_OBJS@
+WAM_DEP_SHRD_LIBS = @WAM_DEP_SHRD_LIBS@
+WAM_DEP_SHRD_PATH = @WAM_DEP_SHRD_PATH@
 abs_builddir = @abs_builddir@
 abs_srcdir = @abs_srcdir@
 abs_top_builddir = @abs_top_builddir@
@@ -330,14 +339,22 @@ am__quote = @am__quote@
 am__tar = @am__tar@
 am__untar = @am__untar@
 bindir = @bindir@
+build = @build@
 build_alias = @build_alias@
+build_cpu = @build_cpu@
+build_os = @build_os@
+build_vendor = @build_vendor@
 builddir = @builddir@
 datadir = @datadir@
 datarootdir = @datarootdir@
 docdir = @docdir@
 dvidir = @dvidir@
 exec_prefix = @exec_prefix@
+host = @host@
 host_alias = @host_alias@
+host_cpu = @host_cpu@
+host_os = @host_os@
+host_vendor = @host_vendor@
 htmldir = @htmldir@
 includedir = @includedir@
 infodir = @infodir@
@@ -917,9 +934,9 @@ wam.mk:
 	@echo "ESMF_DEP_FRONT     = wamCap"                        >> $(@)
 	@echo "ESMF_DEP_INCPATH   = $(includedir)"                 >> $(@)
 	@echo "ESMF_DEP_CMPL_OBJS = "                              >> $(@)
-	@echo "ESMF_DEP_LINK_OBJS = $(libdir)/libwam.a"            >> $(@)
-	@echo "ESMF_DEP_SHRD_PATH = $(IPE_DEP_SHRD_PATH)"          >> $(@)
-	@echo "ESMF_DEP_SHRD_LIBS = $(IPE_DEP_SHRD_LIBS)"          >> $(@)
+	@echo "ESMF_DEP_LINK_OBJS = $(WAM_DEP_LINK_OBJS)"          >> $(@)
+	@echo "ESMF_DEP_SHRD_PATH = $(WAM_DEP_SHRD_PATH)"          >> $(@)
+	@echo "ESMF_DEP_SHRD_LIBS = $(WAM_DEP_SHRD_LIBS)"          >> $(@)
 	@echo
 	@echo "Finished generating ESMF self-describing build dependency makefile fragment:" $(@)
 	@echo

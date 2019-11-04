@@ -65,12 +65,15 @@ AC_COMPILE_IFELSE([AC_LANG_PROGRAM([],[dnl
 AC_FC_PP_SRCEXT([F90])
 AX_COMPILER_VENDOR
 
-# Check required NEMSIO
+# Check for required NEMSIO
 AX_LIB_NEMSIO([yes])
 AS_IF([test "x$with_nemsio" = xno],
   [AC_MSG_ERROR([Unable to find required NEMSIO library])],
   []
 )
+
+# Check for required BLAS library
+AX_BLAS
 
 # Add configure options
 CHNK_RRTM=8
@@ -208,10 +211,12 @@ AC_LANG_POP
 LIBS="${LIBS} ${NETCDF4_FLIBS} ${NEMSIO_FLIBS}"
 LDFLAGS="${LDFLAGS} ${NETCDF4_LDFLAGS} ${NEMSIO_LDFLAGS}"
 
-IPE_DEP_SHRD_PATH="`echo ${LDFLAGS} | $SED -e's/-L//g'`"
-IPE_DEP_SHRD_LIBS="`echo ${LIBS} | $SED -e's/-l//g'`"
-AC_SUBST([IPE_DEP_SHRD_PATH])
-AC_SUBST([IPE_DEP_SHRD_LIBS])
+WAM_DEP_LINK_OBJS="${BLAS_LIBS} ${libdir}/libwam.a"
+WAM_DEP_SHRD_PATH="`echo ${LDFLAGS} | $SED -e's/-L//g'`"
+WAM_DEP_SHRD_LIBS="`echo ${LIBS} | $SED -e's/-l//g'`"
+AC_SUBST([WAM_DEP_LINK_OBJS])
+AC_SUBST([WAM_DEP_SHRD_PATH])
+AC_SUBST([WAM_DEP_SHRD_LIBS])
 
 # Set F77 flags
 AC_LANG_PUSH([Fortran 77])
@@ -278,6 +283,8 @@ AS_ECHO("  LDFLAGS        = ${LDFLAGS}")
 AS_ECHO("  LIBS           = ${LIBS}")
 AS_ECHO("")
 AS_ECHO("Libraries required:")
+AS_ECHO("* BLAS")
+AS_ECHO("  LIBS   : ${BLAS_LIBS}")
 AS_ECHO("* NEMSIO")
 AS_ECHO("  Version: ${NEMSIO_VERSION}")
 AS_ECHO("  FCFLAGS: ${NEMSIO_FCFLAGS}")
