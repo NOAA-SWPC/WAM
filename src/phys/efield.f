@@ -55,7 +55,8 @@
 !     use abortutils,    only: endrun
 !     use cam_logfile,   only: iulog
       use IDEA_IO_UNITS, only: iulog  
-      use w05sc,         only: EpotVal_new, SetModel_new 
+      use w05sc,         only: EpotVal_new, SetModel_new, read_bndy,
+     &                         read_potential, read_schatable, model
  
       implicit none
 
@@ -199,7 +200,7 @@
 !
       contains
 
-      subroutine efield_init
+      subroutine efield_init(my_model)
 !--------------------------------------------------------------------
 ! Purpose: read in and set up coefficients needed for electric field
 !          calculation (independent of time & geog. location)
@@ -209,9 +210,13 @@
 ! Author: A. Maute Dec 2003  am 12/17/03 
 !-------------------------------------------------------------------
 
+      character(len=4), intent(in) :: my_model
+
       character(len=*), parameter :: 
      &                  efield_lflux_file='global_idea_coeff_lflux.dat',
      &                  efield_hflux_file='global_idea_coeff_hflux.dat'
+
+      model = my_model
 
       call constants	 ! calculate constants
 !-----------------------------------------------------------------------
@@ -225,6 +230,16 @@
 !following part should be independent of time & location if IMF constant
 !-----------------------------------------------------------------------
       call ReadCoef
+
+      if (trim(model) == 'epot') then
+        call read_potential('global_idea_coeff_W05scEpot.dat')
+      else
+        call read_potential('global_idea_coeff_W05scBpot.dat')
+      endif
+
+      call read_schatable('global_idea_coeff_W05SCHAtable.dat')
+
+      call read_bndy('global_idea_coeff_W05scBndy.dat')
 
       end subroutine efield_init
 
@@ -1084,7 +1099,7 @@
        write(iulog,*)  '  tilt =',tilt
       end if
 
-      call SetModel_new(angle,bt,tilt,v_sw,swden,'epot')
+      call SetModel_new(angle,bt,tilt,v_sw,swden)
 
       if(debug) then
        write(iulog,"(/,'efield prep_weimer:')")

@@ -490,7 +490,7 @@
           call h2ocin(prpa,nlevc_h2o,me,mpi_r_io_r,mpi_comm_all)
           deallocate(prpa)
 !ion
-          call efield_init()
+          call efield_init(weimer_model)
 !o3
           call o3ini(levs)
 !

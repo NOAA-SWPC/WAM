@@ -22,6 +22,7 @@
 !
 ! Location of W05scEpot.dat, W05SCHAtable.dat, W05scBndy.dat
       character*2  :: file_location = './'
+      character*4  :: model
 !
       real :: rad2deg,deg2rad           ! set by SetModel_new
       real :: bndyfitr                  ! calculated by setboundary
@@ -55,14 +56,14 @@
       epoto = 0.0
 !
 ! for northern hemisphere:  tilt,  angle
-      call SetModel_new(angle,bt,tilt,swvel,swden,'epot')
+      call SetModel_new(angle,bt,tilt,swvel,swden)
       call get_elec_field(epoto(1,1:22,1:180))
 !
 
 ! for southern hemisphere:  -tilt, BY will be 360-BY(north)
       sangle = mod(360.0-angle, 360.0)
       stilt  = -tilt
-      call SetModel_new(sangle,bt,stilt,swvel,swden,'epot')
+      call SetModel_new(sangle,bt,stilt,swvel,swden)
       call get_elec_field(epoto(2,1:22,1:180))
 
       end subroutine weimer05
@@ -107,16 +108,14 @@
 
       end subroutine get_elec_field
 !-----------------------------------------------------------------------
-      subroutine SetModel_new(angle,bt,tilt,swvel,swden,model)
+      subroutine SetModel_new(angle,bt,tilt,swvel,swden)
         implicit none
 !
 ! Args:
 !
 ! file_path: directory in which to find data file (must have "/" at end)
-! model: must be either 'epot' or 'bpot' for electric or magnetic potential
 !
         real,intent(in) :: angle,bt,tilt,swvel,swden
-        character(len=*),intent(in) :: model
 !
 ! Local:
         integer :: i,j
@@ -131,13 +130,6 @@
         endif
 !
 ! Read data:
-        if (trim(model) == 'epot') then
-          call read_potential('global_idea_coeff_W05scEpot.dat')  ! By Zhuxiao
-        else
-          call read_potential('global_idea_coeff_W05scBpot.dat')
-        endif
-          call read_schatable('global_idea_coeff_W05SCHAtable.dat')
-!
         pi = 4.*atan(1.)
         rad2deg = 180./pi
         deg2rad = pi/180.
@@ -198,9 +190,6 @@
         integer :: i
         real :: swp,xc,theta,ct,st,tilt2,cosa,btx,x(na),c(na)
         real, parameter :: num_0 = 0., num_1 = 1. 
-!
-! Read data:
-        call read_bndy('global_idea_coeff_W05scBndy.dat')
 !
 ! Calculate the transformation matrix to the coordinate system
 ! of the offset pole.
@@ -536,7 +525,7 @@
         endif
         if (th0 < th0s(1)) then
 !         write(iulog,"('>>> nkmlookup: th0 < th0s(1): th0=',e12.4,' th0s(1)=',e12.4)")
-     c       th0,th0s(1)
+!    c       th0,th0s(1)
         endif
 
 !   write(iulog,"('nkmlookup call interpol: kk=',i3,' mm=',i3,' th0=',e12.4,&

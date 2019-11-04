@@ -61,6 +61,7 @@
       logical pdfcld,shcnvcw,redrag,hybedmf,dspheat,stochphys,cnvcld
       logical a2oi_out,cplflx
       character*20 ens_nam
+      character*4  weimer_model
 
       integer ngrid_a2oi
 
