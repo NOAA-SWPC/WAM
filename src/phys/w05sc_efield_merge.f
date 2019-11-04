@@ -21,8 +21,6 @@
       real :: bndya(na),bndyb(nb),ex_bndy(2)
 !
 ! Location of W05scEpot.dat, W05SCHAtable.dat, W05scBndy.dat
-!  character*18  :: file_location = '/Zhuxiao/'
-!  character*18  :: file_location = './'
       character*2  :: file_location = './'
 !
       real :: rad2deg,deg2rad           ! set by SetModel_new
@@ -45,9 +43,6 @@
 ! Args:
 !  real, intent(in)  :: angle, bt, swvel, swden, tilt
 
-!  real, parameter :: angle= 123.255, bt= 4.3368, swvel=343.66
-!  real, parameter :: swden= 5.0, tilt  = 28.0
-
       real, parameter :: angle= 0.0, bt= 4.3368, swvel=343.66
       real, parameter :: swden= 5.0, tilt  = 0.0
 
@@ -58,8 +53,6 @@
       real              :: sangle, stilt
 
       epoto = 0.0
-
-      print *, "angle1 = ", angle
 !
 ! for northern hemisphere:  tilt,  angle
       call SetModel_new(angle,bt,tilt,swvel,swden,'epot')
@@ -109,52 +102,11 @@
 
           call EpotVal_new(glat,  gmlt, epot(m,l))
 
-!      call EpotVal_new(glat,  gmlt, fill, epot(m,l))
-
-!      call EpotVal_new(glatu, gmlt, fill, epotu)       ! 
-!      call EpotVal_new(glatd, gmlt, fill, epotd)
-!      call EpotVal_new(glat, gmlte, fill, epote)
-!      call EpotVal_new(glat, gmltw, fill, epotw)
-!      if (epotu == fill .or. epotd == fill) then
-!        ex(m,l) = 0 
-!      else
-!        ex(m,l) = (epotu-epotd)*1.e3/delx
-!      endif
-!      if (epotw == fill .or. epote == fill) then
-!        ey(m,l) = 0
-!      else
-!        ey(m,l) = (epotw-epote)*1.e3/dely
-!      endif
-
         enddo lat_loop
       enddo mlt_loop
-!
-! Setting the pole value here
-!  epx = 0.0
-!  epy = 0.0
-
-!  mlt_loop2: do l = 1, nmlon
-!    phir = (float(l)-1.0)*pi/10.0
-!    cphi = cos(phir)
-!    sphi = sin(phir)
-!    epx = epx + ex(2,l)*cphi - ey(2,l)*sphi
-!    epy = epy + ex(2,l)*sphi + ey(2,l)*cphi
-!  enddo mlt_loop2
-
-!  epx = epx/real(nmlon)
-!  epy = epy/real(nmlon)
-
-!  mlt_loop3: do l = 1, nmlon
-!    phir = (float(l)-1.0)*pi/10.0
-!    cphi = cos(phir)
-!    sphi = sin(phir)
-!    ex(1,l) = epx*cphi + epy*sphi
-!    ey(1,l) = epy*cphi - epx*sphi
-!  enddo mlt_loop3
 
       end subroutine get_elec_field
 !-----------------------------------------------------------------------
-!  subroutine SetModel_new(angle,bt,tilt,swvel,swden,file_path,model)
       subroutine SetModel_new(angle,bt,tilt,swvel,swden,model)
         implicit none
 !
@@ -164,7 +116,6 @@
 ! model: must be either 'epot' or 'bpot' for electric or magnetic potential
 !
         real,intent(in) :: angle,bt,tilt,swvel,swden
-!    character(len=*),intent(in) :: file_path,model
         character(len=*),intent(in) :: model
 !
 ! Local:
@@ -173,19 +124,14 @@
         real :: cfits(d1_pot,csize),a(d1_pot)
 !
         if (trim(model) /= 'epot'.and.trim(model) /= 'bpot') then
-!      write(6,"('>>> model=',a)") trim(model)
-!      write(6,"('>>> SetModel_new: model must be either epot or bpot')")
           write(iulog,"('>>> model=',a)") trim(model)
-          write(iulog,"('>>> SetModel_new: model must be either epot or bpot')")
+          write(iulog,"('>>> SetModel_new: model must be either epot
+     & or bpot')")
           stop 'SetModel_new' 
         endif
-
-!   write(iulog,"('SetModel_new: angle=',f8.2,' bt=',f8.2,' tilt=',f8.2,' swvel=',&
-!     &f8.2,' swden=',f8.2)") angle,bt,tilt,swvel,swden
 !
 ! Read data:
         if (trim(model) == 'epot') then
-!      call read_potential(file_path//'W05scEpot.dat')
           call read_potential('global_idea_coeff_W05scEpot.dat')  ! By Zhuxiao
         else
           call read_potential('global_idea_coeff_W05scBpot.dat')
@@ -196,7 +142,6 @@
         rad2deg = 180./pi
         deg2rad = pi/180.
 !
-!    call setboundary(angle,bt,tilt,swvel,swden,file_path)
         call setboundary(angle,bt,tilt,swvel,swden)
 !
         stilt = sin(tilt*deg2rad)
@@ -229,7 +174,6 @@
             enddo
           enddo
 !     write(iulog,"('SetModel_new: esphc=',/,(6e12.4))") esphc
-!      print *, 'SetModel_new: esphc=', esphc      
         else
           bsphc(:) = 0.
           do j=1,csize
@@ -241,7 +185,6 @@
         endif
       end subroutine SetModel_new
 !-----------------------------------------------------------------------
-!  subroutine setboundary(angle,bt,tilt,swvel,swden,file_path)
        subroutine setboundary(angle,bt,tilt,swvel,swden)        ! Zhuxiao
         implicit none
 !
@@ -254,12 +197,9 @@
 ! Local:
         integer :: i
         real :: swp,xc,theta,ct,st,tilt2,cosa,btx,x(na),c(na)
-! Zhuxiao
         real, parameter :: num_0 = 0., num_1 = 1. 
-!   write(iulog,"('Enter setboundary: angle=',f8.3,' bt=',f8.3)") angle,bt
 !
 ! Read data:
-!    call read_bndy(file_path//'W05scBndy.dat')
         call read_bndy('global_idea_coeff_W05scBndy.dat')
 !
 ! Calculate the transformation matrix to the coordinate system
@@ -270,16 +210,12 @@
         ct = cos(theta)
         st = sin(theta)
 !
-!    tmat(1,:) = (/ ct, 0., st/) 
         tmat(1,:) = (/ ct, num_0, st/)   ! avoid conflict
         tmat(2,:) = (/ 0., 1., 0./) 
-!    tmat(3,:) = (/-st, 0., ct/)
         tmat(3,:) = (/-st, num_0, ct/)   ! avoid conflict
 !
-!    ttmat(1,:) = (/ct, 0.,-st/)
         ttmat(1,:) = (/ct, num_0,-st/)
         ttmat(2,:) = (/ 0.,1., 0./)
-!    ttmat(3,:) = (/st, 0., ct/)
         ttmat(3,:) = (/st, num_0, ct/)   ! avoid conflict
 !
         swp = swden*swvel**2*1.6726e-6 ! pressure
@@ -291,7 +227,6 @@
         else
           cosa = 1.+bt*(cosa-1.) ! remove angle dependency for IMF under 1 nT
         endif
-!    x = (/1., cosa, btx, btx*cosa, swvel, swp/)
         x = (/num_1, cosa, btx, btx*cosa, swvel, swp/)
         c = bndya
         bndyfitr = 0.
@@ -300,18 +235,14 @@
         enddo
 
 !   write(iulog,"('setboundary: cosa=',f8.3,' btx=',f8.3)") cosa,btx
-!   write(iulog,"('setboundary: x=',/,(6e12.4))") x
-!   write(iulog,"('setboundary: c=',/,(6e12.4))") c
 !   write(iulog,"('setboundary: bndyfitr=',e12.4)") bndyfitr
 
       end subroutine setboundary
 !-----------------------------------------------------------------------
-!  subroutine EpotVal_new(lat,mlt,fill,epot)
       subroutine EpotVal_new(lat,mlt,epot)
         implicit none
 !
 ! Args:
-!    real,intent(in) :: lat,mlt,fill
         real,intent(in) :: lat,mlt
         real,intent(out) :: epot
 !
@@ -325,15 +256,10 @@
 !
         call checkinputs(lat,mlt,inside,phir,colat)
 
-!    print *, 'EpotVal_new', lat, mlt, inside, phir, colat
-
         if (inside == 0) then
           epot = 0.
-!      epot = fill
           return
         endif
-
-!    print *, 'go though EpotVal_new'
 
 !
 ! IDL code: 
@@ -346,7 +272,6 @@
 !
         phim(1) = phir
         phim(2) = phir*2.
-!   write(iulog,"('EpotVal_new: phir=',1pe12.4,' phim=',2(1pe12.4))") phir,phim
         cospm(:) = cos(phim(:))
         sinpm(:) = sin(phim(:))
 !
@@ -376,12 +301,10 @@
         epot = z 
       end subroutine EpotVal_new
 !-----------------------------------------------------------------------
-!  subroutine mpfac(lat,mlt,fill,mpmpfac)
       subroutine mpfac(lat,mlt,mpmpfac)
         implicit none
 !
 ! Args:
-!    real,intent(in) :: lat,mlt,fill
         real,intent(in) :: lat,mlt
         real,intent(out) :: mpmpfac
 !
@@ -398,7 +321,6 @@
         call checkinputs(lat,mlt,inside,phir,colat)
         if (inside == 0) then
           mpmpfac = 0.
-!      mpmpfac = fill
           return
         endif
 !
@@ -469,8 +391,6 @@
 
 !     write(iulog,"('scplm: tablesize=',i4,' colattable=',/,(6f8.3))") &
 !       tablesize,colattable(1:tablesize)
-!     write(iulog,"('scplm: tablesize=',i4,' cth=',/,(6(1pe12.4)))") &
-!       tablesize,cth(1:tablesize)
 
           prevth0 = th0
           nlms = 0. ! whole array init 
@@ -487,10 +407,7 @@
 !       write(iulog,"('scplm after nkmlookup: j=',i3,' l=',i3,' m=',i3,&
 !         &' nlms(j)=',f8.4)") j,l,m,nlms(j)
 
-! real :: plmtable(mxtablesize,csize)
             call pm_n(m,nlms(j),cth,plmtable(1:tablesize,j),tablesize)
-!       write(iulog,"('scplm: j=',i3,' indx=',i3,' plmtable(:,j)=',/,(6e12.4))") &
-!         j,indx,plmtable(1:tablesize,j)
 
             skip = 0
             if (m /= 0 .and. ab(j) > 0) then
@@ -511,7 +428,6 @@
 
 !   write(iulog,"('scplm: indx=',i3,' scplm=',e12.4,' plmtable=',/,(6e12.4))") &
 !     indx,scplm,plmtable(1:tablesize,indx)
-!   write(iulog,"('scplm returning: indx=',i3,' scplm=',1pe12.4)") indx,scplm
 
       end function scplm
 !-----------------------------------------------------------------------
@@ -539,14 +455,9 @@
         xn = r*(r+1.)
         x(:) = (1.-cth(:))/2.
 
-!   write(iulog,"('pm_n: a=',/,(6(1pe12.4))") a
-!   write(iulog,"('pm_n: xn=',1pe12.4") xn
-!   write(iulog,"('pm_n: x=',/,(6(1pe12.4))") x
-
         table = a ! whole array init
 !
         k = 1
-!   write(iulog,"(/)")
         pmn_loop: do         ! repeat-until loop in idl code
           do i=1,tablesize
             rm = float(m)
@@ -567,22 +478,12 @@
 
 !     write(iulog,"('pm_n: k=',i3,' abs(a)=',/,(6(1pe12.4)))") k,abs(a)
 !     write(iulog,"('pm_n: k=',i3,' abs(table)=',/,(6(1pe12.4)))") k,abs(table)
-!     write(iulog,"('pm_n: k=',i3,' tmp=',/,(6(1pe12.4)))") k,tmp
-!     write(iulog,"('pm_n: k=',i3,' max(tmp)=',1pe12.4)") k,maxval(tmp)
-
-!     write(iulog,"('pm_n: k=',i5,' min,max table=',2(1pe12.4),' min,max tmp=',2(1pe12.4))")&
-!       k,minval(table),maxval(table),minval(tmp),maxval(tmp)
 
           if (maxval(tmp) < 1.e-6) exit pmn_loop
         enddo pmn_loop
         ans = km_n(m,r)
 
-!   write(iulog,"('pm_n: ans=',1pe12.4,' table=',/,(6(1pe12.4)))") ans,table(1:tablesize)
-
         plmtable(:) = table(:)*ans
-
-!   write(iulog,"('pm_n returning: tablesize=',i4,' plmtable=',/,6(1pe12.4))") &
-!     tablesize,plmtable
 
       end subroutine pm_n
 !-----------------------------------------------------------------------
@@ -604,7 +505,6 @@
         
         rm = float(m)
         km_n = sqrt(2.*exp(lngamma(rn+rm+1.)-lngamma(rn-rm+1.))) / (2.**m*factorial(m))
-!   write(iulog,"('km_n: m=',i3,' rn=',f8.4,' km_n=',e12.4)") m,rn,km_n
 
       end function km_n
 !-----------------------------------------------------------------------
@@ -627,15 +527,15 @@
         kk = k+1
         mm = m+1
         if (kk > maxk_scha) then
-          write(iulog,"('>>> nkmlookup: kk > maxk: kk=',i4,' maxk=',i4)") kk,maxk_scha
+!         write(iulog,"('>>> nkmlookup: kk > maxk: kk=',i4,' maxk=',i4)") kk,maxk_scha
           call interpol_quad(allnkm(maxk_scha,mm,:),th0s,th0a,out)
         endif
         if (mm > maxm_scha) then
-          write(iulog,"('>>> nkmlookup: mm > maxm: kk=',i4,' maxm=',i4)") kk,maxm_scha
+!         write(iulog,"('>>> nkmlookup: mm > maxm: kk=',i4,' maxm=',i4)") kk,maxm_scha
           call interpol_quad(allnkm(kk,maxm_scha,:),th0s,th0a,out)
         endif
         if (th0 < th0s(1)) then
-          write(iulog,"('>>> nkmlookup: th0 < th0s(1): th0=',e12.4,' th0s(1)=',e12.4)")
+!         write(iulog,"('>>> nkmlookup: th0 < th0s(1): th0=',e12.4,' th0s(1)=',e12.4)")
      c       th0,th0s(1)
         endif
 
@@ -701,9 +601,6 @@
       
         latout = asin(pos(3))*rad2deg
         lonout = atan2(pos(2),pos(1))*rad2deg
-
-!   write(iulog,"('dorotation: latin,lonin=',2f9.4,' latout,lonout=',2f9.4)") &
-!     latin,lonin,latout,lonout
       
       end subroutine dorotation
 !-----------------------------------------------------------------------
@@ -867,8 +764,6 @@
       read(lu,"(2i3)") maxl_pot,maxm_pot
       read(lu,"(28i3)") ms
 
-      print *, 'SetModel_new_read_potential', ms
-
       do i=1,csize
         read(lu,"(6e20.9)") schfits(:,i)
       enddo
@@ -937,7 +832,7 @@
       read(lu,"(8e20.9)") bndyb
       read(lu,"(8e20.9)") ex_bndy
 
-      print *, 'read_bndy', ex_bndy
+!     print *, 'read_bndy', ex_bndy
 
       close(lu)
       end subroutine read_bndy
