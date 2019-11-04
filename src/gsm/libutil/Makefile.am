@@ -16,9 +16,9 @@ clean-modules:
 clean-local: clean-modules
 
 # dependencies
-libutil_a-dyn_phy_cpl_comp_mod.$(OBJEXT) : libutil_a-module_export_import_data.$(OBJEXT)
+libutil_a-gfs_dyn_phy_cpl_comp_mod.$(OBJEXT) : libutil_a-module_export_import_data.$(OBJEXT)
 libutil_a-module_DM_PARALLEL_GFS.$(OBJEXT) : libutil_a-module_gfs_mpi_def.$(OBJEXT) libutil_a-module_gfs_machine.$(OBJEXT)
-libutil_a-module_gfs_funcphys.$(OBJEXT) : libutil_a-module_gfs_physcons.$(OBJEXT) libutil_a-module_gfs_machine.$(OBJEXT)
+libutil_a-module_gfs_funcphys.$(OBJEXT) : libutil_a-module_gfs_machine.$(OBJEXT) libutil_a-module_gfs_physcons.$(OBJEXT)
 libutil_a-module_gfs_physcons.$(OBJEXT) : libutil_a-module_gfs_machine.$(OBJEXT)
-libutil_a-module_gfs_tropp.$(OBJEXT) : libutil_a-module_gfs_physcons.$(OBJEXT) libutil_a-module_gfs_machine.$(OBJEXT)
+libutil_a-module_gfs_tropp.$(OBJEXT) : libutil_a-module_gfs_machine.$(OBJEXT) libutil_a-module_gfs_physcons.$(OBJEXT)
 libutil_a-module_include_gfs.$(OBJEXT) : libutil_a-module_gfs_machine.$(OBJEXT)
