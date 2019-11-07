@@ -314,6 +314,8 @@
 !
 !---------------------------------------------------------------------------
 !
+      btime = 0.d0
+
       if (first) then
         allocate (acv(lonr,lats_node_r))
         allocate (acvb(lonr,lats_node_r))
