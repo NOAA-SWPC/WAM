@@ -141,3 +141,53 @@ else
 fi
 AC_LANG_POP([Fortran])dnl
 ])# AX_FC_LINE_LENGTH
+
+
+# --------------------------------------------------------------------------
+#
+# SYNOPSIS
+#
+#   AX_FC_BIGENDIAN([ACTION-IF-FOUND [, ACTION-IF-NOT-FOUND]])
+#
+# Looks for a compiler flag to set the conversion format for numerical
+# data in unformatted I/O.
+# into double precision variables and adds the flag to FCFLAGS.
+# On success the variable ax_cv_fc_bigendian holds the compiler flag
+# otherwise the string "none". Call ACTION-IF-SUCCESS
+# (defaults to nothing) if successful (i.e. can compile code using
+# the specific compiler flag) and ACTION-IF-FAILURE (defaults to
+# failing with an error message) if not.
+#
+# The known flags are:
+#    -convert big_endian: Intel Fortran (ifort), Compaq Fortran (f90) compilers
+#   -fconvert=big-endian: GNU Fortran compiler (gfortran)
+#              -qufmt=be: IBM Fortran compiler (xlf)
+#            -byteswapio: PGI Fortran compiler (pgfortran)
+# --------------------------------------------------------------------------
+AC_DEFUN([AX_FC_BIGENDIAN],[
+    AC_LANG_PUSH(Fortran)dnl
+    AC_CACHE_CHECK([for Fortran flag for big-endian I/O],
+        ax_cv_fc_bigendian,[
+	ax_cv_fc_bigendian=unknown
+	ax_fc_bigendian_FCFLAGS_save="$FCFLAGS"
+	for ac_flag in "-convert big_endian" -fconvert=big-endian -qufmt=be -byteswapio
+	do
+	    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([],[])],[dnl
+		ax_cv_fc_bigendian=$ac_flag; break
+            ])
+        done
+        rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
+        FCFLAGS=$ax_fc_bigendian_FCFLAGS_save
+    ])
+    AS_VAR_IF([ax_cv_fc_bigendian],[unknown],[dnl
+        ax_cv_fc_bigendian=""
+        m4_default([$2],[
+            AC_MSG_ERROR([Fortran compiler does not support big-endian I/O])])
+    ],[dnl
+        AS_VAR_IF([ax_cv_fc_bigendian],[none],[dnl
+           ax_cv_fc_bigendian=""])
+        m4_default([$1],[dnl
+	    FCFLAGS="$FCFLAGS $ax_cv_fc_bigendian"])
+    ])
+    AC_LANG_POP(Fortran)dnl
+])# AX_FC_BIGENDIAN

@@ -174,6 +174,15 @@ AC_FC_MODULE_FLAG
 AC_FC_PP_DEFINE
 AC_OPENMP
 
+# Checks whether platform is big endian. If not, finds compiler flag
+# to convert data from big to little endian format (or vice-versa)
+# during I/O from/to Fortran sequential unformatted files.
+AC_LANG_POP
+AC_C_BIGENDIAN
+AC_LANG_PUSH([Fortran])
+AS_IF([test "x$ac_cv_c_bigendian" = xno], [dnl look for compiler flag
+  AX_FC_BIGENDIAN],[])
+
 # Adds ESMF include paths
 fc_inc=
 for incpath in ${NETCDF4_FFLAGS} ${ESMF_FCFLAGS} ${NEMSIO_FCFLAGS}
