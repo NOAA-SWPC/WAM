@@ -12,18 +12,15 @@
 !                 restart run,
 !                 ii)  add wam_ipe_cpl_rst_output for WAM-IPE coupling
 !                 restart run,
-!                 iii) add grads_output and FHOUT_grads for outputing
-!                      the fort.178 file for grads the figure,
 !                 iv)  add NC_output and FHOUT_NC for outputing the
 !                      NetCDF diagnostic files.
 !
       use gfs_dyn_machine
-      use module_CPLFIELDS
       implicit none
       
       integer nsres,nsout,igen,ngptc,levwgt(2),k2o,nsout_hf
       integer dfilevs,nsskeb
-      integer FHOUT_grads, FHOUT_NC
+      integer FHOUT_NC
       real(kind=kind_evod) fhrot,fhmax,fhout,fhres,fhini,fhdfi
       real(kind=kind_evod) filta,ref_temp,sl_epsln,cdamp(2)
      &,                    ref_pres,fhout_hf,fhmax_hf
@@ -52,9 +49,8 @@
       real(kind=kind_evod), dimension(7) :: iaufhrs
 ! WAM IPE coupling flags.
 !------------------------
-      logical :: wam_ipe_coupling, height_dependent_g, 
-!     &           wam_ipe_cpl_rst_input, wam_ipe_cpl_rst_output, 
-     &           grads_output, NC_output
+      logical :: wam_ipe_coupling, height_dependent_g, NC_output
+     &           wam_ipe_cpl_rst_input, wam_ipe_cpl_rst_output
 ! pjp stochastic phyics
       integer skeb_varspect_opt
       logical sppt_sfclimit
