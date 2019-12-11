@@ -28,13 +28,14 @@
      &,                                                          ttg,wwg
      &,                                                          zzg,n2g
       real(kind=kind_grid), dimension(lonf,lats_node_a,levh) ::  rqg
-      real(kind=kind_grid), dimension(lonf,lats_node_a,levs), optional ::
-     &                                                           den,gmol
+      real(kind=kind_grid), dimension(lonf,lats_node_a,levs),
+     &                      optional                         :: den,gmol
 !
-      real(kind=kind_grid), dimension(:, :, :), allocatable :: 
+      real(kind=kind_grid), dimension(:, :, :), allocatable ::
      &                                              buff_mult_pieceg_ipe
 !
       integer i, j, k, ngrids_gg_ipe, kdt
+      integer, dimension(lonf,lats_node_a)             :: kmsk
       logical nc_out
       real deltim
 !
@@ -111,8 +112,7 @@
       use gfs_dyn_layout1
       use gfs_dyn_mpi_def
       use namelist_dynamics_def, ONLY: wam_ipe_cpl_rst_output,
-     &                                 grads_output,
-     &                                 FHOUT_grads, NC_output,
+     &                                 NC_output,
      &                                 FHOUT_NC, FHRES, ens_nam
       implicit none
 !
@@ -129,7 +129,7 @@
       integer j,k,i,ierr, node
       integer lenrec, ndig, nfill
       real    deltim
-      logical restart_output
+      logical nc_out
 !
       ioproc = nodes_comp - 1
 
@@ -190,7 +190,6 @@
 ! buff_final contains wwg, zzg, uug, vvg, ttg, rqg, n2g (den, gmol).
 !-------------------------------------------------------------------
       if(me == ioproc) then
-
         if (nc_out) then
           call write_nc(kdt, lonf, latg, ngrids_gg_ipe,buff_final)
         else
@@ -279,7 +278,7 @@
       integer, dimension(levs) :: levels
       integer :: ncstatus, ncid, x_dimid, y_dimid, z_dimid, time_dimid
       integer :: xt_dimid, yt_dimid, zt_dimid
-      integer :: varid, i, k
+      integer :: varid, i, k, time
       integer :: start(4), count(4)
       character(13), parameter :: filename='wam_fields.nc'
       real :: pi
@@ -327,7 +326,6 @@
      &                         zt_dimid)
          ncstatus=nf90_put_att(ncid, zt_dimid, "axis", "Z")
          ncstatus=nf90_put_att(ncid, zt_dimid, "long_name", "level")
-         ncstatus=nf90_put_att(ncid, zt_dimid, "units", "level")
          ncstatus=nf90_put_var(ncid, zt_dimid, levels)
 
          do i=1,fields
@@ -339,10 +337,13 @@
          ncstatus=nf90_close(ncid)
       else
          ncstatus=nf90_open(filename,NF90_WRITE, ncid)
+         ncstatus=nf90_inq_dimid(ncid, "time", time_dimid)
+         ncstatus=nf90_inquire_dimension(ncid,time_dimid,len=time)
+         time = time + 1
          do i=1,fields
             ncstatus=nf90_inq_varid(ncid, trim(var(i)), varid)
             do k=1,levs
-               start = (/1,1,k,kdt/)
+               start = (/1,1,k,time/)
                ncstatus=nf90_put_var(ncid, varid,                       &
      &                  buff_final(:,:,(i-1)*levs+k),                   &
      &                  start=start,count=count)

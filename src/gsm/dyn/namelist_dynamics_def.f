@@ -49,7 +49,7 @@
       real(kind=kind_evod), dimension(7) :: iaufhrs
 ! WAM IPE coupling flags.
 !------------------------
-      logical :: wam_ipe_coupling, height_dependent_g, NC_output
+      logical :: wam_ipe_coupling, height_dependent_g, NC_output,
      &           wam_ipe_cpl_rst_input, wam_ipe_cpl_rst_output
 ! pjp stochastic phyics
       integer skeb_varspect_opt

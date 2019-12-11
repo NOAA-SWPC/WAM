@@ -57,12 +57,10 @@
 !  2016-03-07   Weiyu Yang - add the wam_ipe_coupling, and height_dependent_g:
 !                            the WAM IPE model coupling flag and the flag that
 !                            flag for using the height dependent g in that coupling.
-!  2017-11-06   Weiyu Yang - 
+!  2017-11-06   Weiyu Yang -
 !               i)   add wam_ipe_cpl_rst_input for WAM-IPE coupling restart run,
 !               ii)  add wam_ipe_cpl_rst_output for WAM-IPE coupling restart run,
-!               iii) add grads_output and FHOUT_grads for outputing 
-!                    the fort.178 file for grads the figure, 
-!               iv)  add NC_output and FHOUT_NC for outputing the 
+!               iii) add NC_output and FHOUT_NC for outputing the
 !                    NetCDF diagnostic files.
 !
 ! Usage:    call compns(deltim,
@@ -137,9 +135,6 @@ c - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 ! For WAM IPE coupling restart run.
 !----------------------------------
      & wam_ipe_cpl_rst_output, wam_ipe_cpl_rst_input,
-! For outputing the fort.178 file for grads figures.
-!---------------------------------------------------
-     & grads_output, FHOUT_grads,
 ! For outputing the NetCDF diagnostic files.
 !-------------------------------------------
      & NC_output, FHOUT_NC
@@ -289,9 +284,6 @@ c - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
       wam_ipe_cpl_rst_input  = .false.
       wam_ipe_cpl_rst_output = .false.
 
-      grads_output        = .false.
-      FHOUT_grads         = 2400
-
       NC_output           = .false.
       FHOUT_NC            = 2400
 !
@@ -355,12 +347,6 @@ c - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 !
       if( lsidea ) then       ! idea add (WAM) case needs larger ref_temp
         if (levs > 100 .and. ref_temp < 400.0) ref_temp = 2500.0
-! open the wam-ipe coupling interface output file for grads.
-!-----------------------------------------------------------
-        if(grads_output .and. wam_ipe_coupling) then
-          open(178, file = 'WAM-IPE_interface_output_grads',
-     &        form='UNFORMATTED')
-        end if
       endif
 
       if (me == 0) write(6,nam_dyn)

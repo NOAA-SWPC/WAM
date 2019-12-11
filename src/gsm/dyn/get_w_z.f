@@ -4,8 +4,7 @@
       use gfs_dyn_layout1,   ONLY: lats_node_a
       use gfs_dyn_machine
       use namelist_dynamics_def, ONLY: wam_ipe_cpl_rst_output,
-     &                                 grads_output,
-     &                                 FHOUT_grads, NC_output,
+     &                                 NC_output,
      &                                 FHOUT_NC, FHRES
 
       IMPLICIT NONE
@@ -166,11 +165,6 @@
          ALLOCATE(ps(lonf,lats_node_a))
          ps = 0.0
       endif
-!!     
-!
-!     print *,' -----------------get_initial_w_inp ------ '
-!
-!
 !----------------------------------------------------------
       if (me < num_pes_fcst) then
         levs3 = levs * 3
