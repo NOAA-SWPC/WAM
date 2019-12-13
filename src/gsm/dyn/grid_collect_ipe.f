@@ -112,8 +112,7 @@
       use gfs_dyn_layout1
       use gfs_dyn_mpi_def
       use namelist_dynamics_def, ONLY: wam_ipe_cpl_rst_output,
-     &                                 NC_output,
-     &                                 FHOUT_NC, FHRES, ens_nam
+     &                                 NC_output, FHRES, ens_nam
       implicit none
 !
       integer ngrids_gg_ipe
@@ -259,6 +258,7 @@
       use netcdf
       use gfs_dyn_gg_def, only:    sinlat_a
       use gfs_dyn_resol_def, only: levs
+      use namelist_dynamics_def, ONLY: nc_fields
       implicit none
 
       integer, intent(in) :: kdt
@@ -270,9 +270,13 @@
       ! Local Variables
       integer, parameter :: fields = 13
       character(2), dimension(fields),parameter::var=(/'w ', 'z ', 'u ',&
-     &                                           'v ', 't ', 'q1', 'q2',&
-     &                                           'q3', 'q4', 'q5', 'n2',&
+     &                                           'v ', 't ', 'qr', 'o3',&
+     &                                           'cw', 'o ', 'o2', 'n2',&
      &                                           'dn', 'gm'/)
+      character(7),dimension(fields),parameter::units=(/'m/s','m','m/s',&
+     &                                        'm/s','K','kg/kg','kg/kg',&
+     &                                     'kg/kg','m^-3','m^-3','m^-3',&
+     &                                         'kg*m^-3','kg/mol'/)
       real, dimension(latg) :: lats
       real, dimension(lonf) :: lons
       integer, dimension(levs) :: levels
@@ -285,7 +289,7 @@
       logical :: file_exists
 
       pi = atan(1.0)*4.0
-      count = (/lonf,latg,1,1/)
+      count = (/lonf,latg,levs,1/)
 
       lats = asin(sinlat_a)*180. / pi
       do i = 1,lonf
@@ -329,25 +333,28 @@
          ncstatus=nf90_put_var(ncid, zt_dimid, levels)
 
          do i=1,fields
+            if (nc_fields(i)) then
             ncstatus=nf90_def_var(ncid,trim(var(i)), NF90_FLOAT, (/     &
      &                 x_dimid, y_dimid, z_dimid, time_dimid /), varid)
-            ncstatus=nf90_put_att(ncid, varid, "units", "unknown")
-         end do
+            ncstatus=nf90_put_att(ncid, varid, "units", trim(units(i)))
+            ncstatus=nf90_def_var_deflate(ncid, varid, shuffle = 1,     &
+     &                                   deflate = 1, deflate_level = 5)
+            endif
+         enddo
          ncstatus=nf90_enddef(ncid)
          ncstatus=nf90_close(ncid)
       else
          ncstatus=nf90_open(filename,NF90_WRITE, ncid)
          ncstatus=nf90_inq_dimid(ncid, "time", time_dimid)
          ncstatus=nf90_inquire_dimension(ncid,time_dimid,len=time)
-         time = time + 1
+         start = (/1,1,1,time+1/)
          do i=1,fields
+            if (nc_fields(i)) then
             ncstatus=nf90_inq_varid(ncid, trim(var(i)), varid)
-            do k=1,levs
-               start = (/1,1,k,time/)
                ncstatus=nf90_put_var(ncid, varid,                       &
-     &                  buff_final(:,:,(i-1)*levs+k),                   &
+     &                  buff_final(:,:,(i-1)*levs+1:i*levs),            &
      &                  start=start,count=count)
-           enddo !k
+            endif
         enddo !i
       endif ! kdt
       ncstatus=nf90_close(ncid)

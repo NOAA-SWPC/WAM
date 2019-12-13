@@ -1052,7 +1052,7 @@
 ! Get w hydrostatically.
 !-----------------------
       if( wam_ipe_coupling .or. (nc_output .and.
-     &           MOD(NINT(shour),FHOUT_NC*3600) == 0) ) then
+     &           MOD(NINT(shour),DELOUT_NC) == 0) ) then
         call get_w_z(grid_gr,
      &               trie_ls,trio_ls,
      &               LS_NODE,LS_NODES,MAX_LS_NODES,

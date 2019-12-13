@@ -4,8 +4,8 @@
       use gfs_dyn_layout1,   ONLY: lats_node_a
       use gfs_dyn_machine
       use namelist_dynamics_def, ONLY: wam_ipe_cpl_rst_output,
-     &                                 NC_output,
-     &                                 FHOUT_NC, FHRES
+     &                                 NC_output, nc_fields,
+     &                                 DELOUT_NC, FHRES
 
       IMPLICIT NONE
 
@@ -481,7 +481,7 @@
 ! The following is to the NetCDF diagnostic files.
 !-------------------------------------------------
       IF(NC_output .AND.
-     &  MOD(NINT(deltim) * kdt, FHOUT_NC * 3600) == 0) THEN
+     &  MOD(NINT(deltim) * kdt, DELOUT_NC) == 0) THEN
         CALL grid_collect_ipe(wwg,zzg,uug,vvg,
      &                        ttg,rqg,n2g,global_lats_a,lonsperlat,
      &                        lats_nodes_a,kdt,deltim,den,gmol)

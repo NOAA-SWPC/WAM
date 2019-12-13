@@ -12,7 +12,7 @@
 !                 restart run,
 !                 ii)  add wam_ipe_cpl_rst_output for WAM-IPE coupling
 !                 restart run,
-!                 iv)  add NC_output and FHOUT_NC for outputing the
+!                 iv)  add NC_output and DELOUT_NC for outputting the
 !                      NetCDF diagnostic files.
 !
       use gfs_dyn_machine
@@ -20,7 +20,7 @@
       
       integer nsres,nsout,igen,ngptc,levwgt(2),k2o,nsout_hf
       integer dfilevs,nsskeb
-      integer FHOUT_NC
+      integer DELOUT_NC
       real(kind=kind_evod) fhrot,fhmax,fhout,fhres,fhini,fhdfi
       real(kind=kind_evod) filta,ref_temp,sl_epsln,cdamp(2)
      &,                    ref_pres,fhout_hf,fhmax_hf
@@ -51,6 +51,7 @@
 !------------------------
       logical :: wam_ipe_coupling, height_dependent_g, NC_output,
      &           wam_ipe_cpl_rst_input, wam_ipe_cpl_rst_output
+      logical, dimension(13) :: nc_fields
 ! pjp stochastic phyics
       integer skeb_varspect_opt
       logical sppt_sfclimit

@@ -60,7 +60,7 @@
 !  2017-11-06   Weiyu Yang -
 !               i)   add wam_ipe_cpl_rst_input for WAM-IPE coupling restart run,
 !               ii)  add wam_ipe_cpl_rst_output for WAM-IPE coupling restart run,
-!               iii) add NC_output and FHOUT_NC for outputing the
+!               iii) add NC_output and DELOUT_NC for outputing the
 !                    NetCDF diagnostic files.
 !
 ! Usage:    call compns(deltim,
@@ -137,7 +137,7 @@ c - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
      & wam_ipe_cpl_rst_output, wam_ipe_cpl_rst_input,
 ! For outputing the NetCDF diagnostic files.
 !-------------------------------------------
-     & NC_output, FHOUT_NC
+     & NC_output, DELOUT_NC, nc_fields
 
 !
       fhmax      = 0
@@ -285,7 +285,8 @@ c - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
       wam_ipe_cpl_rst_output = .false.
 
       NC_output           = .false.
-      FHOUT_NC            = 2400
+      nc_fields           = .true.
+      DELOUT_NC           = 3600
 !
 !  iau parameters
        iau              = .false.
