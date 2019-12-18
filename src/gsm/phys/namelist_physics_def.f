@@ -51,6 +51,7 @@
       logical lsfwd,lssav,lscca,lsswr,lslwr,ldfi
 ! idea hmhj add
       logical lsidea
+      logical output_jh_integral
       logical shuff_lats_r,reshuff_lats_r,reduced_grid
       logical hybrid,gen_coord_hybrid
 !     logical hybrid,gen_coord_hybrid,zflxtvd

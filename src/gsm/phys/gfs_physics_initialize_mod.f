@@ -125,6 +125,7 @@
       USE gfs_physics_sfc_flx_set_mod,                                  &
                           ONLY: sfcvar_aldata, flxvar_aldata, flx_init, sfc_init
       USE d3d_def,        ONLY: d3d_init, d3d_zero
+      use wam_jh_integral,only: jh_integral_init, jh_integral_zero
       use machine,        ONLY : kind_io4
       USE sfcio_module,   ONLY: sfcio_axdbta
 
@@ -680,6 +681,10 @@
         call d3d_init(ngptc,nblck,lonr,lats_node_r_max,levs,pl_coeff)
       endif
 
+     if (lsidea) then
+        call jh_integral_init(ngptc,nblck)
+      endif
+
 !* allocate g3d_fld and g2d_fld
       if (lgocart) then
         call g3d_aldata (lonr, lats_node_r_max, levs,                   &
@@ -898,6 +903,10 @@
 !    Add (Xingren Wu)
       if (a2oi_out .or. cplflx) then
         call aoivar_init(gis_phy%aoi_fld, ierr)
+      endif
+
+      if (lsidea) then
+        call jh_integral_zero
       endif
 
       if (ldiag3d) then

@@ -156,7 +156,7 @@
      & ntrac,nxpt,nypt,jintmx,jcap,levs,lonr,latr,levr,
      & ntoz,ntcw,ncld,ntke,lsoil,nmtvr,zhao_mic,nsout,lsm,tfiltc,
      & isol, ico2, ialb, iems, iaer, iovr_sw, iovr_lw,ictm,
-     & isubc_lw, isubc_sw, fdaer, lsidea, weimer_model,
+     & isubc_lw,isubc_sw,fdaer,lsidea,weimer_model,output_jh_integral,
      & f107_kp_size, f107_kp_interval,f107_kp_skip_size,
      & f107_kp_data_size, f107_kp_read_in_start, ipe_to_wam_coupling,
      & ncw, crtrh,old_monin,flgmin,cnvgwd,cgwf,prslrd0,ral_ts,fixtrc,
@@ -247,6 +247,7 @@
 ! idea add
       lsidea           = .false.
       weimer_model     = 'epot'
+      output_jh_integral = .false.
       f107_kp_size     = 56
       f107_kp_skip_size= 0
       f107_kp_read_in_start=0

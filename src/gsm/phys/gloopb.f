@@ -118,6 +118,7 @@
       USE module_IPE_to_WAM,       only : lowst_ipe_level, 
      &                                    ZMT, MMT, JHR, SHR, O2DR,
      &                                    ipe_to_wam_coupling
+      use wam_jh_integral,         only : jh_global
 !
       use mersenne_twister
 !================================================================= WAM-related 201702
@@ -249,6 +250,7 @@
       real(kind=kind_phys) dt3dt_v(ngptc,levs,6), du3dt_v(ngptc,levs,4)
      &,                    dv3dt_v(ngptc,levs,4)
      &,                    dq3dt_v(ngptc,levs,5+pl_coeff)
+      real(kind=kind_phys) jh_local(ngptc)
       real(kind=kind_phys) upd_mfv(ngptc,levs), dwn_mfv(ngptc,levs)
      &,                    det_mfv(ngptc,levs)
 !    &,                    det_mfv(ngptc,levs), dkh_v(ngptc,levs)
@@ -895,7 +897,7 @@
      &                     swh(1,1,iblk,lan),hlw(1,1,iblk,lan),hlwd,
      &                     thermodyn_id,sfcpress_id,gen_coord_hybrid,
      &                     me,mpi_r_io_r,MPI_COMM_ALL, fhour, kdt,
-     &                     gzmt, gmmt, gjhr, gshr, go2dr)
+     &                     gzmt, gmmt, gjhr, gshr, go2dr, jh_local)
 !
 !
 !
@@ -1502,6 +1504,9 @@
               sfc_fld%slc(k,item,lan) = slc_v(i,k)
             enddo
           enddo
+          if (lsidea) then
+            jh_global(:,iblk,lan) = jh_local
+          endif
 !
           if (ldiag3d) then
             do k=1,6

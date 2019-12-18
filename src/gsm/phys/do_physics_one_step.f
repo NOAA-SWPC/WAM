@@ -73,6 +73,10 @@
       use gfs_physics_g3d_mod,      ONLY: G3D_Var_Data
       use gfs_physics_g2d_mod,      ONLY: G2D_Var_Data, g2d_zerout
 !     use gfs_phy_tracer_config,    ONLY: gfs_phy_tracer_type
+      use wam_jh_integral,          ONLY: jh_integral_zero,
+     &                                    do_jh_integral,
+     &                                    write_jh_output
+
       use d3d_def, ONLY: d3d_zero, CLDCOV
 ! idea add by hmhj
       use module_radsw_parameters,  only : NBDSW
@@ -587,6 +591,11 @@
 !     &   'fhour=',fhour,'zhour=',zhour,'zhour_dfin=',zhour_dfin,
 !     &   'zhour_dfi=',zhour_dfi
 
+      if (kdt /= 0) then
+         call do_jh_integral(global_lats_r, lonsperlar, nblck,ngptc,me)
+         if (output_jh_integral .and. me.eq.0) call write_jh_output(kdt)
+      endif
+
       if (lsout .and. kdt /= 0 ) then
 !WY bug fix.
 !-----------
@@ -634,6 +643,8 @@
             enddo
           enddo
         enddo
+!
+        call jh_integral_zero
 !
         if (ldiag3d) then
 !         if(me==0) print *, 'LU_CLDCOV: zero out d3d fields'

@@ -3,6 +3,8 @@ config.log
 config.status
 autom4te.cache/
 wam.mk
+**/Makefile
+WAM_INSTALL/
 
 # compiler output
 *.o

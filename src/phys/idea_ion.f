@@ -135,7 +135,7 @@
      &  adu,adv,adt,dudt,dvdt,dtdt,rho,rlat,rlon,ix,im,levs,              
      &  dayno,utsec,sda,maglon,maglat,btot,dipang,essa,
      &  f107, f107d, kp, nhp, nhpi, shp, shpi, SPW_DRIVERS,
-     &  swbz, swvel)
+     &  swbz, swvel, jh_local)
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ! driver      dtdt(i,k)=jh(i,k)/cp(i,k), dudt dvdt
 !              ion darge and Joule heating
@@ -186,9 +186,10 @@
       REAL, INTENT(in) :: sda         ! solar declination angle (rad)
       REAL, INTENT(in) :: utsec       !universal time
 ! output
-      REAL, INTENT(out)     :: dtdt(ix,levs)  ! temperature change (k/s)
-      REAL, INTENT(out)     :: dudt(ix,levs)  ! zonal wind change (m/s2)
-      REAL, INTENT(out)     :: dvdt(ix,levs)  ! meridional change wind (m/s2)
+      REAL, INTENT(out)     :: jh_local(ix)  ! unscaled joule heating (J/s)
+      REAL, INTENT(out)     :: dtdt(ix,levs) ! temperature change (k/s)
+      REAL, INTENT(out)     :: dudt(ix,levs) ! zonal wind change (m/s2)
+      REAL, INTENT(out)     :: dvdt(ix,levs) ! meridional change wind (m/s2)
 !
 ! local
 !
@@ -220,7 +221,7 @@
      &   dayno,utsec,F107,f107d,KP,NHP,NHPI,spw_drivers,sda,sza,rlat,zg,grav,      
      &   o_n, o2_n, n2_n,adu,adv,adt,rho,rlt,rlon,ix,im,levs,k91,       
      &   btot,dipang,maglon,maglat,essa,                                
-     &   dudt,dvdt,jh) 
+     &   dudt,dvdt,jh,jh_local)
 
 !       print *, 'F107=  ', F107, 'F107d=  ', f107d
 !       print *, 'NHP=  ', NHP, 'NHPI=  ', NHPI
@@ -233,21 +234,21 @@
 !   semiannual variation, Zhuxiao.Li
 
 !  JH0_6
-           jh_fac = 1.75+0.5*tanh(2.*rlat(i))*cos((dayno+9.)*2.*pi/365.)
-     &                  +0.5*(cos(4.*pi*(dayno-80.)/365.))
+         jh_fac = 1.75+0.5*tanh(2.*rlat(i))*cos((dayno+9.)*2.*pi/365.)
+     &                +0.5*(cos(4.*pi*(dayno-80.)/365.))
 
 ! VBz adjustment
 
-          if (abs(VBz).le.5000.) then
-             st_fac = 1.
-          else
-             st_fac = (25000.+5000.)/(25000.+ abs(VBz))
-          endif
+         if (abs(VBz).le.5000.) then
+            st_fac = 1.
+         else
+            st_fac = (25000.+5000.)/(25000.+ abs(VBz))
+         endif
 
-      do k=1,levs
-!           dtdt(i,k)=jh(i,k)*jh_fac/cp(i,k)
-           dtdt(i,k)=jh(i,k)*jh_fac*st_fac/cp(i,k)
-      enddo
+         do k=1,levs
+            dtdt(i,k)=jh(i,k)*jh_fac*st_fac/cp(i,k)
+         enddo
+
       enddo
       return
 !
@@ -258,7 +259,7 @@
      &   dayno,utsec,f107,f107d,kp,hp,hpi,spw_drivers,sda,sza,rlat,ht,grav, 
      &   o_n, o2_n, n2_n,adu,adv,adt,rho,rlt,rlon,ix,im,levs,lev1,      
      &   btot,dipang,maglon,maglat,essa,                                
-     &   dudt,dvdt,jh) 
+     &   dudt,dvdt,jh,jh_local)
 !      use physcons,  pi => con_pi
 !    
        use IDEA_ION_INPUT, only : EMAPS1, CMAPS1, DJSPECTRA1
@@ -303,9 +304,10 @@
       REAL, INTENT(in) :: essa(im)    !magnetic local time
 
 
-      REAL, INTENT(OUT) :: dvdt(ix,levs) !(m/s2)
-      REAL, INTENT(OUT) :: dudt(ix,levs) !(m/s2)
+      REAL, INTENT(OUT) :: dvdt(ix,levs) ! (m/s2)
+      REAL, INTENT(OUT) :: dudt(ix,levs) ! (m/s2)
       REAL, INTENT(OUT) :: jh(ix,levs)   ! (J/kg/s)
+      REAL, INTENT(OUT) :: jh_local(ix)  ! (J/s)
 ! local
       real ht1(levs),v1(levs),nden(levs),o2n(levs),on(levs),            
      &    n2n(levs),elx(im),ely(im),ssa,elz(im),ee1(im),                
@@ -339,6 +341,7 @@
       REAL      :: eden(ix,levs)  !electron density
       REAL      :: eden_chiu(ix,levs)  !electron density from CHIU
       REAL      :: eden_aurora(ix,levs)  !electron density from TIROS
+      real,parameter       :: rearth = 6372000.0 ! (m)
 !
       real,dimension(levs) :: pr1,rho1,grav1, adt1
       real,dimension(levs) :: o3p_1,o2_1,n2_1,aur_1
@@ -518,6 +521,14 @@
           jh(i,k) = 0.
         enddo
       ENDDO                          ! i-hor.-pixel loop
+
+      jh_local = 0.0
+      do k=2,levs-1
+         do i=1,im
+            jh_local(i) = jh_local(i) + jh(i,k) * rho(i,k) *
+     &                    (ht(i,k+1)-ht(i,k-1))/2 * (rearth+ht(i,k))**2
+         enddo ! i
+      enddo ! k
 !
 !        if (mpi_id == 0) then
 !           print *, 'vay-ion GetIonParams'

@@ -7,7 +7,7 @@
      &                     xlon,xlat,oro,cozen,swh,hlw,dt6dt,           
      &                     thermodyn_id,sfcpress_id,gen_coord_hybrid,me,
      &                     mpi_ior,mpi_comm, fhour, kstep,
-     &                     gzmt, gmmt, gjhr, gshr, go2dr)
+     &                     gzmt, gmmt, gjhr, gshr, go2dr, jh_local)
 
 !-----------------------------------------------------------------------
 ! add temp, wind changes due to viscosity and thermal conductivity
@@ -125,7 +125,8 @@
       real, intent(inout) :: adu(ix,levs)       ! W-E u
       real, intent(inout) :: adv(ix,levs)       ! S-N v
 !
-      real, intent(inout) :: dt6dt(ix,levs,6)   ! diagnostic 3D-array ....never used 
+      real, intent(inout) :: dt6dt(ix,levs,6) ! diagnostic 3D-array ....never used 
+      real, intent(out)   :: jh_local(ix)     ! joule heating array for local PE
 !                                               !
 ! (2)-wtot-merged (SH-LW, H2O, CO2, O2,O3), (4-5-6) for Strobel +Cooling
 ! (1)-MT_SHEAT(EUV+?),  (3) - Joule heating
@@ -554,7 +555,7 @@
      &              dayno,utsec,sda,maglon,maglat,btot,dipang,essa,
      &              f107_curdt, f107d_curdt, kp_curdt, nhp_curdt, 
      &              nhpi_curdt, shp_curdt, shpi_curdt, SPW_DRIVERS,
-     &              swbz_curdt, swvel_curdt)                                                
+     &              swbz_curdt, swvel_curdt, jh_local)
 ! Merge the  IPE back coupling WAM dudt, dvdt and dtdt arrays into WAM.
 !----------------------------------------------------------------------
       IF(ipe_to_wam_coupling) THEN
