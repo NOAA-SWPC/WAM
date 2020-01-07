@@ -126,6 +126,7 @@
       use idea_composition,  only : k91, ELCH
       use idea_composition,  only : PI,  PI2, DTR, R_2_D, fac_lst, PID2
       use idea_composition,  only : pi_24hr
+      use efield_wam,        only : pf_nh_integral
 !
 !      use idea_ion_input, only : cormag(20,91),btot(20,91),dipang(20,91),glat(91),glon(20)
 !
@@ -135,7 +136,7 @@
      &  adu,adv,adt,dudt,dvdt,dtdt,rho,rlat,rlon,ix,im,levs,              
      &  dayno,utsec,sda,maglon,maglat,btot,dipang,essa,
      &  f107, f107d, kp, nhp, nhpi, shp, shpi, SPW_DRIVERS,
-     &  swbz, swvel, jh_local)
+     &  swbz, swvel, jh_local, jh_nh_integral)
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ! driver      dtdt(i,k)=jh(i,k)/cp(i,k), dudt dvdt
 !              ion darge and Joule heating
@@ -185,6 +186,7 @@
       REAL, INTENT(in) :: essa(im)    !magnetic local time
       REAL, INTENT(in) :: sda         ! solar declination angle (rad)
       REAL, INTENT(in) :: utsec       !universal time
+      REAL, INTENT(in) :: jh_nh_integral ! integrated NH joule heating
 ! output
       REAL, INTENT(out)     :: jh_local(ix)  ! unscaled joule heating (J/s)
       REAL, INTENT(out)     :: dtdt(ix,levs) ! temperature change (k/s)
@@ -201,7 +203,14 @@
 ! get VBz swvel*swbz
 
       VBz = swvel*swbz
-
+      if (abs(VBz).le.5000.) then
+         st_fac = 1.
+      else
+         st_fac = (25000.+5000.)/(25000.+ abs(VBz))
+      endif
+      if ( mpi_id == 0 ) then
+         print *, 'jh_nh_int=',jh_nh_integral,'pf_nh_int=',pf_nh_integral
+      endif
 ! get sza in rad
       sza=acos(cospass)
 ! get local solar time in rad:  rlt=(rlon/(15.*pi/180.)+solhr)/24.*2.*pi
@@ -238,12 +247,6 @@
      &                +0.5*(cos(4.*pi*(dayno-80.)/365.))
 
 ! VBz adjustment
-
-         if (abs(VBz).le.5000.) then
-            st_fac = 1.
-         else
-            st_fac = (25000.+5000.)/(25000.+ abs(VBz))
-         endif
 
          do k=1,levs
             dtdt(i,k)=jh(i,k)*jh_fac*st_fac/cp(i,k)

@@ -57,6 +57,7 @@
       use IDEA_IO_UNITS, only: iulog  
       use w05sc,         only: EpotVal_new, SetModel_new, read_bndy,
      &                         read_potential, read_schatable, model
+      use Pflux_NS_Bx_mod
  
       implicit none
 
@@ -67,8 +68,9 @@
      &          potent,        ! electric potential [V]
      &	        nmlon, nmlat,  ! dimension of mag. grid 
      &          dlatm, dlonm,  ! grid spacing of mag. grid 
-     &	        ylonm, ylatm   ! magnetic longitudes/latitudes (degc)
-     &,iday,iyear,iday_m,imo,f107d,by,bz,ut
+     &	        ylonm, ylatm,  ! magnetic longitudes/latitudes (degc)
+     &          iday,iyear,iday_m,imo,f107d,by,bz,ut,
+     &          pf_nh_integral
 
       public :: ALAMN,ALAMX,ALAMR,
      &STPD,STP2,CSTP,SSTP,CX,ST,CT,AM,EPOCH,TH0,PH0,DIPOLE
@@ -87,6 +89,7 @@
       real ::   f107d           ! 10.7 cm solar flux
       real ::   by              ! By component of IMF [nT]
       real ::   bz              ! Bz component of IMF [nT]
+      real ::   pf_nh_integral
       private
 !---------------------------------------------------------------------- 
 ! mag. grid dimensions (assumed resolution of 2deg)
@@ -240,6 +243,8 @@
       call read_schatable('global_idea_coeff_W05SCHAtable.dat')
 
       call read_bndy('global_idea_coeff_W05scBndy.dat')
+! following is for empirical Poynting flux model
+      call Read_model_parameters
 
       end subroutine efield_init
 
@@ -1087,6 +1092,9 @@
         swden   = swden_curdt
 
       end if
+
+      call Pflux_NS_Bx(angle,bt,v_sw,swden,tilt,0.0) ! 0.0 = swbx
+      pf_nh_integral = totalEnergyFlux_GWatts
 
       if(debug) then
        write(iulog,"(/,'efield prep_weimer:')")

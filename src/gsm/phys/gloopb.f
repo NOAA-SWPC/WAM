@@ -118,7 +118,8 @@
       USE module_IPE_to_WAM,       only : lowst_ipe_level, 
      &                                    ZMT, MMT, JHR, SHR, O2DR,
      &                                    ipe_to_wam_coupling
-      use wam_jh_integral,         only : jh_global
+      use wam_jh_integral,         only : jh_global, jh_nh_integral,
+     &                                    jh_sh_integral
 !
       use mersenne_twister
 !================================================================= WAM-related 201702
@@ -897,7 +898,8 @@
      &                     swh(1,1,iblk,lan),hlw(1,1,iblk,lan),hlwd,
      &                     thermodyn_id,sfcpress_id,gen_coord_hybrid,
      &                     me,mpi_r_io_r,MPI_COMM_ALL, fhour, kdt,
-     &                     gzmt, gmmt, gjhr, gshr, go2dr, jh_local)
+     &                     gzmt, gmmt, gjhr, gshr, go2dr, jh_local,
+     &                     jh_nh_integral)
 !
 !
 !

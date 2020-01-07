@@ -7,7 +7,8 @@
      &                     xlon,xlat,oro,cozen,swh,hlw,dt6dt,           
      &                     thermodyn_id,sfcpress_id,gen_coord_hybrid,me,
      &                     mpi_ior,mpi_comm, fhour, kstep,
-     &                     gzmt, gmmt, gjhr, gshr, go2dr, jh_local)
+     &                     gzmt, gmmt, gjhr, gshr, go2dr, jh_local,
+     &                     jh_nh_integral)
 
 !-----------------------------------------------------------------------
 ! add temp, wind changes due to viscosity and thermal conductivity
@@ -57,8 +58,8 @@
       use wam_ion,          only : idea_ion
       use wam_f107_kp_mod,  only : f107_wy, kp_wy, kdt_interval, interpolate_weight, kpa_wy, f107d_wy, nhp_wy, 
      &                             shpi_wy, shp_wy, nhpi_wy, 
-     &                             swbz_wy, swvel_wy, swbt_wy, swang_wy, swden_wy 
-
+     &                             swbz_wy, swvel_wy, swbt_wy, swang_wy, swden_wy, 
+     &                             f107_kp_interval
 !     Changed by Zhuxiao.Li(05/2017) for back to the path to read in F10.7 and Kp
 !     from solar_in namelist instead of from wam_f107_kp_mod.f
 !     use  wam_f107_kp_mod, only : f107_fix, f107d_fix, kp_fix
@@ -120,6 +121,9 @@
       real, intent(in)    :: xlat(im)        ! (90 => -90)/180.*PI, radians
       real, intent(in)    :: coslat(im)
       real, intent(in)    :: sinlat(im)
+
+      real, intent(in)    :: jh_nh_integral
+
       real, intent(inout) :: adr(ix,levs,ntrac) ! tracer
       real, intent(inout) :: adt(ix,levs)       ! temperature
       real, intent(inout) :: adu(ix,levs)       ! W-E u
@@ -313,9 +317,9 @@
         endif
 !
 
-!       if (me == 0 .and. kstep <= 1) then
-!           print *
-!           print *, kdt_interval, interpolate_weight
+        if (me == 0 .and. kstep <= 1) then
+            print *, 'f107_kp_interval=', f107_kp_interval
+            print *, 'kdt_interval=',kdt_interval, 'interpolate_weight=',interpolate_weight
 !           print *, f107_curdt, f107d_curdt, kp_curdt, kpa_curdt, nhp_curdt, nhpi_curdt
 !           print *
 !           print *, swbt_curdt, swang_curdt, swvel_curdt, swbz_curdt, shp_curdt, shpi_curdt, 'f107-kp data'
@@ -325,7 +329,7 @@
 !           print *, 'ID-phys SPW-drivers option: ', trim(SPW_DRIVERS)
 !           print *, 'prsl(10,150) = ', prsl(10,150)
 !           print *
-!        endif
+        endif
 !==================================================
 ! in all WAM-subs pass: f107_curdt, f107d_curdt, kp_curdt
 !    defined above  from 4-cases (CLIM-SWPC-SAIR-CIRES)
@@ -553,9 +557,9 @@
       call idea_ion(prsl, solhr,cospass,zg, grav, o_n,o2_n,n2_n,cp,
      &              adu,adv,adt,dudt,dvdt,dtdt,rho,xlat,xlon,ix,im,levs,
      &              dayno,utsec,sda,maglon,maglat,btot,dipang,essa,
-     &              f107_curdt, f107d_curdt, kp_curdt, nhp_curdt, 
+     &              f107_curdt, f107d_curdt, kp_curdt, nhp_curdt,
      &              nhpi_curdt, shp_curdt, shpi_curdt, SPW_DRIVERS,
-     &              swbz_curdt, swvel_curdt, jh_local)
+     &              swbz_curdt, swvel_curdt, jh_local, jh_nh_integral)
 ! Merge the  IPE back coupling WAM dudt, dvdt and dtdt arrays into WAM.
 !----------------------------------------------------------------------
       IF(ipe_to_wam_coupling) THEN

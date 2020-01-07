@@ -30,7 +30,7 @@ libidea_a_SOURCES = co2hc.f efield.f h2oc.f h2ohdc.f ideaca.f idea_cal_advance.f
 	idea_interpol_datab.f idea_ion_empirmodels.f idea_ion.f idea_ion_input.f idea_io_units.f \
 	idea_merge_ipe_to_wam.f idea_mpi_def.f idea_o2_o3.f idea_phys.f idea_solar_2014.f \
 	idea_solar_heating.f idea_solar_init.f idea_solar_input.f idea_tracer.f idea_tracers_input.f \
-	idea_trad_geopgrav.f namelist_wamphysics_def.f w05sc_efield_merge.f
+	idea_trad_geopgrav.f namelist_wamphysics_def.f w05sc_efield_merge.f pflux_ns.f
 
 libidea_a_FFLAGS = $(FC_MODINC) ../share
 libidea_a_FFLAGS += $(FC_AUTODOUBLE) $(FC_LINE_LENGTH)
@@ -140,7 +140,7 @@ libgfsf_a-tridi2t3.$(OBJEXT) : libgfs_a-machine.$(OBJEXT)
 
 # idea
 libidea_a-w05sc_efield_merge.$(OBJEXT) : libidea_a-idea_io_units.$(OBJEXT)
-libidea_a-efield.$(OBJEXT) : libidea_a-idea_io_units.$(OBJEXT) libidea_a-namelist_wamphysics_def.$(OBJEXT) libgfs_a-wam_f107_kp_mod.$(OBJEXT) libidea_a-w05sc_efield_merge.$(OBJEXT) 
+libidea_a-efield.$(OBJEXT) : libidea_a-idea_io_units.$(OBJEXT) libidea_a-namelist_wamphysics_def.$(OBJEXT) libgfs_a-wam_f107_kp_mod.$(OBJEXT) libidea_a-w05sc_efield_merge.$(OBJEXT)  libidea_a-pflux_ns.$(OBJEXT)
 libidea_a-idea_cal_advance.$(OBJEXT) : libidea_a-idea_io_units.$(OBJEXT) libgfsf_a-date_def.$(OBJEXT) libidea_a-idea_mpi_def.$(OBJEXT) 
 libidea_a-idea_co2.$(OBJEXT) : libidea_a-idea_composition.$(OBJEXT) libgfs_a-physcons.$(OBJEXT) libidea_a-co2hc.$(OBJEXT) 
 libidea_a-idea_dissipation.$(OBJEXT) : libgfs_a-machine.$(OBJEXT) libidea_a-idea_composition.$(OBJEXT) libgfs_a-physcons.$(OBJEXT) 
