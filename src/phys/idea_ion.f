@@ -209,9 +209,6 @@
       else
          st_fac = (25000.+5000.)/(25000.+ abs(VBz))
       endif
-      if ( mpi_id == 0 ) then
-         print *, 'jh_nh_int=',jh_nh_integral,'pf_nh_int=',pf_nh_integral
-      endif
       pf_out = pf_nh_integral
 ! get sza in rad
       sza=acos(cospass)

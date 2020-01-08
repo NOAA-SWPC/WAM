@@ -595,7 +595,7 @@
       if (kdt /= 0) then
          call do_jh_integral(global_lats_r, lonsperlar, nblck,ngptc,me)
          if (output_jh_integral .and. me.eq.0) call write_jh_output(kdt,
-     &                                              pf_jh_integral)
+     &                                              pf_nh_integral)
       endif
 
       if (lsout .and. kdt /= 0 ) then
