@@ -136,7 +136,7 @@
      &  adu,adv,adt,dudt,dvdt,dtdt,rho,rlat,rlon,ix,im,levs,              
      &  dayno,utsec,sda,maglon,maglat,btot,dipang,essa,
      &  f107, f107d, kp, nhp, nhpi, shp, shpi, SPW_DRIVERS,
-     &  swbz, swvel, jh_local, jh_nh_integral)
+     &  swbz, swvel, jh_local, jh_nh_integral, pf_out)
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ! driver      dtdt(i,k)=jh(i,k)/cp(i,k), dudt dvdt
 !              ion darge and Joule heating
@@ -188,6 +188,7 @@
       REAL, INTENT(in) :: utsec       !universal time
       REAL, INTENT(in) :: jh_nh_integral ! integrated NH joule heating
 ! output
+      real, intent(out)     :: pf_out
       REAL, INTENT(out)     :: jh_local(ix)  ! unscaled joule heating (J/s)
       REAL, INTENT(out)     :: dtdt(ix,levs) ! temperature change (k/s)
       REAL, INTENT(out)     :: dudt(ix,levs) ! zonal wind change (m/s2)
@@ -211,6 +212,7 @@
       if ( mpi_id == 0 ) then
          print *, 'jh_nh_int=',jh_nh_integral,'pf_nh_int=',pf_nh_integral
       endif
+      pf_out = pf_nh_integral
 ! get sza in rad
       sza=acos(cospass)
 ! get local solar time in rad:  rlt=(rlon/(15.*pi/180.)+solhr)/24.*2.*pi

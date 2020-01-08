@@ -145,6 +145,7 @@
       INTEGER              IERR,I,J,K,L,LOCL,N,iprint, findex, kdt_dif
       LOGICAL LSOUT
       real(kind=kind_phys), parameter:: omz1 = 10.0  ! for nst model
+      real(kind=kind_phys) :: pf_nh_integral
 !
 !     real*8 rtc, timer1, timer2
 
@@ -578,7 +579,7 @@
      &                ozplin,       jindx1,        jindx2, ddy,
      &                phy_f3d,      phy_f2d,       phy_fctd, nctp,
      &                xlat,         nblck,  kdt,   restart_step,
-     &                mdl_parm,     iniauinterval)
+     &                mdl_parm,     iniauinterval, pf_nh_integral)
 !
 !!
       endif ! if (comp_task) then
@@ -593,7 +594,8 @@
 
       if (kdt /= 0) then
          call do_jh_integral(global_lats_r, lonsperlar, nblck,ngptc,me)
-         if (output_jh_integral .and. me.eq.0) call write_jh_output(kdt)
+         if (output_jh_integral .and. me.eq.0) call write_jh_output(kdt,
+     &                                              pf_jh_integral)
       endif
 
       if (lsout .and. kdt /= 0 ) then

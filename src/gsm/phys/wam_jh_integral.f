@@ -105,7 +105,7 @@
 
 ! Local variables
       integer           :: ncstatus, ncid, time_dimid
-      integer           :: jh_sh_varid, jh_nh_varid
+      integer           :: jh_sh_varid, jh_nh_varid, pf_nh_varid
 
 ! create
       ncstatus=nf90_create(filename, NF90_NETCDF4, ncid )
@@ -127,6 +127,12 @@
      &                        "NH Joule Heating Integral" )
       ncstatus=nf90_put_att( ncid, jh_nh_varid, "units", "J/s" )
 
+      ncstatus=nf90_def_var( ncid, "pf_nh", NF90_FLOAT, (/time_dimid/), &
+     &                        pf_nh_varid)
+      ncstatus=nf90_put_att( ncid, pf_nh_varid,"long_name",             &
+     &                        "NH Poynting Flux" )
+      ncstatus=nf90_put_att( ncid, pf_nh_varid, "units", "J/s" )
+
 ! close
       ncstatus=nf90_enddef(ncid)
       ncstatus=nf90_close(ncid)
@@ -135,10 +141,11 @@
 !
 !
 !
-      subroutine write_jh_output(kdt)
+      subroutine write_jh_output(kdt, pf_nh_integral)
       implicit none
 
       integer, intent(in) :: kdt
+      real,    intent(in) :: pf_nh_integral
 ! Local variables
       integer             :: ncid, ncstatus, varid
       integer             :: start(1)
@@ -152,6 +159,9 @@
 
       ncstatus=nf90_inq_varid(ncid, "jh_nh", varid)
       ncstatus=nf90_put_var(ncid, varid, jh_nh_integral, start=start)
+
+      ncstatus=nf90_inq_varid(ncid, "pf_nh", varid)
+      ncstatus=nf90_put_var(ncid, varid, pf_nh_integral, start=start)
 
       ncstatus=nf90_close(ncid)
 

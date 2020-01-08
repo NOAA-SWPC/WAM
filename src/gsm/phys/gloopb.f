@@ -8,7 +8,7 @@
      &                  ozplin,       jindx1,        jindx2,  ddy,
      &                  phy_f3d,      phy_f2d,       phy_fctd, nctp,
      &                  xlat,         nblck,   kdt,  restart_step,
-     &                  mdl_parm,     iniauinterval)
+     &                  mdl_parm,     iniauinterval, pf_nh_integral)
 !!
 !! Code Revision:
 !! Sep    2009       Shrinivas Moorthi added nst_fld
@@ -136,6 +136,7 @@
 !
       integer nblck, kdt, nbdsw, nbdlw, nctp
       logical restart_step,iniauinterval
+      real(kind=kind_phys), intent(out) :: pf_nh_integral
 !!
       real(kind=kind_phys)  tstep, phour,slag, sdec, cdec
       real(kind=kind_phys)  plyr(levs)
@@ -899,7 +900,7 @@
      &                     thermodyn_id,sfcpress_id,gen_coord_hybrid,
      &                     me,mpi_r_io_r,MPI_COMM_ALL, fhour, kdt,
      &                     gzmt, gmmt, gjhr, gshr, go2dr, jh_local,
-     &                     jh_nh_integral)
+     &                     jh_nh_integral, pf_nh_integral)
 !
 !
 !
