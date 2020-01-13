@@ -127,6 +127,7 @@
       use idea_composition,  only : PI,  PI2, DTR, R_2_D, fac_lst, PID2
       use idea_composition,  only : pi_24hr
       use efield_wam,        only : pf_nh_integral
+      use wam_f107_kp_mod,   only : kdt_interval
 !
 !      use idea_ion_input, only : cormag(20,91),btot(20,91),dipang(20,91),glat(91),glon(20)
 !
@@ -203,12 +204,12 @@
 
 ! get VBz swvel*swbz
 
-      VBz = swvel*swbz
-      if (abs(VBz).le.5000.) then
-         st_fac = 1.
-      else
-         st_fac = (25000.+5000.)/(25000.+ abs(VBz))
-      endif
+!!      VBz = swvel*swbz
+!!      if (abs(VBz).le.5000.) then
+!!         st_fac = 1.
+!!      else
+!!         st_fac = (25000.+5000.)/(25000.+ abs(VBz))
+!!      endif
       pf_out = pf_nh_integral
 ! get sza in rad
       sza=acos(cospass)
@@ -242,13 +243,24 @@
 !   semiannual variation, Zhuxiao.Li
 
 !  JH0_6
-         jh_fac = 1.75+0.5*tanh(2.*rlat(i))*cos((dayno+9.)*2.*pi/365.)
-     &                +0.5*(cos(4.*pi*(dayno-80.)/365.))
+!!         jh_fac = 1.75+0.5*tanh(2.*rlat(i))*cos((dayno+9.)*2.*pi/365.)
+!!     &                +0.5*(cos(4.*pi*(dayno-80.)/365.))
 
 ! VBz adjustment
 
+         if(kdt_interval.eq.1) then
+            jh_fac = 2.0
+         else
+            jh_fac = pf_nh_integral/jh_nh_integral
+         endif
+
+        if (mpi_id == 0) then
+          print *, 'jh_fac=', jh_fac, pf_nh_integral, jh_nh_integral
+        endif
+
          do k=1,levs
-            dtdt(i,k)=jh(i,k)*jh_fac*st_fac/cp(i,k)
+            dtdt(i,k)=jh(i,k)*jh_fac/cp(i,k)
+!!            dtdt(i,k)=jh(i,k)*jh_fac*st_fac/cp(i,k)
          enddo
 
       enddo
