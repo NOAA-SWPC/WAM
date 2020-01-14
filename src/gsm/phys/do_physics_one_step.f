@@ -113,7 +113,8 @@
 !!
       REAL(KIND=KIND_EVOD)  :: delt_cpl  ! xw - add for A/O/I coupling
 !!     
-      INTEGER n3, n4, nblck, nctp, kdt
+      INTEGER n3, n4, nblck, nctp, kdt, lan, lons_lat, lat, lon, njeff,
+     &        iblk, item
       character(len=128) :: fldname
 !!
       INTEGER               LATS_NODES_R(NODES)
@@ -146,7 +147,7 @@
       INTEGER              IERR,I,J,K,L,LOCL,N,iprint, findex, kdt_dif
       LOGICAL LSOUT
       real(kind=kind_phys), parameter:: omz1 = 10.0  ! for nst model
-      real(kind=kind_phys) :: pf_nh_integral
+      real(kind=kind_phys) :: pf_nh_integral, jh_fac
 !
 !     real*8 rtc, timer1, timer2
 
