@@ -75,7 +75,8 @@
 !     use gfs_phy_tracer_config,    ONLY: gfs_phy_tracer_type
       use wam_jh_integral,          ONLY: jh_integral_zero,
      &                                    do_jh_integral,
-     &                                    write_jh_output
+     &                                    write_jh_output,
+     &                                    jh_nh_integral
 
       use d3d_def, ONLY: d3d_zero, CLDCOV
 ! idea add by hmhj
@@ -124,7 +125,7 @@
       real (kind=kind_phys), dimension(lonr,lats_node_r) :: xlon, xlat,
      &                                                     coszdg, sfalb
       real (kind=kind_phys), dimension(ngptc,levs,nblck,lats_node_r) ::
-     &                          swh, swhc, hlw, hlwc
+     &                          swh, swhc, hlw, hlwc, dtjh_global
       REAL (KIND=KIND_RAD) HPRIME(NMTVR,LONR,LATS_NODE_R),
      &                     FLUXR(nfxr,LONR,LATS_NODE_R)
 ! idea add by hmhj  - commented by moorthi since unused
@@ -579,7 +580,8 @@
      &                ozplin,       jindx1,        jindx2, ddy,
      &                phy_f3d,      phy_f2d,       phy_fctd, nctp,
      &                xlat,         nblck,  kdt,   restart_step,
-     &                mdl_parm,     iniauinterval, pf_nh_integral)
+     &                mdl_parm,     iniauinterval, pf_nh_integral,
+     &                dtjh_global)
 !
 !!
       endif ! if (comp_task) then
@@ -594,6 +596,22 @@
 
       if (kdt /= 0) then
          call do_jh_integral(global_lats_r, lonsperlar, nblck,ngptc,me)
+         jh_fac = pf_nh_integral/jh_nh_integral - 2.0
+         do lan=1,lats_node_r
+           lat         = global_lats_r(ipt_lats_node_r-1+lan)
+           lons_lat    = lonsperlar(lat)
+           do lon=1,lons_lat,ngptc
+             njeff = min(ngptc,lons_lat-lon+1)
+             iblk  = (lon-1)/ngptc + 1
+             do k=1,levs
+               do i=1,njeff
+                 item = lon+i-1
+                 grid_fld%t(item,lan,k) = grid_fld%t(item,lan,k) +
+     &                                jh_fac * dtjh_global(i,k,iblk,lan)
+               enddo
+             enddo
+           enddo
+         enddo
          if (output_jh_integral .and. me.eq.0) call write_jh_output(kdt,
      &                                              pf_nh_integral)
       endif

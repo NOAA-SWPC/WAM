@@ -8,7 +8,7 @@
      &                     thermodyn_id,sfcpress_id,gen_coord_hybrid,me,
      &                     mpi_ior,mpi_comm, fhour, kstep,
      &                     gzmt, gmmt, gjhr, gshr, go2dr, jh_local,
-     &                     jh_nh_integral, pf_out)
+     &                     pf_out, dt_jh)
 
 !-----------------------------------------------------------------------
 ! add temp, wind changes due to viscosity and thermal conductivity
@@ -122,8 +122,6 @@
       real, intent(in)    :: coslat(im)
       real, intent(in)    :: sinlat(im)
 
-      real, intent(in)    :: jh_nh_integral
-
       real, intent(inout) :: adr(ix,levs,ntrac) ! tracer
       real, intent(inout) :: adt(ix,levs)       ! temperature
       real, intent(inout) :: adu(ix,levs)       ! W-E u
@@ -132,6 +130,7 @@
       real, intent(inout) :: dt6dt(ix,levs,6) ! diagnostic 3D-array ....never used 
       real, intent(out)   :: jh_local(ix)     ! joule heating array for local PE
       real, intent(out)   :: pf_out
+      real, intent(out)   :: dt_jh(ix,levs)
 !                                               !
 ! (2)-wtot-merged (SH-LW, H2O, CO2, O2,O3), (4-5-6) for Strobel +Cooling
 ! (1)-MT_SHEAT(EUV+?),  (3) - Joule heating
@@ -560,8 +559,7 @@
      &              dayno,utsec,sda,maglon,maglat,btot,dipang,essa,
      &              f107_curdt, f107d_curdt, kp_curdt, nhp_curdt,
      &              nhpi_curdt, shp_curdt, shpi_curdt, SPW_DRIVERS,
-     &              swbz_curdt, swvel_curdt, jh_local, jh_nh_integral,
-     &              pf_out)
+     &              swbz_curdt, swvel_curdt, jh_local, pf_out)
 ! Merge the  IPE back coupling WAM dudt, dvdt and dtdt arrays into WAM.
 !----------------------------------------------------------------------
       IF(ipe_to_wam_coupling) THEN
@@ -578,9 +576,10 @@
 !
       do k=1,levs
         do i=1,im
-          adu(i,k) = adu(i,k) + dtp*dudt(i,k)
-          adv(i,k) = adv(i,k) + dtp*dvdt(i,k)
-          adt(i,k) = adt(i,k) + dtp*dtdt(i,k)
+          adu(i,k)   = adu(i,k) + dtp*dudt(i,k)
+          adv(i,k)   = adv(i,k) + dtp*dvdt(i,k)
+          dt_jh(i,k) =            dtp*dtdt(i,k)
+          adt(i,k)   = adt(i,k) + dt_jh(i,k)
         enddo
       enddo
 !======================= WAM-IPE physics is completed ========

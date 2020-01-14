@@ -74,14 +74,15 @@
          endif
          volfac = (2*pi/lons_lat) * dlat * coslat_r(lat) * 1.0e-09
 
-         if (sinlat_r(lat).lt.0) then
-            do n=1,nblck
-               do i=1,ngptc
-                  sh_integral = sh_integral + jh_global(i,n,lan) *      &
-     &                           volfac
-               end do !i
-            end do !n
-         else
+!         if (sinlat_r(lat).lt.0) then
+!            do n=1,nblck
+!               do i=1,ngptc
+!                  sh_integral = sh_integral + jh_global(i,n,lan) *      &
+!     &                           volfac
+!               end do !i
+!            end do !n
+!         else
+         if (sinlat_r(lat).ge.0) then
             do n=1,nblck
                do i=1,ngptc
                   nh_integral = nh_integral + jh_global(i,n,lan) *      &
@@ -91,12 +92,12 @@
          end if !hemispheric
       end do !lan
 
-      call mpi_allreduce(sh_integral, jh_sh_integral, 1, mpi_real8,     &
-     &                    mpi_sum, mpi_comm_all, ierr)
+!      call mpi_allreduce(sh_integral, jh_sh_integral, 1, mpi_real8,     &
+!     &                    mpi_sum, mpi_comm_all, ierr)
 
       call mpi_allreduce(nh_integral, jh_nh_integral, 1, mpi_real8,     &
      &                    mpi_sum, mpi_comm_all, ierr)
-      call mpi_barrier(mpi_comm_all, ierr)
+!      call mpi_barrier(mpi_comm_all, ierr)
 
       end subroutine do_jh_integral
 !
@@ -115,11 +116,11 @@
       ncstatus=nf90_put_att( ncid, time_dimid, "axis", "T")
 
 ! variables
-      ncstatus=nf90_def_var( ncid, "jh_sh", NF90_FLOAT, (/time_dimid/), &
-     &                        jh_sh_varid)
-      ncstatus=nf90_put_att( ncid, jh_sh_varid,"long_name",             &
-     &                        "SH Joule Heating Integral" )
-      ncstatus=nf90_put_att( ncid, jh_sh_varid, "units", "J/s" )
+!      ncstatus=nf90_def_var( ncid, "jh_sh", NF90_FLOAT, (/time_dimid/), &
+!     &                        jh_sh_varid)
+!      ncstatus=nf90_put_att( ncid, jh_sh_varid,"long_name",             &
+!     &                        "SH Joule Heating Integral" )
+!      ncstatus=nf90_put_att( ncid, jh_sh_varid, "units", "J/s" )
 
       ncstatus=nf90_def_var( ncid, "jh_nh", NF90_FLOAT, (/time_dimid/), &
      &                        jh_nh_varid)
@@ -154,8 +155,8 @@
 
       ncstatus=nf90_open(filename, NF90_WRITE, ncid)
 
-      ncstatus=nf90_inq_varid(ncid, "jh_sh", varid)
-      ncstatus=nf90_put_var(ncid, varid, jh_sh_integral, start=start)
+!      ncstatus=nf90_inq_varid(ncid, "jh_sh", varid)
+!      ncstatus=nf90_put_var(ncid, varid, jh_sh_integral, start=start)
 
       ncstatus=nf90_inq_varid(ncid, "jh_nh", varid)
       ncstatus=nf90_put_var(ncid, varid, jh_nh_integral, start=start)

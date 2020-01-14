@@ -8,7 +8,8 @@
      &                  ozplin,       jindx1,        jindx2,  ddy,
      &                  phy_f3d,      phy_f2d,       phy_fctd, nctp,
      &                  xlat,         nblck,   kdt,  restart_step,
-     &                  mdl_parm,     iniauinterval, pf_nh_integral)
+     &                  mdl_parm,     iniauinterval, pf_nh_integral,
+     &                  dtjh_global)
 !!
 !! Code Revision:
 !! Sep    2009       Shrinivas Moorthi added nst_fld
@@ -118,8 +119,7 @@
       USE module_IPE_to_WAM,       only : lowst_ipe_level, 
      &                                    ZMT, MMT, JHR, SHR, O2DR,
      &                                    ipe_to_wam_coupling
-      use wam_jh_integral,         only : jh_global, jh_nh_integral,
-     &                                    jh_sh_integral
+      use wam_jh_integral,         only : jh_global
 !
       use mersenne_twister
 !================================================================= WAM-related 201702
@@ -155,11 +155,14 @@
 !!
       real (kind=kind_rad), dimension(ngptc,levs,nblck,lats_node_r) ::
      &                            swh, swhc, hlw, hlwc
+      real (kind=kind_phys),dimension(ngptc,levs,nblck,lats_node_r) ::
+     &                            dtjh_global
 !!
       real (kind=kind_rad)  hprime(nmtvr,lonr,lats_node_r)
 
 !idea add by hmhj
       real (kind=kind_rad) hlwd(ngptc,levs,6)
+      real (kind=kind_phys),dimension(ngptc,levs) :: dt_jh
 !    &,                    htrswb(ngptc,levs,nbdsw,nblck,lats_node_r)
 !    &,                    htrlwb(ngptc,levs,nbdlw,nblck,lats_node_r)
 !!
@@ -900,7 +903,7 @@
      &                     thermodyn_id,sfcpress_id,gen_coord_hybrid,
      &                     me,mpi_r_io_r,MPI_COMM_ALL, fhour, kdt,
      &                     gzmt, gmmt, gjhr, gshr, go2dr, jh_local,
-     &                     jh_nh_integral, pf_nh_integral)
+     &                     pf_nh_integral, dt_jh)
 !
 !
 !
@@ -1509,6 +1512,7 @@
           enddo
           if (lsidea) then
             jh_global(:,iblk,lan) = jh_local
+            dtjh_global(:,:,iblk,lan) = dt_jh
           endif
 !
           if (ldiag3d) then

@@ -137,7 +137,7 @@
      &  adu,adv,adt,dudt,dvdt,dtdt,rho,rlat,rlon,ix,im,levs,              
      &  dayno,utsec,sda,maglon,maglat,btot,dipang,essa,
      &  f107, f107d, kp, nhp, nhpi, shp, shpi, SPW_DRIVERS,
-     &  swbz, swvel, jh_local, jh_nh_integral, pf_out)
+     &  swbz, swvel, jh_local, pf_out)
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ! driver      dtdt(i,k)=jh(i,k)/cp(i,k), dudt dvdt
 !              ion darge and Joule heating
@@ -187,7 +187,6 @@
       REAL, INTENT(in) :: essa(im)    !magnetic local time
       REAL, INTENT(in) :: sda         ! solar declination angle (rad)
       REAL, INTENT(in) :: utsec       !universal time
-      REAL, INTENT(in) :: jh_nh_integral ! integrated NH joule heating
 ! output
       real, intent(out)     :: pf_out
       REAL, INTENT(out)     :: jh_local(ix)  ! unscaled joule heating (J/s)
@@ -202,14 +201,6 @@
 
       INTEGER   i,k
 
-! get VBz swvel*swbz
-
-!!      VBz = swvel*swbz
-!!      if (abs(VBz).le.5000.) then
-!!         st_fac = 1.
-!!      else
-!!         st_fac = (25000.+5000.)/(25000.+ abs(VBz))
-!!      endif
       pf_out = pf_nh_integral
 ! get sza in rad
       sza=acos(cospass)
@@ -239,28 +230,10 @@
 ! update to ........ K/sec
       do i=1,im
 
-!   Joule heating factor to consider the seasonal variation and
-!   semiannual variation, Zhuxiao.Li
-
-!  JH0_6
-!!         jh_fac = 1.75+0.5*tanh(2.*rlat(i))*cos((dayno+9.)*2.*pi/365.)
-!!     &                +0.5*(cos(4.*pi*(dayno-80.)/365.))
-
-! VBz adjustment
-
-         if(kdt_interval.eq.1) then
-            jh_fac = 2.0
-         else
-            jh_fac = pf_nh_integral/jh_nh_integral
-         endif
-
-        if (mpi_id == 0) then
-          print *, 'jh_fac=', jh_fac, pf_nh_integral, jh_nh_integral
-        endif
+        jh_fac = 2.0
 
          do k=1,levs
             dtdt(i,k)=jh(i,k)*jh_fac/cp(i,k)
-!!            dtdt(i,k)=jh(i,k)*jh_fac*st_fac/cp(i,k)
          enddo
 
       enddo
