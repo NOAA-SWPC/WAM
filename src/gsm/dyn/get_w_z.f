@@ -23,7 +23,8 @@
      &                 LATS_NODES_A,GLOBAL_LATS_A,LONSPERLAT,
      &                 EPSE,EPSO,EPSEDN,EPSODN,
      &                 PLNEV_A,PLNOD_A,PLNEW_A,PLNOW_A,
-     &                 PDDEV_A,PDDOD_A,SNNP1EV,SNNP1OD, kdt, deltim)
+     &                 PDDEV_A,PDDOD_A,SNNP1EV,SNNP1OD,
+     &                 kdt, deltim, restart_step)
 !!
 ! Program History Log:
 ! Mar 2015    Henry Juang	use existed variables to get w hydrostatically
@@ -113,6 +114,7 @@
       REAL(KIND=KIND_GRID) phis(lonf,lats_node_a)
       real, parameter:: g0re = g0*re, g0re2 = g0*re*re
       real           :: deltim
+      logical :: restart_step
 
       INTEGER               I,J,K,L,LOCL,N
 
@@ -475,7 +477,7 @@
      &       kdt
         CALL grid_collect_ipe(wwg,zzg,uug,vvg,
      &                        ttg,rqg,n2g,global_lats_a,lonsperlat,
-     &                        lats_nodes_a,kdt,deltim)
+     &                        lats_nodes_a,kdt,deltim,restart_step)
       END IF
 
 ! The following is to the NetCDF diagnostic files.
@@ -484,7 +486,8 @@
      &  MOD(NINT(deltim) * kdt, DELOUT_NC) == 0) THEN
         CALL grid_collect_ipe(wwg,zzg,uug,vvg,
      &                        ttg,rqg,n2g,global_lats_a,lonsperlat,
-     &                        lats_nodes_a,kdt,deltim,den,gmol)
+     &                        lats_nodes_a,kdt,deltim,restart_step,
+     &                        den,gmol)
       END IF
 
       END subroutine get_w_z

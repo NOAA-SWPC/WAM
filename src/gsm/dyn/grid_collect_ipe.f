@@ -1,6 +1,6 @@
       SUBROUTINE grid_collect_ipe(wwg,zzg,uug,vvg,ttg,rqg,n2g,
      &             global_lats_a,lonsperlat, lats_nodes_a, kdt, deltim,
-     &             den, gmol)
+     &             restart_step, den, gmol)
 !!
 !! Revision history:
 !  2007           Henry Juang, original code
@@ -28,6 +28,7 @@
      &,                                                          ttg,wwg
      &,                                                          zzg,n2g
       real(kind=kind_grid), dimension(lonf,lats_node_a,levh) ::  rqg
+      logical, intent(in) :: restart_step
       real(kind=kind_grid), dimension(lonf,lats_node_a,levs),
      &                      optional                         :: den,gmol
 !
@@ -99,13 +100,13 @@
 
       CALL atmgg_move_ipe(buff_mult_pieceg_ipe,ngrids_gg_ipe, kdt,
      &                    global_lats_a, lats_nodes_a, deltim,
-     &                    nc_out)
+     &                    nc_out, restart_step)
 
       END SUBROUTINE grid_collect_ipe
 
       subroutine atmgg_move_ipe(buff_mult_pieceg_ipe,ngrids_gg_ipe, kdt,
      &                       global_lats_a, lats_nodes_a, deltim,
-     &                       nc_out)
+     &                       nc_out, restart_step)
 !!!
       use gfs_dyn_resol_def
       use gfs_dyn_write_state
@@ -128,7 +129,7 @@
       integer j,k,i,ierr, node
       integer lenrec, ndig, nfill
       real    deltim
-      logical nc_out
+      logical nc_out, restart_step
 !
       ioproc = nodes_comp - 1
 
@@ -190,7 +191,8 @@
 !-------------------------------------------------------------------
       if(me == ioproc) then
         if (nc_out) then
-          call write_nc(kdt, lonf, latg, ngrids_gg_ipe,buff_final)
+          call write_nc(kdt.eq.0 .or. restart_step,
+     &                   lonf, latg, ngrids_gg_ipe,buff_final)
         else
           PRINT*, 'write out WAM IPE CPL RST file, kdt=', kdt
           rewind 181
@@ -254,14 +256,14 @@
       enddo
       end subroutine
 
-      subroutine write_nc(kdt, lonf, latg, ngrids_gg_ipe, buff_final)
+      subroutine write_nc(first_step,lonf,latg,ngrids_gg_ipe,buff_final)
       use netcdf
       use gfs_dyn_gg_def, only:    sinlat_a
       use gfs_dyn_resol_def, only: levs
       use namelist_dynamics_def, ONLY: nc_fields
       implicit none
 
-      integer, intent(in) :: kdt
+      logical, intent(in) :: first_step
       integer, intent(in) :: lonf
       integer, intent(in) :: latg
       integer, intent(in) :: ngrids_gg_ipe
@@ -301,7 +303,7 @@
 
       INQUIRE(FILE=filename, EXIST=file_exists)
 
-      if (.not. file_exists) then
+      if (.not. file_exists .or. first_step) then
 !        create
          ncstatus=nf90_create(filename, NF90_NETCDF4, ncid )
 

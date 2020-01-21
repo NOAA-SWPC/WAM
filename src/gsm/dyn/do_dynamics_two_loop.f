@@ -1059,7 +1059,8 @@
      &               LATS_NODES_A,GLOBAL_LATS_A,LONSPERLAT,
      &               EPSE,EPSO,EPSEDN,EPSODN,
      &               PLNEV_A,PLNOD_A,PLNEW_A,PLNOW_A,
-     &               PDDEV_A,PDDOD_A,SNNP1EV,SNNP1OD,kdt,deltim)
+     &               PDDEV_A,PDDOD_A,SNNP1EV,SNNP1OD,
+     &               kdt,deltim,restart_step)
       endif
       if ( wam_ipe_coupling ) then
         call fillWAMFields(uug, vvg, wwg, ttg, zzg, n2g, rqg,
