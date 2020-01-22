@@ -1,11 +1,30 @@
+      module get_variables_for_WAM_IPE_coupling
+
+      use gfs_dyn_resol_def, ONLY: lonf, levs, levh
+      use gfs_dyn_layout1,   ONLY: lats_node_a
+      use gfs_dyn_machine
+      use namelist_dynamics_def, ONLY: wam_ipe_cpl_rst_output,
+     &                                 NC_output, nc_fields,
+     &                                 DELOUT_NC, FHRES
+
+      IMPLICIT NONE
+
+      REAL, DIMENSION(:, :, :), ALLOCATABLE :: wwg, zzg, uug,
+     &                                         vvg, ttg, rqg,
+     &                                         n2g, ppg, den,
+     &                                         gmol
+      REAL, DIMENSION(:, :),    ALLOCATABLE :: ps
+
+      END module get_variables_for_WAM_IPE_coupling
+
       subroutine get_w_z(grid_gr,
      &                 trie_ls,trio_ls,
      &                 LS_NODE,LS_NODES,MAX_LS_NODES,
      &                 LATS_NODES_A,GLOBAL_LATS_A,LONSPERLAT,
      &                 EPSE,EPSO,EPSEDN,EPSODN,
      &                 PLNEV_A,PLNOD_A,PLNEW_A,PLNOW_A,
-!     &                 PDDEV_A,PDDOD_A,SNNP1EV,SNNP1OD)
-     &                 PDDEV_A,PDDOD_A,SNNP1EV,SNNP1OD, kdt, deltim)
+     &                 PDDEV_A,PDDOD_A,SNNP1EV,SNNP1OD,
+     &                 kdt, deltim, restart_step)
 !!
 ! Program History Log:
 ! Mar 2015    Henry Juang	use existed variables to get w hydrostatically
@@ -34,7 +53,7 @@
      &,                           re => con_rerth, g0 => con_g
      &,                           cpd => con_cp, rkap => con_rocp
      &,                           con_amw, con_rgas, con_amo2, con_avgd
-     &,                           con_amo3
+     &,                           con_amo3, con_boltz
       use do_dynamics_mod
       use gfs_dyn_tracer_const, only: cpi
       use get_variables_for_WAM_IPE_coupling
@@ -47,7 +66,6 @@
       REAL(KIND=KIND_EVOD) TRIO_LS(LEN_TRIO_LS,2,LOTls)
       REAL(KIND=KIND_GRID) GRID_GR(lonf*lats_node_a_max,lotgr)
 
-!      integer          ls_node(ls_dim,3)
       integer          ls_node(ls_dim,3), kdt
 !
       INTEGER          LS_NODES(LS_DIM,NODES)
@@ -87,14 +105,16 @@
       REAL(KIND=KIND_GRID), PARAMETER :: qmin=1.e-10
 !!     
       REAL (KIND=KIND_grid), parameter :: cons0=0.0d0, cons1=1.0d0,
-     &                                    cons2=2.0d0, cons0p5 = 0.5d0
+     &                                    cons2=2.0d0, cons0p5 = 0.5d0,
+     &                                    con_amn2=28.013
 !sk
       REAL(KIND=KIND_GRID) zs,phi,grav, rkapi, rmdo1, rmdo2, rmdn2
-      REAL(KIND=KIND_EVOD) pptt, mmm, con_amo1, avgdr
+      REAL(KIND=KIND_EVOD) pptt, ppttbz, mmm, con_amo1, avgdr, mmmavgd
 
       REAL(KIND=KIND_GRID) phis(lonf,lats_node_a)
       real, parameter:: g0re = g0*re, g0re2 = g0*re*re
       real           :: deltim
+      logical :: restart_step
 
       INTEGER               I,J,K,L,LOCL,N
 
@@ -131,6 +151,14 @@
          ALLOCATE(n2g(lonf,lats_node_a,levs)) 
          n2g = 0.0 
       endif
+      IF(.NOT. ALLOCATED(den)) then
+         ALLOCATE(den(lonf,lats_node_a,levs))
+         den = 0.0
+      endif
+      IF(.NOT. ALLOCATED(gmol)) then
+         ALLOCATE(gmol(lonf,lats_node_a,levs))
+         gmol = 0.0
+      endif
       IF(.NOT. ALLOCATED(ppg)) then
          ALLOCATE(ppg(lonf,lats_node_a,levs))
          ppg = 0.0
@@ -139,11 +167,6 @@
          ALLOCATE(ps(lonf,lats_node_a))
          ps = 0.0
       endif
-!!     
-!
-!     print *,' -----------------get_initial_w_inp ------ '
-!
-!
 !----------------------------------------------------------
       if (me < num_pes_fcst) then
         levs3 = levs * 3
@@ -309,21 +332,25 @@
              mmm = mmm + rqg(i, lan, k+levs ) / con_amo3   ! add ozone weight.
              mmm = mmm + rqg(i, lan, k+levs3) / con_amo1   ! add     O weight.
              mmm = mmm + rqg(i, lan, k+levs4) / con_amo2   ! add    O2 weight.
-             mmm = mmm + n2g(i, lan, k)       / 28.0       ! add    N2 weight.
+             mmm = mmm + n2g(i, lan, k)       / con_amn2     ! add    N2 weight.
              mmm = 1.0 / mmm                               ! final mmm.
 !             IF(i == 4. and. lan == 1 .and.me == 0) THEN
 !               print*, 'in get_w_z, i, lan, k, mmm=',i, lan, k, mmm
 !             END IF
 
              rmdo1 = mmm * avgdr         ! Md * average number / R.
-             rmdo2 = rmdo1 / con_amo2    ! Md * average number / R / Mi_o2.
-             rmdn2 = rmdo1 / 28.0        ! Md * average number / R / Mi_n2.
              rmdo1 = rmdo1 / con_amo1    ! Md * average number / R / Mi_o1.
+             rmdo2 = rmdo1 / con_amo2    ! Md * average number / R / Mi_o2.
+             rmdn2 = rmdo1 / con_amn2      ! Md * average number / R / Mi_n2.
              
-             pptt = ppg(i, lan, k) / ttg(i, lan, k)  ! P / T.
+             pptt   = ppg(i, lan, k) / ttg(i, lan, k)  ! P / T.
+             ppttbz = pptt / con_boltz
              rqg(i, lan, k+levs3) = rqg(i, lan, k+levs3) * rmdo1 * pptt
              rqg(i, lan, k+levs4) = rqg(i, lan, k+levs4) * rmdo2 * pptt
              n2g(i, lan, k)       = n2g(i, lan, k)       * rmdn2 * pptt
+
+             den (i, lan, k) = mmm * 1.0e-3 / con_avgd * ppttbz ! unit ~ kg/m^3.
+             gmol(i, lan, k) = mmm * 1.0e-3 ! unit ~ kg/mol.
            end do
          end do
        enddo
@@ -437,15 +464,6 @@
 !
 ! The following is only to output for making figures and comparisons. WY.
 !------------------------------------------------------------------------
-      IF(grads_output .AND. 
-     &  MOD(NINT(deltim) * kdt, FHOUT_grads * 3600) == 0) THEN
-        PRINT*,'Output the WAM-IPE coupling fields at kdt=', kdt
-        CALL grid_collect_ipe(wwg,zzg,uug,vvg,
-     &                        ttg,rqg,n2g,global_lats_a,lonsperlat,
-     &                        lats_nodes_a, kdt, deltim)
-      END IF
-! End of output fort.178 for grads figours.
-!------------------------------------------
 
 ! The following is to output the interface restart file for WAM-IPE coupling
 ! restart run.
@@ -459,16 +477,17 @@
      &       kdt
         CALL grid_collect_ipe(wwg,zzg,uug,vvg,
      &                        ttg,rqg,n2g,global_lats_a,lonsperlat,
-     &                        lats_nodes_a, kdt, deltim)
+     &                        lats_nodes_a,kdt,deltim,restart_step)
       END IF
 
 ! The following is to the NetCDF diagnostic files.
 !-------------------------------------------------
-!      IF(NC_output .AND. 
-!     &  MOD(NINT(deltim) * kdt, FHOUT_NC * 3600) == 0) THEN
-!        CALL grid_collect_ipe(wwg,zzg,uug,vvg,
-!     &                        ttg,rqg,n2g,global_lats_a,lonsperlat,
-!     &                        lats_nodes_a, kdt, deltim)
-!      END IF
+      IF(NC_output .AND.
+     &  MOD(NINT(deltim) * kdt, DELOUT_NC) == 0) THEN
+        CALL grid_collect_ipe(wwg,zzg,uug,vvg,
+     &                        ttg,rqg,n2g,global_lats_a,lonsperlat,
+     &                        lats_nodes_a,kdt,deltim,restart_step,
+     &                        den,gmol)
+      END IF
 
       END subroutine get_w_z
