@@ -6,6 +6,7 @@
       use namelist_dynamics_def, ONLY: wam_ipe_cpl_rst_output,
      &                                 NC_output, nc_fields,
      &                                 DELOUT_NC, FHRES
+      use gci, only: grid_collect_ipe
 
       IMPLICIT NONE
 

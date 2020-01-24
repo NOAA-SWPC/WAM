@@ -1,3 +1,7 @@
+      module gci
+      implicit none
+
+      contains
       SUBROUTINE grid_collect_ipe(wwg,zzg,uug,vvg,ttg,rqg,n2g,
      &             global_lats_a,lonsperlat, lats_nodes_a, kdt, deltim,
      &             restart_step, den, gmol)
@@ -361,3 +365,4 @@
       endif ! kdt
       ncstatus=nf90_close(ncid)
       end subroutine
+      end module
