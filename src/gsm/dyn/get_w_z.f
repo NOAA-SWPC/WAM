@@ -340,9 +340,9 @@
 !             END IF
 
              rmdo1 = mmm * avgdr         ! Md * average number / R.
-             rmdo1 = rmdo1 / con_amo1    ! Md * average number / R / Mi_o1.
              rmdo2 = rmdo1 / con_amo2    ! Md * average number / R / Mi_o2.
-             rmdn2 = rmdo1 / con_amn2      ! Md * average number / R / Mi_n2.
+             rmdn2 = rmdo1 / con_amn2    ! Md * average number / R / Mi_n2.
+             rmdo1 = rmdo1 / con_amo1    ! Md * average number / R / Mi_o1.
              
              pptt   = ppg(i, lan, k) / ttg(i, lan, k)  ! P / T.
              ppttbz = pptt / con_boltz
