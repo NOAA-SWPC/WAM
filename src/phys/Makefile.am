@@ -4,7 +4,7 @@ libgfs_a_SOURCES = calpreciptype.f cs_conv.f funcphys.f gcm_shoc.f machine.f \
 	module_nst_model.f module_nst_parameters.f module_nst_water_prop.f   \
 	physcons.f physparam.f wam_f107_kp_mod.f         
 
-libgfs_a_FFLAGS = $(PHYS_DEFS) $(FCFLAGS_f) $(FC_AUTODOUBLE) $(FCFLAGS_FREE)
+libgfs_a_FFLAGS = $(PHYS_DEFS) $(FCFLAGS_f) $(FC_AUTODOUBLE) $(FCFLAGS_FREE) -g -traceback -check bounds
 
 libgfsf_a_SOURCES = cnvc90.f date_def.f dcyc2.f dcyc2.pre.rad.f gbphys.f get_prs.f \
 	gfs_phy_tracer_config.f grrad.f gscond.f gscondp.f gsmddrive.f gwdc.f \
@@ -26,11 +26,11 @@ libfgfs_a_SOURCES = num_parthds.F
 libfgfs_a_FFLAGS  = $(FC_AUTODOUBLE) $(FCFLAGS_FREE)
 
 libidea_a_SOURCES = co2hc.f efield.f h2oc.f h2ohdc.f ideaca.f idea_cal_advance.f idea_co2.f \
-	idea_composition.f idea_dissipation.f idea_getno_snoe.f idea_h2o.f idea_imf_input.f \
+	idea_composition.f idea_dissipation.f idea_getno_snoe.f idea_h2o.f idea_iau_gmao.f idea_imf_input.f \
 	idea_interpol_datab.f idea_ion_empirmodels.f idea_ion.f idea_ion_input.f idea_io_units.f \
 	idea_merge_ipe_to_wam.f idea_mpi_def.f idea_o2_o3.f idea_phys.f idea_solar_2014.f \
 	idea_solar_heating.f idea_solar_init.f idea_solar_input.f idea_tracer.f idea_tracers_input.f \
-	idea_trad_geopgrav.f namelist_wamphysics_def.f w05sc_efield_merge.f
+	idea_trad_geopgrav.f idea_vert_diff.f namelist_wamphysics_def.f vert_def.f w05sc_efield_merge.f
 
 libidea_a_FFLAGS = $(FC_MODINC) ../share
 libidea_a_FFLAGS += $(FC_AUTODOUBLE) $(FC_LINE_LENGTH)
@@ -157,12 +157,14 @@ libidea_a-idea_o2_o3.$(OBJEXT) : libidea_a-idea_composition.$(OBJEXT) libgfs_a-p
 libidea_a-idea_phys.$(OBJEXT) : libidea_a-namelist_wamphysics_def.$(OBJEXT) libidea_a-idea_composition.$(OBJEXT) libgfs_a-wam_f107_kp_mod.$(OBJEXT) libidea_a-idea_imf_input.$(OBJEXT) libidea_a-idea_mpi_def.$(OBJEXT) libidea_a-idea_ion.$(OBJEXT) libidea_a-idea_cal_advance.$(OBJEXT) libidea_a-idea_solar_input.$(OBJEXT) 
 libidea_a-idea_solar_2014.$(OBJEXT) : libidea_a-idea_composition.$(OBJEXT) 
 libidea_a-idea_solar_heating.$(OBJEXT) : libgfsf_a-date_def.$(OBJEXT) libgfs_a-machine.$(OBJEXT) libidea_a-idea_composition.$(OBJEXT) libgfs_a-physcons.$(OBJEXT) libidea_a-idea_ion.$(OBJEXT) libidea_a-idea_cal_advance.$(OBJEXT) libidea_a-idea_solar_init.$(OBJEXT) 
+libidea_a-idea_iau_gmao.$(OBJEXT) : libgfs_a-machine.$(OBJEXT) libidea_a-idea_cal_advance.$(OBJEXT)
 libidea_a-idea_solar_init.$(OBJEXT) : libidea_a-idea_io_units.$(OBJEXT) libidea_a-idea_getno_snoe.$(OBJEXT) libidea_a-namelist_wamphysics_def.$(OBJEXT) libgfs_a-machine.$(OBJEXT) libidea_a-idea_composition.$(OBJEXT) libgfs_a-wam_f107_kp_mod.$(OBJEXT) libgfs_a-physcons.$(OBJEXT) libidea_a-idea_mpi_def.$(OBJEXT) libidea_a-idea_cal_advance.$(OBJEXT) libidea_a-idea_solar_input.$(OBJEXT) 
 libidea_a-idea_solar_input.$(OBJEXT) : libidea_a-idea_io_units.$(OBJEXT) libidea_a-idea_mpi_def.$(OBJEXT) libidea_a-idea_cal_advance.$(OBJEXT) 
 libidea_a-idea_tracer.$(OBJEXT) : libgfs_a-machine.$(OBJEXT) libidea_a-idea_composition.$(OBJEXT) libidea_a-idea_tracers_input.$(OBJEXT) libgfs_a-physcons.$(OBJEXT) libidea_a-idea_mpi_def.$(OBJEXT) 
 libidea_a-idea_tracers_input.$(OBJEXT) : libidea_a-idea_io_units.$(OBJEXT) libidea_a-idea_composition.$(OBJEXT) libgfs_a-physcons.$(OBJEXT) libidea_a-idea_mpi_def.$(OBJEXT) 
 libidea_a-idea_trad_geopgrav.$(OBJEXT) : libgfs_a-machine.$(OBJEXT) libgfs_a-physcons.$(OBJEXT) libgfsf_a-tracer_const_h.$(OBJEXT) libidea_a-idea_solar_init.$(OBJEXT) 
-
+libidea_a-vert_def.$(OBJEXT) : libgfs_a-machine.$(OBJEXT)
+libidea_a-idea_vert_diff.$(OBJEXT) : libgfs_a-machine.$(OBJEXT) libidea_a-idea_composition.$(OBJEXT)
 # drv
 libgfsdrv_a-nuopc_physics.$(OBJEXT) : libgfsf_a-radsw_param.$(OBJEXT) libgfs_a-machine.$(OBJEXT) \
 	libgfsf_a-radlw_param.$(OBJEXT) libgfs_a-physcons.$(OBJEXT) libgfs_a-funcphys.$(OBJEXT) \

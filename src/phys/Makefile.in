@@ -173,7 +173,7 @@ am_libidea_a_OBJECTS = libidea_a-co2hc.$(OBJEXT) \
 	libidea_a-idea_composition.$(OBJEXT) \
 	libidea_a-idea_dissipation.$(OBJEXT) \
 	libidea_a-idea_getno_snoe.$(OBJEXT) \
-	libidea_a-idea_h2o.$(OBJEXT) \
+	libidea_a-idea_h2o.$(OBJEXT) libidea_a-idea_iau_gmao.$(OBJEXT) \
 	libidea_a-idea_imf_input.$(OBJEXT) \
 	libidea_a-idea_interpol_datab.$(OBJEXT) \
 	libidea_a-idea_ion_empirmodels.$(OBJEXT) \
@@ -190,7 +190,9 @@ am_libidea_a_OBJECTS = libidea_a-co2hc.$(OBJEXT) \
 	libidea_a-idea_tracer.$(OBJEXT) \
 	libidea_a-idea_tracers_input.$(OBJEXT) \
 	libidea_a-idea_trad_geopgrav.$(OBJEXT) \
+	libidea_a-idea_vert_diff.$(OBJEXT) \
 	libidea_a-namelist_wamphysics_def.$(OBJEXT) \
+	libidea_a-vert_def.$(OBJEXT) \
 	libidea_a-w05sc_efield_merge.$(OBJEXT)
 libidea_a_OBJECTS = $(am_libidea_a_OBJECTS)
 AM_V_P = $(am__v_P_@AM_V@)
@@ -433,7 +435,7 @@ libgfs_a_SOURCES = calpreciptype.f cs_conv.f funcphys.f gcm_shoc.f machine.f \
 	module_nst_model.f module_nst_parameters.f module_nst_water_prop.f   \
 	physcons.f physparam.f wam_f107_kp_mod.f         
 
-libgfs_a_FFLAGS = $(PHYS_DEFS) $(FCFLAGS_f) $(FC_AUTODOUBLE) $(FCFLAGS_FREE)
+libgfs_a_FFLAGS = $(PHYS_DEFS) $(FCFLAGS_f) $(FC_AUTODOUBLE) $(FCFLAGS_FREE) -g -traceback -check bounds
 libgfsf_a_SOURCES = cnvc90.f date_def.f dcyc2.f dcyc2.pre.rad.f gbphys.f get_prs.f \
 	gfs_phy_tracer_config.f grrad.f gscond.f gscondp.f gsmddrive.f gwdc.f \
 	gwdps.f iounitdef.f lrgsclr.f mfdeepcnv.f mfpbl.f mfshalcnv.f \
@@ -452,11 +454,11 @@ libgfsf_a_FFLAGS = $(FC_MODINC) ../share $(FC_AUTODOUBLE) \
 libfgfs_a_SOURCES = num_parthds.F
 libfgfs_a_FFLAGS = $(FC_AUTODOUBLE) $(FCFLAGS_FREE)
 libidea_a_SOURCES = co2hc.f efield.f h2oc.f h2ohdc.f ideaca.f idea_cal_advance.f idea_co2.f \
-	idea_composition.f idea_dissipation.f idea_getno_snoe.f idea_h2o.f idea_imf_input.f \
+	idea_composition.f idea_dissipation.f idea_getno_snoe.f idea_h2o.f idea_iau_gmao.f idea_imf_input.f \
 	idea_interpol_datab.f idea_ion_empirmodels.f idea_ion.f idea_ion_input.f idea_io_units.f \
 	idea_merge_ipe_to_wam.f idea_mpi_def.f idea_o2_o3.f idea_phys.f idea_solar_2014.f \
 	idea_solar_heating.f idea_solar_init.f idea_solar_input.f idea_tracer.f idea_tracers_input.f \
-	idea_trad_geopgrav.f namelist_wamphysics_def.f w05sc_efield_merge.f
+	idea_trad_geopgrav.f idea_vert_diff.f namelist_wamphysics_def.f vert_def.f w05sc_efield_merge.f
 
 libidea_a_FFLAGS = $(FC_MODINC) ../share $(FC_AUTODOUBLE) \
 	$(FC_LINE_LENGTH)
@@ -1109,6 +1111,12 @@ libidea_a-idea_h2o.o: idea_h2o.f
 libidea_a-idea_h2o.obj: idea_h2o.f
 	$(AM_V_F77)$(F77) $(libidea_a_FFLAGS) $(FFLAGS) -c -o libidea_a-idea_h2o.obj `if test -f 'idea_h2o.f'; then $(CYGPATH_W) 'idea_h2o.f'; else $(CYGPATH_W) '$(srcdir)/idea_h2o.f'; fi`
 
+libidea_a-idea_iau_gmao.o: idea_iau_gmao.f
+	$(AM_V_F77)$(F77) $(libidea_a_FFLAGS) $(FFLAGS) -c -o libidea_a-idea_iau_gmao.o `test -f 'idea_iau_gmao.f' || echo '$(srcdir)/'`idea_iau_gmao.f
+
+libidea_a-idea_iau_gmao.obj: idea_iau_gmao.f
+	$(AM_V_F77)$(F77) $(libidea_a_FFLAGS) $(FFLAGS) -c -o libidea_a-idea_iau_gmao.obj `if test -f 'idea_iau_gmao.f'; then $(CYGPATH_W) 'idea_iau_gmao.f'; else $(CYGPATH_W) '$(srcdir)/idea_iau_gmao.f'; fi`
+
 libidea_a-idea_imf_input.o: idea_imf_input.f
 	$(AM_V_F77)$(F77) $(libidea_a_FFLAGS) $(FFLAGS) -c -o libidea_a-idea_imf_input.o `test -f 'idea_imf_input.f' || echo '$(srcdir)/'`idea_imf_input.f
 
@@ -1211,11 +1219,23 @@ libidea_a-idea_trad_geopgrav.o: idea_trad_geopgrav.f
 libidea_a-idea_trad_geopgrav.obj: idea_trad_geopgrav.f
 	$(AM_V_F77)$(F77) $(libidea_a_FFLAGS) $(FFLAGS) -c -o libidea_a-idea_trad_geopgrav.obj `if test -f 'idea_trad_geopgrav.f'; then $(CYGPATH_W) 'idea_trad_geopgrav.f'; else $(CYGPATH_W) '$(srcdir)/idea_trad_geopgrav.f'; fi`
 
+libidea_a-idea_vert_diff.o: idea_vert_diff.f
+	$(AM_V_F77)$(F77) $(libidea_a_FFLAGS) $(FFLAGS) -c -o libidea_a-idea_vert_diff.o `test -f 'idea_vert_diff.f' || echo '$(srcdir)/'`idea_vert_diff.f
+
+libidea_a-idea_vert_diff.obj: idea_vert_diff.f
+	$(AM_V_F77)$(F77) $(libidea_a_FFLAGS) $(FFLAGS) -c -o libidea_a-idea_vert_diff.obj `if test -f 'idea_vert_diff.f'; then $(CYGPATH_W) 'idea_vert_diff.f'; else $(CYGPATH_W) '$(srcdir)/idea_vert_diff.f'; fi`
+
 libidea_a-namelist_wamphysics_def.o: namelist_wamphysics_def.f
 	$(AM_V_F77)$(F77) $(libidea_a_FFLAGS) $(FFLAGS) -c -o libidea_a-namelist_wamphysics_def.o `test -f 'namelist_wamphysics_def.f' || echo '$(srcdir)/'`namelist_wamphysics_def.f
 
 libidea_a-namelist_wamphysics_def.obj: namelist_wamphysics_def.f
 	$(AM_V_F77)$(F77) $(libidea_a_FFLAGS) $(FFLAGS) -c -o libidea_a-namelist_wamphysics_def.obj `if test -f 'namelist_wamphysics_def.f'; then $(CYGPATH_W) 'namelist_wamphysics_def.f'; else $(CYGPATH_W) '$(srcdir)/namelist_wamphysics_def.f'; fi`
+
+libidea_a-vert_def.o: vert_def.f
+	$(AM_V_F77)$(F77) $(libidea_a_FFLAGS) $(FFLAGS) -c -o libidea_a-vert_def.o `test -f 'vert_def.f' || echo '$(srcdir)/'`vert_def.f
+
+libidea_a-vert_def.obj: vert_def.f
+	$(AM_V_F77)$(F77) $(libidea_a_FFLAGS) $(FFLAGS) -c -o libidea_a-vert_def.obj `if test -f 'vert_def.f'; then $(CYGPATH_W) 'vert_def.f'; else $(CYGPATH_W) '$(srcdir)/vert_def.f'; fi`
 
 libidea_a-w05sc_efield_merge.o: w05sc_efield_merge.f
 	$(AM_V_F77)$(F77) $(libidea_a_FFLAGS) $(FFLAGS) -c -o libidea_a-w05sc_efield_merge.o `test -f 'w05sc_efield_merge.f' || echo '$(srcdir)/'`w05sc_efield_merge.f
@@ -1542,12 +1562,14 @@ libidea_a-idea_o2_o3.$(OBJEXT) : libidea_a-idea_composition.$(OBJEXT) libgfs_a-p
 libidea_a-idea_phys.$(OBJEXT) : libidea_a-namelist_wamphysics_def.$(OBJEXT) libidea_a-idea_composition.$(OBJEXT) libgfs_a-wam_f107_kp_mod.$(OBJEXT) libidea_a-idea_imf_input.$(OBJEXT) libidea_a-idea_mpi_def.$(OBJEXT) libidea_a-idea_ion.$(OBJEXT) libidea_a-idea_cal_advance.$(OBJEXT) libidea_a-idea_solar_input.$(OBJEXT) 
 libidea_a-idea_solar_2014.$(OBJEXT) : libidea_a-idea_composition.$(OBJEXT) 
 libidea_a-idea_solar_heating.$(OBJEXT) : libgfsf_a-date_def.$(OBJEXT) libgfs_a-machine.$(OBJEXT) libidea_a-idea_composition.$(OBJEXT) libgfs_a-physcons.$(OBJEXT) libidea_a-idea_ion.$(OBJEXT) libidea_a-idea_cal_advance.$(OBJEXT) libidea_a-idea_solar_init.$(OBJEXT) 
+libidea_a-idea_iau_gmao.$(OBJEXT) : libgfs_a-machine.$(OBJEXT) libidea_a-idea_cal_advance.$(OBJEXT)
 libidea_a-idea_solar_init.$(OBJEXT) : libidea_a-idea_io_units.$(OBJEXT) libidea_a-idea_getno_snoe.$(OBJEXT) libidea_a-namelist_wamphysics_def.$(OBJEXT) libgfs_a-machine.$(OBJEXT) libidea_a-idea_composition.$(OBJEXT) libgfs_a-wam_f107_kp_mod.$(OBJEXT) libgfs_a-physcons.$(OBJEXT) libidea_a-idea_mpi_def.$(OBJEXT) libidea_a-idea_cal_advance.$(OBJEXT) libidea_a-idea_solar_input.$(OBJEXT) 
 libidea_a-idea_solar_input.$(OBJEXT) : libidea_a-idea_io_units.$(OBJEXT) libidea_a-idea_mpi_def.$(OBJEXT) libidea_a-idea_cal_advance.$(OBJEXT) 
 libidea_a-idea_tracer.$(OBJEXT) : libgfs_a-machine.$(OBJEXT) libidea_a-idea_composition.$(OBJEXT) libidea_a-idea_tracers_input.$(OBJEXT) libgfs_a-physcons.$(OBJEXT) libidea_a-idea_mpi_def.$(OBJEXT) 
 libidea_a-idea_tracers_input.$(OBJEXT) : libidea_a-idea_io_units.$(OBJEXT) libidea_a-idea_composition.$(OBJEXT) libgfs_a-physcons.$(OBJEXT) libidea_a-idea_mpi_def.$(OBJEXT) 
 libidea_a-idea_trad_geopgrav.$(OBJEXT) : libgfs_a-machine.$(OBJEXT) libgfs_a-physcons.$(OBJEXT) libgfsf_a-tracer_const_h.$(OBJEXT) libidea_a-idea_solar_init.$(OBJEXT) 
-
+libidea_a-vert_def.$(OBJEXT) : libgfs_a-machine.$(OBJEXT)
+libidea_a-idea_vert_diff.$(OBJEXT) : libgfs_a-machine.$(OBJEXT) libidea_a-idea_composition.$(OBJEXT)
 # drv
 libgfsdrv_a-nuopc_physics.$(OBJEXT) : libgfsf_a-radsw_param.$(OBJEXT) libgfs_a-machine.$(OBJEXT) \
 	libgfsf_a-radlw_param.$(OBJEXT) libgfs_a-physcons.$(OBJEXT) libgfs_a-funcphys.$(OBJEXT) \

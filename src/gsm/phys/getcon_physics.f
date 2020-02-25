@@ -99,12 +99,15 @@
         global_lats_r = -1
 
         do lat = 1,latr
-         global_time_r(lat) = lonsperlar(lat)
+         global_time_r(lat) = -lonsperlar(lat)
+!         global_time_r(lat) = lonsperlar(lat)
+
         enddo
 !
 !my sort the lat times in descending order
 !
-        call sortrx(latr,-global_time_r,global_time_sort_index_r)
+!        call sortrx(latr,-global_time_r,global_time_sort_index_r)
+        call sortrx(latr,global_time_r,global_time_sort_index_r)
 
         if (iprint == 1)
      &   print *,' getcon_physics after sortrx for r index = ',

@@ -79,7 +79,7 @@
       use idea_solar_input,  only : wf107_s,   wkp_s
       use idea_solar_input,  only : wf107a_s,  wap_s
       use idea_solar_input,  only : weuv_s,  nwafix
-
+      use idea_solar_input,  only : solar_read_omni_2004_2017
       use idea_solar_input,  only : solar_read_namelist
       use idea_solar_input,  only : solar_read_myy1947_2016, solar_read_wam_init
       use idea_solar_input,  only : solar_waccmx_advance
@@ -453,7 +453,7 @@
 ! data_wx
 !
        if (trim(SPW_DRIVERS)=='cires_wam'.and.idea_solar_fix.le.1) then
-           CALL solar_read_myy1947_2016(ncfile_fpath, mpi_id )
+           CALL solar_read_omni_2004_2017(ncfile_fpath, mpi_id )
            CALL solar_waccmx_advance(mpi_id, Mjdat, Hcur, 1)
        endif
 !

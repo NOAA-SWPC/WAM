@@ -227,8 +227,12 @@
        ymd2 = dates(tim_ndx2)
        hh1 = 0               ! WACCMX data for UT=0
        hh2 = 0    
-       hr1 = float(hh1)
-       hr2 = float(hh2)
+!       hr1 = float(hh1)
+!       hr2 = float(hh2)
+       hh1 = dfhours(tim_ndx1)              ! WACCMX-OMNI data for UT=0,1,....23
+       hh2 = dfhours(tim_ndx2)   
+
+
        call wam_split_ymd(ymd1, hh1, jdat1, ndi)
        call wam_split_ymd(ymd2, hh2, jdat2, ndi)
 !
@@ -405,7 +409,7 @@
 !=========================================================================
 
       isolar_file = 2016       ! all years
-      wxdan_file='wasolar_dan_20161019.nc'
+!      wxdan_file='wasolar_dan_20161019.nc'
       noeof_file='snoe_eof.nc'
 ! put defaults above
 !
@@ -824,4 +828,147 @@
 !
        END SUBROUTINE solar_read_myy1947_2016
 !
+       SUBROUTINE solar_read_omni_2004_2017( file, mpi_id )
+!========================================================
+! Oct 20 2016:  VAY include WACCM-solar data file
+! data span from 20040101 to 20170132
+! /scratch3/NCEPDEV/swpc/save/Valery.Yudin/BASE_SVN/BASE_WAM_DATA/WACCM_OMNI/
+! file:  wasolar_1hr_20040101_20170131.nc 
+!	 time = UNLIMITED ; // (114720 currently) every hour
+!;variables:
+!        int date(time) ;
+!                date:long_name = "current date (YYYYMMDD)" ;
+!        int datesec(time) ;
+!                datesec:long_name = "current seconds of current date" ;
+!        float f107(time) ;
+!                f107:long_name = "10.7 cm solar radio flux (F10.7)" ;
+!                f107:units = " f107:units = \"10^-22 W m^-2 Hz^-1 " ;
+!        float f107a(time) ;
+!                f107a:long_name = "81-day centered mean of 10.7 cm solar radio flux (F10.7)" ;
+!        float kp(time) ;
+!                kp:long_name = " Hourly planetary Kp index " ;
+!        float ap(time) ;
+!                ap:long_name = " Hourly planetary Ap index " ;
+!        float sn(time) ;
+!                sn:long_name = " Hourly International Sunspot Number " ;
+!=======================================================
+       use netcdf      
+       use idea_mpi_def, ONLY:  info, mpi_comm_all     
+       implicit none
+       include 'mpif.h'
+!input
+        integer :: mpi_id
+        character(len=*) :: file
+!
+!locals
+!
+        integer ::  ierr
+        integer ::  ncid, vid, ierNC
+        integer  :: astat      
+!        integer  :: ntimes_wx                ! data-line of FILE, # of days  as a pert of module
+             
+        real     :: wrk_time   
+        real, parameter     :: r24 = 1./24.
+        integer  :: wrk_date
+        integer  :: yr, mon, day, day_fraction
+        integer  :: dimid    
+        integer, dimension(nf90_max_var_dims) :: dimidT         
+        integer  :: n
+        integer  :: masterproc
+        
+
+        if(mpi_id.eq.0) then
+           write(iulog,*)file        
+           write(iulog,*) 'VAY SOLAR_MULTI-YEARS: opening file ', trim(file) 
+        endif
+!
+       ierNC=NF90_OPEN(trim(File), nf90_nowrite, ncid)   
+       if (iernc /= 0) write(iulog,*) ncid, 'ncid ', iernc, ' iernc '
+!
+
+         iernc=nf90_inq_varid( ncid, 'f107', vid )
+         if (iernc /=0) write(iulog,*) 'err ind_varid ', iernc, ' f107 '
+
+         ierNC=nf90_inquire_variable(ncid, vid, dimids=dimidT) 
+         iernc = nf90_inquire_dimension(ncid, dimidT(1), len=ntimes_wx)
+!         iernc = nf90_inquire_dimension(ncid, dimidT(1), len=nwaves)
+         ntimes = ntimes_wx
+         if(mpi_id.eq.0) then
+              write(iulog,*) ntimes_wx, ' ntimes_wx  idea_solar_input_myy'
+         endif
+         
+ !   
+       allocate( dates(ntimes_wx),  times(ntimes_wx),stat=astat )  
+       allocate( dfhours(ntimes_wx),stat=astat )  
+       if( astat /= 0 ) then
+       write(iulog,*) ' alloc_err in read_waccm_solar for dates/times', ntimes_wx 
+       end if    
+
+ 
+
+        iernc=nf90_inq_varid( ncid, 'date', vid )
+        iernc= nf90_get_var( ncid, vid, dates)
+        iernc=nf90_inq_varid( ncid, 'datehour', vid )
+        iernc= nf90_get_var( ncid, vid, dfhours)
+          if(mpi_id.eq.0) then
+            write(iulog,*) ' dates-last 365 days ' 
+            write(iulog,*) dates(ntimes-365:ntimes)
+            write(iulog,*) ' dates-last 365 days ' 
+          endif
+
+        do n = 1,ntimes_wx
+!           dfhours(n) = 0                              ! integer .......current for daily  12UT
+           times(n) = float(dates(n))  + dfhours(n)*r24   
+        end do
+!
+! init hr1 & hr2
+          hr1 = dfhours(1)
+          hr2 = dfhours(2)
+    !---------------------------------------------------------------
+    !	... allocate and read solar parms ..... ALL-time series
+    !   call dealloc_solar(mpi_id) in the End of WAM-RUN
+    !   we do not put these data-sets in the restart files
+    !---------------------------------------------------------------
+       allocate(  Af107(ntimes_wx), Af107a(ntimes_wx),stat=astat )
+       allocate(  Akp(ntimes_wx),  Aap(ntimes_wx),    stat=astat )
+ 
+
+       if( astat /= 0 ) then
+         write(iulog,*) ' alloc_err( astat, f107 ... ap ', ntimes_wx 
+       end if
+
+        iernc=nf90_inq_varid( ncid, 'f107', vid )
+        iernc= nf90_get_var( ncid, vid, Af107)
+
+        iernc=nf90_inq_varid( ncid, 'f107a', vid )
+        iernc= nf90_get_var( ncid, vid, Af107a)
+
+        iernc=nf90_inq_varid( ncid, 'kp', vid )
+        iernc= nf90_get_var( ncid, vid, Akp)
+
+        iernc=nf90_inq_varid( ncid, 'ap', vid )
+        iernc= nf90_get_var( ncid, vid, Aap)
+        iernc=nf90_close(ncid)     
+!
+!
+          Akp =0.1*Akp
+         
+          if(mpi_id.eq.0) then
+          write(iulog,*) '  solar_read_myyread, ntimes_wx:  ', ntimes_wx   
+          write(iulog,*)     maxval(af107), minval(af107), ' F107 '
+          write(iulog,*)     maxval(af107a),minval(af107a), ' F107a ' 
+          write(iulog,*)     maxval(aKp),   minval(aKp), ' Kp-daily ' 
+          write(iulog,*)     maxval(aAp),   minval(aAp), ' Aap-daily '      
+          write(iulog,*)            ' mpi_bcast in solar_read_wam_init'
+          write(iulog,*)  ' VAY completed solar_read_WACCMX_init_OMNI'
+         endif
+
+       if(mpi_id.eq.0) then
+          write(iulog,*)  ' VAY completed solar_read_omni_2004_2017 ntimes', ntimes
+       endif        
+ 
+       END SUBROUTINE solar_read_omni_2004_2017
+!
+
+
        END MODULE IDEA_SOLAR_INPUT      

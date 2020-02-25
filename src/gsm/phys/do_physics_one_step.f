@@ -81,6 +81,26 @@
      &,                                    importFieldsList 
      &,                                    importFieldsValid
       use nuopc_physics,            only: model_parameters
+!VAY-2017
+!
+      use idea_iau_gmao,           only: nxa, nya,nza,nta
+      use idea_iau_gmao,           only: irec_anl, Last_IAU_DATE8
+      use idea_iau_gmao,           only: Uanl, Vanl, Tanl, Qanl
+      use idea_iau_gmao,           only: Psanl, Tsanl
+      use idea_iau_gmao,           only: IAU_UPDATE_DATE8, UPDATE_DATE10, 
+     &  gpy_Uan, gpy_Van, gpy_Tan, gpy_Qan, gpy_Psan, gpy_Tsan
+!
+      use idea_ncout_phys_1hr,  only : idea_init_nc_1hr
+      use idea_ncout_phys,  only : idea_init_daily,  wam_daysteps
+      use idea_ncout_diag,  only : idea_init_diagav, wamD_daysteps
+
+      use idea_das_saber,   only : IDEA_INIT_SABER_DAY
+!!!!      use idea_ncout_phys,  only : idea_write_wamday
+      use IDEA_DAS_PE,      only  : T_das, O3_das, OP_das
+      use IDEA_DAS_PE,      only  : Wt, Wo3, Wop
+      use wam_pass_diag_types,          only : gis_wam
+!VAY-2017
+
       IMPLICIT NONE
 !!     
       TYPE(Sfc_Var_Data)        :: sfc_fld
@@ -95,6 +115,14 @@
 !*    REAL(KIND=KIND_GRID)      GRID_GR(lonr*lats_node_r_max,lotgr)
       CHARACTER(16)             :: CFHOUR1
       logical                   :: restart_step
+ 
+      logical, parameter        :: DAS_SAB=.false.
+      logical, save             :: FIRST_NC =.true.
+      logical, save             :: FIRST_NCR=.true.   !to read only firstime after RESTART
+!!     
+!      REAL(KIND=KIND_EVOD),INTENT(IN)    :: ocn_tmp(lonr,lats_node_r)
+
+
 !!    
 ! The following dummy array must be an explicit shape dummy array!!!!!
       REAL(KIND=KIND_EVOD),INTENT(IN):: 
@@ -146,6 +174,26 @@
 
       real (kind=kind_phys) dt_warm, tem1, tem2
       real (kind=kind_phys), save :: zhour_dfin=0.
+
+!VAY-2017:
+!
+!===============================================================================
+      INTEGER :: ind_lats(LATS_NODE_R), ind_lons(LATS_NODE_R)
+      INTEGER         ::    lan, lons_lat, jlat
+      INTEGER         ::    IAU_DATE_8, IAU_Irec 
+      INTEGER,save    ::    Curr_IAU_DATE8, CURR_NC_WAMDAY
+!
+      INTEGER,save    ::    Curr_NC_WAMDAYHR, Curr_IAU_DATE10 
+      REAL            ::    RIH6, RIH24, RIH1, HOUR_DAY
+
+      REAL            ::    t_sab2, t_sab1, x1_test, x2_test, x3_test
+
+      INTEGER         ::    ISAB_INIT, IDAS_first, lat_das
+      character(len=2) :: sme
+      character(len=12) :: file_sme         
+
+
+
 ! NUOPC physics driver types
        type(model_parameters), intent(in)     :: mdl_parm
 !
@@ -156,10 +204,143 @@
       shour   = kdt * deltim
       fhour   = shour / 3600.
       lsfwd   = kdt == 1
-!jws
       kdt_dif = kdt - kdt_start
-!     if (me == 0) write(0,*)' in do_onestep ndfi=',ndfi,' kdt_dif=',kdt_dif
-!    &,' ldfi=',ldfi,' me=',me,' kdt=',kdt,' kdt_start=',kdt_start
+!====================================================================
+!
+! Here update "analysis" fields and having "fhour" or sechour
+!      call and read appropriate "Analysis-file"
+!      read-in SABER & MLS data
+!
+!====================================================================
+      rih6   = mod(fhour, 6.0)
+      rih24  = mod(fhour, 24.0) 
+      rih1   = mod(fhour, 1.0) 
+!
+! VAY-2017        rih6=5.000000000000071E-002   fhour=24.0500000000000    kdt=481
+!
+!      print*, 'kdtrestart_step.FIRST_NCR',kdt,restart_step,FIRST_NCR
+      
+      if (kdt > 1 .and. restart_step.and.FIRST_NCR) then                        ! Special Restart Run Treatment
+          CALL IAU_UPDATE_DATE8(Idate, Fhour, Curr_IAU_DATE8)
+          CALL UPDATE_DATE10(Idate, Fhour, Curr_NC_WAMDAYHR) 
+          IAU_IREC=1 
+         if (me == 0) then
+            print *, ' VAY_IAU_RESTART ', rih6, fhour, kdt
+            print *, ' VAY_IAU_RESTART ',  Curr_NC_WAMDAYHR  
+         endif    
+       if (.not. allocated(gpy_Tan)) then
+       
+       allocate ( gpy_Uan(lonr, lats_node_r, nza), stat = ierr)
+       allocate ( gpy_Van(lonr, lats_node_r, nza), stat = ierr)
+       allocate ( gpy_Tan(lonr, lats_node_r, nza), stat = ierr)
+       allocate ( gpy_Qan(lonr, lats_node_r, nza), stat = ierr)
+!
+       allocate ( gpy_Psan(lonr, lats_node_r),  stat = ierr)
+       allocate ( gpy_Tsan(lonr, lats_node_r),  stat = ierr)
+!          print *, ' VAY2020 do_physics_one_step allocate  gpy_Uan' , ierr      
+       endif
+!
+          call READ_ANALYSIS(Curr_IAU_DATE8, IAU_Irec, me)
+          irec_anl = IAU_Irec
+          Last_IAU_DATE8 =Curr_IAU_DATE8
+!	 if (me == 0) then
+!            print *, ' do_phys_max(gpy_Tan) ', maxval(gpy_Tan)
+!             
+!         endif  
+!
+       call IDEA_IAU_SPLIT3D
+     & (Uanl,nza, me, gpy_Uan, GLOBAL_LATS_R,LONSPERLAR)
+       call IDEA_IAU_SPLIT3D
+     & (Vanl,nza, me, gpy_Van, GLOBAL_LATS_R,LONSPERLAR)
+       call IDEA_IAU_SPLIT3D
+     & (Tanl,nza, me, gpy_Tan, GLOBAL_LATS_R,LONSPERLAR)
+       call IDEA_IAU_SPLIT3D
+     & (Qanl,nza, me, gpy_Qan, GLOBAL_LATS_R,LONSPERLAR)
+       call IDEA_IAU_SPLIT3D
+     & (Psanl,1, me, gpy_Psan, GLOBAL_LATS_R,LONSPERLAR)
+       call IDEA_IAU_SPLIT3D
+     &(Tsanl,1, me, gpy_Tsan, GLOBAL_LATS_R,LONSPERLAR)
+      
+!       print *, 'GMUPD Tanl ' , me,  maxval(Tanl), minval(Tanl)
+!       print *, 'GMUPD gpy_Tan ' , me,  maxval(gpy_Tan), minval(gpy_Tan)
+!       print *, ' after IDEA_IAU_SPLIT3D in UPDATE' , me
+       
+        FIRST_NCR=.false.
+      endif
+!
+! Regular Updates
+!
+!       print*,'do_phys_rih6=',rih6
+       
+      if (lsidea.and.rih6.eq.0.0) then
+           IAU_IREC = irec_anl+1         
+           if (IAU_IREC <= nta) then
+              Curr_IAU_DATE8 =  Last_IAU_DATE8
+           else
+               IAU_IREC=1     
+             CALL IAU_UPDATE_DATE8(Idate, Fhour, Curr_IAU_DATE8)
+           endif
+!
+!
+         if (me == 0) then
+            print *, ' VAY_IAU_UPDATE analysis ',
+     &      rih6, fhour
+!
+            print *, ' VAY_IAU_UPDATE= ', IAU_IREC, Curr_IAU_DATE8
+            print *, ' VAY_IAU_UPDATE= ', Idate(4)
+         endif
+!
+       if (.not. allocated(gpy_Tan)) then
+       allocate ( gpy_Uan(lonr, lats_node_r, nza), stat = ierr)
+       allocate ( gpy_Van(lonr, lats_node_r, nza), stat = ierr)
+       allocate ( gpy_Tan(lonr, lats_node_r, nza), stat = ierr)
+       allocate ( gpy_Qan(lonr, lats_node_r, nza), stat = ierr)
+!
+       allocate ( gpy_Psan(lonr, lats_node_r),  stat = ierr)
+       allocate ( gpy_Tsan(lonr, lats_node_r),  stat = ierr)
+       endif
+
+!       if (me ==0 ) then 
+          call READ_ANALYSIS(Curr_IAU_DATE8, IAU_Irec, me)
+
+          irec_anl = IAU_Irec
+          Last_IAU_DATE8 =Curr_IAU_DATE8
+
+!       print *, ' before mpi_bcast(wrkanl ' , me,  maxval(wrkanl), minval(wrkanl)       
+!           call mpi_bcast(wrkanl,lonr*latr*nza, MPI_REAL8, 0, MPI_COMM_ALL,info)
+!           call mpi_barrier(mpi_comm_all,info)
+!       print *, ' after mpi_bcast( wrkanl, ' , me, maxval(wrkanl), minval(wrkanl)      
+!
+!
+!       print *, ' before IDEA_IAU_SPLIT3D in UPDATE' , me
+
+       call IDEA_IAU_SPLIT3D
+     & (Uanl,nza, me, gpy_Uan, GLOBAL_LATS_R,LONSPERLAR)
+       call IDEA_IAU_SPLIT3D
+     & (Vanl,nza, me, gpy_Van, GLOBAL_LATS_R,LONSPERLAR)
+       call IDEA_IAU_SPLIT3D
+     & (Tanl,nza, me, gpy_Tan, GLOBAL_LATS_R,LONSPERLAR)
+       call IDEA_IAU_SPLIT3D
+     & (Qanl,nza, me, gpy_Qan, GLOBAL_LATS_R,LONSPERLAR)
+       call IDEA_IAU_SPLIT3D
+     & (Psanl,1, me, gpy_Psan, GLOBAL_LATS_R,LONSPERLAR)
+       call IDEA_IAU_SPLIT3D
+     &(Tsanl,1, me, gpy_Tsan, GLOBAL_LATS_R,LONSPERLAR)
+
+!       print *, 'mod(fhour,6) =0GMUPD Tanl ' , me,  maxval(Tanl), minval(Tanl)
+!       print *, 'mod(fhour,6) =0GMUPD gpy_Tan ' , me,  maxval(gpy_Tan), minval(gpy_Tan)
+!       print *, 'mod(fhour,6) =0 after IDEA_IAU_SPLIT3D in UPDATE' , me
+
+!     
+
+      endif      !lsidea   & mod(fhour,6) =0
+!
+!
+
+!jws
+    
+      if (me == 0) write(0,*)' in do_onestep ndfi=',ndfi,' kdt_dif=',kdt_dif
+     &,' ldfi=',ldfi,' me=',me,' kdt=',kdt,' kdt_start=',kdt_start
 
       lssav = .true.
       iniauinterval = .false.
@@ -170,8 +351,8 @@
       if(.not. ldfi .and. ndfi > 0. and. kdt_dif == ndfi/2+1) then
          zhour = zhour_dfin
       endif
-!     if (me == 0) write(0,*)' in do_onestep ndfi=',ndfi,' kdt_dif=',
-!    &            kdt_dif,' lssav=',lssav,' kdt=',kdt,' zhour=',zhour
+      if (me == 0) write(0,*)' in do_onestep ndfi=',ndfi,' kdt_dif=',
+     &            kdt_dif,' lssav=',lssav,' kdt=',kdt,' zhour=',zhour
 !jwe
       lscca   = mod(KDT ,nsswr) == 0
       lsswr   = mod(KDT ,nsswr) == 1
@@ -181,7 +362,7 @@
       phyhour = phour                           ! Moorthi No4 24, 2014
       phydt   = deltim
 
-!     if (me == 0) write(0,*)' in do_onestep phyhour=',phyhour
+      if (me == 0) write(0,*)' in do_onestep phyhour=',phyhour
 
       if(.not. semilag .and. lsfwd) phydt = 0.5*deltim
 !
@@ -552,7 +733,6 @@
      &,                sfc_fld%CVB, SWH, SWHC, HLW, HLWC, flx_fld%SFCNSW
      &,                flx_fld%SFCDLW, sfc_fld%FICE,   sfc_fld%TISFC
      &,                flx_fld%SFCDSW, flx_fld%sfcemis
-
      &,                flx_fld%TSFLW,  FLUXR, phy_f3d, phy_f2d
      &,                SLAG, SDEC, CDEC, NBLCK, KDT, mdl_parm
 !    &,                HTRSWB,HTRLWB       !idea add by hmhj
@@ -565,27 +745,35 @@
 !*       call gloopb ( grid_gr,
          if (iau) call checkiauforcing(phour*3600,iniauinterval)
          call gloopb (grid_fld,     g3d_fld,       sfc_fld,
-     &                flx_fld,      aoi_fld,       nst_fld,
+     &                flx_fld,      aoi_fld,       nst_fld, gis_wam,
      &                lats_nodes_r, global_lats_r, lonsperlar,
      &                phydt,        phyhour,       sfalb,  xlon,
      &                swh,          swhc,          hlw,    hlwc,
-!    &                nbdsw,        nbdlw,         HTRSWB, HTRLWB,          !idea add by hmhj
      &                hprime,       slag,          sdec,   cdec,
      &                ozplin,       jindx1,        jindx2, ddy,
      &                phy_f3d,      phy_f2d,       phy_fctd, nctp,
      &                xlat,         nblck,  kdt,   restart_step,
      &                mdl_parm,     iniauinterval)
-!
+!      subroutine gloopb(grid_fld,     g3d_fld,       sfc_fld,
+!     &                  flx_fld,      aoi_fld,       nst_fld, 
+!     &                  lats_nodes_r, global_lats_r, lonsperlar,
+!     &                  tstep,        phour,         sfalb,   xlon,
+!     &                  swh,          swhc,          hlw,     hlwc,
+!     &                  hprime,       slag,          sdec,    cdec,
+!     &                  ozplin,       jindx1,        jindx2,  ddy,
+!     &                  phy_f3d,      phy_f2d,       phy_fctd, nctp,
+!     &                  xlat,         nblck,   kdt,  restart_step,
+!     &                  mdl_parm,     iniauinterval)
 !!
       endif ! if (comp_task) then
 
 !jw   endif !.NOT.LIOPE.or.icolor.ne.2
 !--------------------------------------------
 !
-!      write(0,*)'in do one phys step, lsout=',lsout,'kdt=',kdt, 
-!     &   'nszer=',nszer,'ldfi=',ldfi,'ndfi=',ndfi,
-!     &   'fhour=',fhour,'zhour=',zhour,'zhour_dfin=',zhour_dfin,
-!     &   'zhour_dfi=',zhour_dfi
+      write(0,*)'in do one phys step, lsout=',lsout,'kdt=',kdt, 
+     &   'nszer=',nszer,'ldfi=',ldfi,'ndfi=',ndfi,
+     &   'fhour=',fhour,'zhour=',zhour,'zhour_dfin=',zhour_dfin,
+     &   'zhour_dfi=',zhour_dfi
 
       if (lsout .and. kdt /= 0 ) then
 !WY bug fix.
@@ -660,6 +848,192 @@
       if(ndfi > 0 .and. kdt_dif == ndfi .and. ldfi ) then
         ldfi = .false.
       endif
+!
+!------- THE LAST Treatment, after ALL PHYSICS/IO-files
+!VAY-2017
+!
+      IF (lsidea) THEN
+!=============================================================
+! do averaging grid_fld%[u, t, v, qtrac]
+!              with sine-cosine decomp for 24-, 12- 8-hr
+!=============================================================
+!   
+!
+!
+!  
+       do lan=1,lats_node_r  
+          jlat     = global_lats_r(ipt_lats_node_r-1+lan)
+          lons_lat = lonsperlar(jlat) 
+          ind_lons(lan) = lons_lat
+          ind_lats(lan) = jlat
+!       print *,  'VAYDO-grid_fld%ps/T ', me, lan,
+!     &      minval(grid_fld%T(1:lons_lat, lan,1)) 
+       enddo
+!
+!===========================  do init Saber-Das-Daily
+!
+! for restarts does not work 
+!
+!===========================
+       if (kdt.le.1) then 
+!
+! PE-phys structure for lats/lons
+!
+!       write(sme, fmt='(i2.2)') me
+!       file_sme='lats_'//sme//'.ff'
+!       open(unit=142, file=trim(file_sme), form='formatted')
+!       write(142,*) me, lats_node_r, latr, lonr
+!       write(142,*) ipt_lats_node_r, lats_node_r_max, lats_dim_r
+!       write(142,*) global_lats_r
+!       write(142,*) lonsperlar
+!       write(142,*) ind_lons
+!       write(142,*) ind_lats
+!       write(142,*) lonr, lats_node_r
+!       write(142,*) xlon
+!       write(142,*) xlat
+!       close(142)
+!       print *, ' VAY-sme', trim(file_sme), me
+
+       
+       ISAB_INIT  =0
+       IDAS_first =0
+
+
+       CALL IAU_UPDATE_DATE8(Idate, Fhour,  Curr_NC_WAMDAY)    
+!
+      if (me == 0)
+     &  print *, kdt, rih24, Curr_NC_WAMDAY, ' VAY:kdt<1' 
+      IF(DAS_SAB)  THEN
+         CALL IDEA_INIT_SABER_DAY(Curr_NC_WAMDAY, ISAB_INIT)
+         CALL IDEA_INIT_DAS
+      ENDIF
+! 
+!
+       if (me == 0)
+     &  print *, kdt, rih24, Curr_NC_WAMDAY, ' VAY:kdt<1'
+
+       ENDIF                 ! idea_inits...kdt<1
+
+!
+       IF(FIRST_NC) then 
+          CALL IAU_UPDATE_DATE8(Idate, Fhour,  Curr_NC_WAMDAY)   
+          CALL UPDATE_DATE10(Idate, Fhour,  Curr_NC_WAMDAYHR) 
+          wam_daysteps =0
+          wamD_daysteps =0
+          call idea_init_daily(deltim)
+          call idea_init_diagav(deltim)
+          call idea_init_nc_1hr
+          FIRST_NC=.false.
+       endif
+!
+       call idea_make_daily(grid_fld, rih24, ind_lats, ind_lons)
+          wam_daysteps = wam_daysteps+1
+
+       call idea_make_diagav(grid_fld, rih24, ind_lats, ind_lons)
+          wamD_daysteps = wamD_daysteps+1
+!======================
+! 1-hr DAS-cycling
+! kdt.lt.0 no cycling
+!======================
+       if (rih1.eq.0.0)   then
+!
+       CALL idea_copy_inst(grid_fld, ind_lats, ind_lons)
+
+       CALL UPDATE_DATE10(Idate, Fhour,  Curr_NC_WAMDAYHR) 
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+       CALL idea_write_wamhour(global_lats_r,lonsperlar,
+     & fhour,idate, Curr_NC_WAMDAY, Curr_NC_WAMDAYHR)
+!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!        
+       endif
+
+
+        if (rih1.eq.0.0.and.DAS_SAB)   then
+!
+          HOUR_DAY = mod(Fhour, 24.0)
+!
+! define time window
+!
+          if(hour_day == 0.) then
+             t_sab1 = 0.
+             t_sab2 = t_sab1+1.0
+          else
+             t_sab1 =hour_day-0.5
+             t_sab2 =t_sab1 +1.0
+          endif
+         CALL IAU_UPDATE_DATE8(Idate, Fhour,  Curr_NC_WAMDAY)  
+!          if (me == 0) 
+!     &    print *, 'VAY-rih1 DAS T-O3-O-kdt ', kdt, Curr_NC_WAMDAY
+!
+! Test #1 copy from grid_fld =>
+!
+       call idea_cp4_omf(grid_fld, ind_lats, ind_lons)
+!
+       call idea_das_window(global_lats_r, lonsperlar,
+     & fhour, Curr_NC_WAMDAY, t_sab1, t_sab2)
+!
+! Test #2 copy to grid_fld =>
+
+!       call idea_cp4_anal(grid_fld,ind_lats, ind_lons)
+!       if ( me==0) print *, 'VAY-idea_cp4_das'
+!
+      DO k=1, levs
+
+      do j=1,lats_node_r
+! 
+       do i=1,lonr
+
+        x1_test =grid_fld%T(i, j,k)
+        grid_fld%T(i, j,k) = Wt(i, j, k)
+        x2_test = grid_fld%tracers(2)%flds(i,j,k)
+        grid_fld%tracers(2)%flds(i,j,k)=WO3(i,j,k)
+        x3_test = grid_fld%tracers(4)%flds(i,j,k)
+        grid_fld%tracers(4)%flds(i,j,k)=Wop(i,j,k)
+!        if(x1_test.ne.Wt(i,j,k).and.x2_test.ne.Wo3(i,j,k).and.
+!     &  x3_test.ne.Wop(i,j,k).and.(k==1.or.k==75)) then
+
+!        print *, 'VAY-panic-TD-ijk', i,j,k, me
+!        print *, 'VAY-panic-T', me,  x1_test,  Wt(i,j,k), k
+!        print *, 'VAY-panic-O3',  x2_test,  O3_das(i,lat_das,k)
+!        print *, 'VAY-panicOP',  x3_test,  OP_das(i,lat_das,k)
+!        endif
+        enddo
+      enddo     
+      ENDDO
+
+
+      ENDIF                      ! ".......das-window 1-hour"(rih1.eq.0.0.and.DAS_SAB)  
+!
+!      if (me == 0) print *, kdt, rih24, Wam_daysteps,' VAY-Wam_daysteps'
+
+
+
+       if (rih24.eq.0.0)   then      
+!          if (me == 0) print *,   Wam_daysteps  ,' VAY-Wam_daysteps BNC'
+
+       CALL idea_write_wamday(global_lats_r,lonsperlar,
+     & fhour,idate,Curr_NC_WAMDAY)
+          if (me == 0) print *,   Wam_daysteps  ,' VAY-Wam_daysteps ANC'
+
+       CALL idea_writediag_wamday(global_lats_r,lonsperlar,
+     & fhour,idate,Curr_NC_WAMDAY)
+!
+! reset wam_daysteps counter
+!
+          wam_daysteps  =0
+          wamD_daysteps =0
+
+          CALL IAU_UPDATE_DATE8(Idate, Fhour,  Curr_NC_WAMDAY) 
+!
+! Read New Day for SABER-instrument
+!
+          if (DAS_SAB) CALL read_saber_day(Curr_NC_WAMDAY, ISAB_INIT)
+!
+       endif                  !(rih24.eq.0.0)
+!
+!------- THE LAST Treatment, after ALL PHYSICS/IO-files
+!VAY-2017
+!      
+      ENDIF     !(lsidea)-NCOUT
 !
       RETURN
       END

@@ -7,7 +7,7 @@
 !r
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
       SUBROUTINE Earth_CHIU_MODEL(sda,sza,thmag,phimr,rlt,rlat,         
-     &f107, dip, nday,ht1d,eden3d,ilon,lev1,ht_dim,lon_dim)
+     &f107, dip, nday,ht1d,eden1d,lev1,ht_dim)
 !
 !VAY-2016, cosmetic corrections for IMPLICIT none (ty and ilon)
 ! +        programming style with sin & cos
@@ -18,14 +18,14 @@
 !
       REAL,     INTENT(IN)   :: sda, sza, thmag, phimr, rlt
       REAL,     INTENT(IN)   :: rlat, f107, dip
-      INTEGER,  INTENT(IN)   :: nday,ht_dim,lon_dim
-      INTEGER,  INTENT(IN)   :: lev1                    ! first level of ion-re k91, see idea_composition
+      INTEGER,  INTENT(IN)   :: nday,ht_dim
+      INTEGER,  INTENT(IN)   :: lev1                   ! first level of ion-re k91, see idea_composition
       REAL,     INTENT(IN)   :: ht1d(ht_dim)
 ! out  
-      REAL,     INTENT(OUT)  :: eden3d(lon_dim,ht_dim)  ! should 1D-array no neeeds for ilon-index
+      REAL ,     INTENT(OUT)  :: eden1d(ht_dim)  ! should 1D-array no neeeds for ilon-index
 !locals
       REAL                   :: ty
-      INTEGER                :: ilon, i, n
+      INTEGER                :: i, n
 !
 !*** Start of declarations inserted by SPAG
       REAL :: abstmg , beta , cbp , cosrlt , costmg , cosza , dipf ,    
@@ -153,10 +153,10 @@
         fz(i) = EXP(alp(i)*(1.0-rr(i)-EXP(-rr(i))))
         fn(i) = a(i)*fz(i)*v(i)
       enddo
-       eden3d(ilon,n) = (fn(1)+fn(2)+fn(3))*1.E11
+       eden1d(n) = (fn(1)+fn(2)+fn(3))*1.E11
       ENDDO
       do n=1,lev1-1
-            eden3d(ilon,n)=0.
+            eden1d(n)=0.
       enddo
 
       RETURN
@@ -238,71 +238,119 @@
 !     &      n2_n(i,:),adt(i,:),maglat(i),essa(i),tiros_activity_level,
 !     &      GW, eden_aurora(i,:) )  
 !
+      subroutine tiros_ionize_sv
+     & (me,lev1,levs,tiros_activity_level,GW, pres,z,
+     & grav,on,o2n, n2n,tn,gm_lat,essa1,eden_aurora1D)
+       integer :: me,lev1,levs,tiros_activity_level 
+       real, dimension(levs) :: pres,z,grav,on,o2n, n2n,tn
+       real :: gm_lat,essa1
+       real, dimension(levs) :: eden_aurora1D
+       if (me .eq. 0) print *,'tiros_ionize_sv'
+       eden_aurora1D(1:levs) = 0.
+       
+      end subroutine tiros_ionize_sv
+      
+      
+      
       subroutine tiros_ionize_data
-     & (pres, lev1,levs,z,emaps,cmaps,djspectra,
-     & grav,on,o2n, n2n,tn,gm_lat,essa1,tiros_activity_level,GW,
-     & eden_aurora1D)
+     & (me,lev1,levs,tiros_activity_level,GW, pres,z,
+     & grav,on,o2n, n2n,tn,gm_lat,essa1,eden_aurora1D,
+     & emaps,cmaps,djspectra)
 !    &   ,eflux,ch)     
-!
+! 
 !vay-2015: pass den = rho from the TOP-level program take-out comput/arrays ntot & meanmass
 !          version with data/xxx/-statements.......eden_aurora1D   3-density due to aurora
 !
 !         output: of tiros_ionize_data
 !
+!      use IDEA_ION_INPUT, only : EMAPS1 => EMAPS, CMAPS1 => CMAPS 
+!      use IDEA_ION_INPUT, only : DJSPECTRA1 => DJSPECTRA
       use idea_mpi_def,      only : mpi_id
       use idea_composition,  only :  DTR, ELCH, R_2_d, PI
 !     use tirosdata
       implicit none
-!
+!    
+      INTEGER, intent(in) :: levs, lev1
+      REAL, intent(in) :: pres(levs)
+      REAL, intent(in) :: Z(levs),GRAV(levs),ON(levs),
+     &        o2n(levs),n2n(levs)
+ 
+      INTEGER, intent(in) :: me
+      
       INTEGER :: j, i, m, l, tiros_activity_level, iband
-      INTEGER :: levs, lev1
-      INTEGER, parameter :: jmaxwell = 6
-
-      real, intent(in) :: pres(levs)
-      real :: pres1(levs)
-
-      real ::  Z(levs),GRAV(levs),ON(levs),
-     &        o2n(levs),n2n(levs),gl,mlt,GW,gm_lat
-      real :: bz, gscon, amu, e0
-!
-      real  :: emaps(21,20,7),cmaps(21,20,7),djspectra(15,21)
-      real ::  NTOT(levs),meanmass(levs)
-!
-      real ::  QIONT(levs),RATIO(21),RLAM(21)
-     &,den(levs),dl_lower,dl_upper,qiont_lower,qiont_upper
-     &,tn(levs),mo,mo2,mn2,alpha
-     &,rno,RANGE_en,pr,ratioz,rlamz,mh,mhe,q
-     &,qiont_O(levs),qiont_O2(levs),qiont_N2(levs)
-      real :: width(15),en(15),TE11(21),TE15(21),width_maxwell
-      real :: ionchr(21),ratio_ch,en_maxwell(jmaxwell),dl(jmaxwell)
-     &,qion_maxwell(levs),eden_aurora1D(levs),lognpres(8),
-     &ion_recomb(8),logpres,rr
-c
-      real :: ch , chi , dfac , diff , dprof , ed ,
-     &     eflux , essa1 , qdmsp , QT(levs) ,
-     &     ri , rj , th , swbz , offset, THMagd
       INTEGER i1 , i2 , j1 , j2 , k , kk , ld , n , nn , jj , jjj
+ 
+      
+      INTEGER, parameter :: jmaxwell = 6
+      REAL :: pres1(levs)
+      REAL :: gl, mlt, GW, gm_lat
+      REAL :: bz, gscon, amu, e0
+!
+
+      
+      REAL  :: dl_lower,dl_upper,qiont_lower,qiont_upper
+     &,mo,mo2,mn2,alpha
+     &,rno,RANGE_en,pr,ratioz,rlamz,mh,mhe,q
+
+
+      REAL :: ch , chi , dfac , diff , dprof , ed ,
+     &     eflux , essa1 , qdmsp ,
+     &     ri , rj , th , swbz , offset, THMagd
+     
+      REAL :: width_maxwell,ratio_ch,logpres,rr
+
+      REAL :: ionchr(21),en_maxwell(jmaxwell),dl(jmaxwell)
+     &,qion_maxwell(levs),lognpres(8),ion_recomb(8)
+
+      REAL :: width(15),en(15),TE11(21),TE15(21)
+c
+      REAL  :: emaps(21,20,7),cmaps(21,20,7),djspectra(15,21)
+      REAL ::  NTOT(levs),meanmass(levs)
+      REAL, intent(out) :: eden_aurora1D(levs)
+!      goto 777
+      
+      REAL ::  QIONT(levs),RATIO(21),RLAM(21)
+     &,qiont_O(levs),qiont_O2(levs),qiont_N2(levs)
+     &,den(levs),tn(levs)      
+      
+ 
+
+
+
+   
+
+
+
       data en/.37,.6,.92,1.37,2.01,2.91,4.19,6.,8.56,12.18,
      &17.3,24.49,36.66,54.77,81.82/
+
       data width/.158,.315,.315,.63,.631,1.261,1.26,2.522,
      &2.522,5.043,5.043,10.,14.81,22.13,33.06/
+
       data RLAM/1.49,1.52,1.51,1.48,1.43,1.37,1.30,1.22,
-     11.12,1.01,0.895,0.785,0.650,0.540,0.415,0.320,0.225,
-     20.14,0.08,0.04,0.0/
+     &1.12,1.01,0.895,0.785,0.650,0.540,0.415,0.320,0.225,
+     &0.14,0.08,0.04,0.0/
 c
       DATA ionchr/.378 , .458 , .616 , .773 , .913 , 1.088 , 1.403 ,
      &     1.718 , 2.033 , 2.349 , 2.979 , 3.610 , 4.250 , 4.780 ,
      &     6.130 , 7.392 , 8.653 , 9.914 , 12.436 , 14.957 , 17.479/
+
       data lognpres/-3.425,-4.835,-5.918,-7.066,-7.784,-8.366,-9.314,
      &-10.507/
+
       data ion_recomb/3.20e-13,3.20e-13,2.75e-13,1.45e-13,1.13e-13,
-     %8.30e-14,3.70e-14,2.00e-14/
-!      DATA dprof/4.23E19 , 5.62E19 , 5.77E19 , 5.70E19 , 1.04E19 ,
-!     &     1.03E20 , 1.22E20 , 1.23E20 , 0.00E19 , 8.36E19 , 2.37E20 ,
-!     &     2.61E20 , 0.00E19 , 0.00E18 , 3.07E20 , 5.26E20 , 0.00E19 ,
-!     &     0.00E18 , 0.00E18 , 8.57E20/
-!      DATA qdmsp/15*0.0/
-    
+     &8.30e-14,3.70e-14,2.00e-14/
+      
+     
+      do i=1,levs
+      qiont(i) = 0.0
+      qion_maxwell(i) = 0.0
+      qiont_O(i) = 0.0
+      qiont_O2(i) = 0.0
+      qiont_N2(i) = 0.0
+      eden_aurora1D(i) = 0.0
+      enddo
+!      goto 777
       do 16 m=1,21
    16 ratio(m) = (m-1)*0.05
       do iband=1,21
@@ -319,7 +367,7 @@ c
 ! normalize with the energy influx 300eV to 20keV
       do 18 m=1,11
    18 TE11(iband)=TE11(iband)+djspectra(m,iband)*en(m)*width(m)*1.6E-06
-!      print *, iband, TE11(iband), TE15(iband)
+ 
       enddo
       bz = 1.38e-23
       gscon = 8.314e3
@@ -335,14 +383,14 @@ c
       en_maxwell(j) = j*0.05 - 0.025
       enddo
 ! initialize qiont, etc
-      do i=1,levs
-      qiont(i) = 0.0
-      qion_maxwell(i) = 0.0
-      qiont_O(i) = 0.0
-      qiont_O2(i) = 0.0
-      qiont_N2(i) = 0.0
-      eden_aurora1D(i) = 0.0
-      enddo
+!      do i=1,levs
+!      qiont(i) = 0.0
+!      qion_maxwell(i) = 0.0
+!      qiont_O(i) = 0.0
+!      qiont_O2(i) = 0.0
+!      qiont_N2(i) = 0.0
+!      eden_aurora1D(i) = 0.0
+!      enddo
 ! convert magnetic latitude from radians to degrees
       thmagd = gm_lat * R_2_D
 !     print *, 'gm_lat   thmagd  essa1', gm_lat, thmagd, essa1
@@ -382,7 +430,7 @@ cc  **
      &        + rj*(1.-ri)*EMAps(j2,i1,l) + (1.-rj)*(1.-ri)
      &        *EMAps(j1,i1,l)
       eflux = 10.**(eflux)/1000.
-!      print *, 'eflux   ', eflux
+!             print *, 'eflux   ', eflux
 !
       ch = rj*ri*CMAps(j2,i2,l) + (1.-rj)*ri*CMAps(j1,i2,l) + rj*(1.-ri)
      &     *CMAps(j2,i1,l) + (1.-rj)*(1.-ri)*CMAps(j1,i1,l)
@@ -410,7 +458,14 @@ cc  **
             GOTO 400
          ENDIF
  300  CONTINUE
- 400  chi = ch - ionchr(k)
+!      if (me .eq. 0) then
+!      print *,'k,kk,ch=',k,kk,ch
+!      endif
+ 400  continue 
+      if (me .eq. 0) then
+!      print *,'400k,kk,ch=',k,kk,ch
+      endif
+      chi = ch - ionchr(k)
       diff = ionchr(kk) - ionchr(k)
       ratio_ch = chi/diff
 !      if(ratio_ch.gt.1.) print *, 'ratio_ch out of bounds', ratio_ch
@@ -418,9 +473,12 @@ c
 c
 99001 FORMAT ('  ch value outof bound in tiros',f10.6)
 !!! loop through ipe height levels
+
+!      goto 777
+
       do 2000 i=lev1,levs
 ! stop at 1000km altitude
-      if(z(i)*1.e-3 .gt. 1000.) goto 200                ! zwam < 1000, vay       
+      if(z(i)*1.e-3 .gt. 1000.) goto 2000                ! zwam < 1000, vay       
 ! set up neutral parameters
 ! ntot  total number density m-3
 ! pres  pressure Pa
@@ -457,12 +515,7 @@ c
       enddo
   451 continue
 
-!err      rr = ion_recomb(jj)-logpres*(ion_recomb(jjj)-ion_recomb(jj))/
-!err     &(lognpres(jjj)-lognpres(jj))
-!update Vay-2016/10
-!NEMS.x             0000000000ADF0A4  tiros_ionize_data         449/450  idea_ion_empirmodels.f
-!ion_recomb(jjj =>  ion_recomb(jj)
-!
+
       rr = ion_recomb(jjj)-(lognpres(jjj)-logpres)*
      & (ion_recomb(jjj)-ion_recomb(jj))/(lognpres(jjj)-lognpres(jj))
   450 continue
@@ -482,7 +535,7 @@ c
       DO 12 M=1,21
       IF(RATIOZ.GT.RATIO(M)) GOTO 12
       RLAMZ=RLAM(M-1)+(RATIOZ-RATIO(M-1))*(RLAM(M)-RLAM(M-1))/
-     1(RATIO(M)-RATIO(M-1))
+     &(RATIO(M)-RATIO(M-1))
       GOTO 13
    12 CONTINUE
    13 CONTINUE
@@ -507,7 +560,7 @@ c
       DO 112 M=1,21
       IF(RATIOZ.GT.RATIO(M)) GOTO 112
       RLAMZ=RLAM(M-1)+(RATIOZ-RATIO(M-1))*(RLAM(M)-RLAM(M-1))/
-     1(RATIO(M)-RATIO(M-1))
+     &(RATIO(M)-RATIO(M-1))
       GOTO 113
   112 CONTINUE
   113 CONTINUE
@@ -536,8 +589,21 @@ c
       qiont_O2(i)=o2n(i)*q
       qiont_N2(i)=0.92*n2n(i)*q
  2000 continue
+  777 continue   
+!      do i=1,levs
+
+!      eden_aurora1D(i) = 0.0
+!      enddo
+
+
   200 continue
-!
+
+!      if (me .eq. 0) then
+!      print *,'eden_aur=', maxval(eden_aurora1D), minval(eden_aurora1D) 
+!      print *,'tn-adt=',maxval(tn),minval(tn)   
+!      endif
+
+
       RETURN
       END subroutine tiros_ionize_data
 !
@@ -571,12 +637,13 @@ c
       INTEGER, intent(in) ::  tiros_activity_level
       real ::  essa1 
       real ::  GW  
-      real ::  Z(levs), grav(levs), PRES(levs), den(levs)
-      real ::  TN(levs)
-      real ::  ON(levs),o2n(levs),n2n(levs)
+      real, intent(in) ::  Z(levs), grav(levs), PRES(levs), den(levs)
+      real, intent(in) ::  TN(levs)
+      real, intent(in) ::  ON(levs),o2n(levs),n2n(levs)
       real ::  gl, mlt,  gm_lat
 !out
-      real, intent(out) ::   eden_aurora1D(levs) 
+!      real, intent(out) ::   eden_aurora1D(levs) 
+      REAL :: eden_aurora1D(levs) 
 !
 !
 !local

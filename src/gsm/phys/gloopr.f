@@ -1,12 +1,12 @@
-       subroutine gloopr (grid_fld, g3d_fld, aoi_fld,                   &
-     &                    lats_nodes_r,global_lats_r, lonsperlar, phour,&
-     &                    deltim,xlon,xlat,coszdg,COSZEN,slmsk,weasd,   &
-     &                    SNCOVR,SNOALB,ZORL,TSEA,HPRIME,SFALB,         &
-     &                    ALVSF,ALNSF ,ALVWF ,ALNWF,FACSF ,FACWF,CV,CVT,&
-     &                    CVB  ,SWH,swhc,HLW,hlwc,SFCNSW,SFCDLW,        &
-     &                    FICE ,TISFC, SFCDSW, sfcemis,                 &
-     &                    TSFLW,FLUXR, phy_f3d,phy_f2d,                 &
-     &                    slag,sdec,cdec,NBLCK,KDT                      &
+       subroutine gloopr (grid_fld, g3d_fld, aoi_fld,                   
+     &                    lats_nodes_r,global_lats_r, lonsperlar, phour,
+     &                    deltim,xlon,xlat,coszdg,COSZEN,slmsk,weasd,   
+     &                    SNCOVR,SNOALB,ZORL,TSEA,HPRIME,SFALB,         
+     &                    ALVSF,ALNSF ,ALVWF ,ALNWF,FACSF ,FACWF,CV,CVT,
+     &                    CVB  ,SWH,swhc,HLW,hlwc,SFCNSW,SFCDLW,        
+     &                    FICE ,TISFC, SFCDSW, sfcemis,                 
+     &                    TSFLW,FLUXR, phy_f3d,phy_f2d,                 
+     &                    slag,sdec,cdec,NBLCK,KDT                      
 !    &,    htrswb,htrlwb                                                &
      &,                   mdl_parm)
 !    &     global_times_r)
@@ -65,29 +65,29 @@
       use module_radsw_parameters,   only : nbdsw
       use module_radlw_parameters,   only : nbdlw
 !
-      use resol_def,             ONLY: levs, levr, latr, lonr, lotgr,   &
-     &                                 g_t, g_p, g_q, g_dp, g_ps,       &
-     &                                 ntcw, ntoz, ncld,num_p3d,        &
-     &                                 nmtvr, ntrac, levp1, nfxr,g_dpdt,&
-     &                                 lgocart,ntot3d,ntot2d,           &
+      use resol_def,             ONLY: levs, levr, latr, lonr, lotgr,   
+     &                                 g_t, g_p, g_q, g_dp, g_ps,       
+     &                                 ntcw, ntoz, ncld,num_p3d,        
+     &                                 nmtvr, ntrac, levp1, nfxr,g_dpdt,
+     &                                 lgocart,ntot3d,ntot2d,           
      &                                 npdf3d,ncnvcld3d
-      use layout1,               ONLY: me, nodes, lats_node_r,          &
+      use layout1,               ONLY: me, nodes, lats_node_r,          
      &                                 lats_node_r_max, ipt_lats_node_r
       use gg_def,                ONLY: coslat_r, sinlat_r
       use date_def,              ONLY: idate
-      use namelist_physics_def,  ONLY: lsswr,iaer,lslwr,ras,shal_cnv,   &
-     &                                 lssav, flgmin, ldiag3d,          &
-     &                                 imfshalcnv, imfdeepcnv,          &
-     &                                 iovr_lw, iovr_sw, isol, iems,    &
-     &                                 ialb, fhlwr, fhswr, ico2, ngptc, &
-     &                                 crick_proof, norad_precip,ccnorm,&
-     &                                 ictm, isubc_sw, isubc_lw, fdaer, &
+      use namelist_physics_def,  ONLY: lsswr,iaer,lslwr,ras,shal_cnv,   
+     &                                 lssav, flgmin, ldiag3d,          
+     &                                 imfshalcnv, imfdeepcnv,          
+     &                                 iovr_lw, iovr_sw, isol, iems,    
+     &                                 ialb, fhlwr, fhswr, ico2, ngptc, 
+     &                                 crick_proof, norad_precip,ccnorm,
+     &                                 ictm, isubc_sw, isubc_lw, fdaer, 
      &                                 sup, ndfi, fhdfi, cplflx
       use d3d_def ,                ONLY: cldcov
       use gfs_physics_gridgr_mod,  ONLY: Grid_Var_Data
       use gfs_physics_g3d_mod,     ONLY: G3D_Var_Data
       use gfs_physics_aoi_var_mod, ONLY: aoi_var_data
-      use mersenne_twister,        only: random_setseed, random_index,  &
+      use mersenne_twister,        only: random_setseed, random_index,  
      &                                   random_stat
 
       use nuopc_physics,
@@ -102,9 +102,9 @@
 !
       implicit none
 !
-      real (kind=kind_phys), parameter :: QMIN =1.0e-10                 &
-     &,                                   Typical_pgr = 95.0            &
-     &,                                   cons0 = 0.0,  cons2 = 2.0     &
+      real (kind=kind_phys), parameter :: QMIN =1.0e-10                 
+     &,                                   Typical_pgr = 95.0            
+     &,                                   cons0 = 0.0,  cons2 = 2.0     
      &,                                   pt00001=1.0e-5
 !    &,                                   pt01=0.01
 !
@@ -121,18 +121,18 @@
       integer, intent(in) :: NBLCK
 
 
-      real (kind=kind_phys), dimension(LONR,LATS_NODE_R), intent(in) :: &
-     &                       xlon,  xlat,  slmsk, weasd, zorl,   tsea,  &
-     &                       alvsf, alnsf, alvwf, alnwf, facsf,  facwf, &
+      real (kind=kind_phys), dimension(LONR,LATS_NODE_R), intent(in) :: 
+     &                       xlon,  xlat,  slmsk, weasd, zorl,   tsea,  
+     &                       alvsf, alnsf, alvwf, alnwf, facsf,  facwf, 
      &                       cv, cvt, cvb, FICE,  tisfc, sncovr, snoalb
 
-      real (kind=kind_phys), intent(inout) ::                           &
-     &    hprime(NMTVR,LONR,LATS_NODE_R), phour, deltim,                &
-     &    phy_f3d(NGPTC,LEVS,ntot3d,NBLCK,LATS_NODE_R),                 &
+      real (kind=kind_phys), intent(inout) ::                           
+     &    hprime(NMTVR,LONR,LATS_NODE_R), phour, deltim,                
+     &    phy_f3d(NGPTC,LEVS,ntot3d,NBLCK,LATS_NODE_R),                 
      &    phy_f2d(lonr,lats_node_r,ntot2d)
 !
 
-      real (kind=kind_phys), intent(inout) ::                           &
+      real (kind=kind_phys), intent(inout) ::                           
      &                    fluxr (NFXR,LONR,LATS_NODE_R)
 
       integer, intent(in) :: KDT
@@ -140,11 +140,11 @@
 !     real(kind=kind_evod), intent(out) ::                              &
 !    &                    global_times_r(latr,NODES)
 
-      real (kind=kind_phys), intent(out), dimension                     &
+      real (kind=kind_phys), intent(out), dimension                     
      &          (ngptc,levs,nblck,lats_node_r) :: swh, swhc, hlw, hlwc
 
-      real (kind=kind_phys),dimension(LONR,LATS_NODE_R), intent(out) :: &
-     &                    coszdg, coszen, sfcnsw, sfcdlw, tsflw,        &
+      real (kind=kind_phys),dimension(LONR,LATS_NODE_R), intent(out) :: 
+     &                    coszdg, coszen, sfcnsw, sfcdlw, tsflw,        
      &                    sfcdsw, SFALB, sfcemis
 
       real (kind=kind_phys), intent(out) :: slag, sdec, cdec
@@ -155,13 +155,13 @@
 !    &                 htrlwb(NGPTC,LEVS,NBDLW,NBLCK,LATS_NODE_R)
 
 !  --- ...  locals:
-      real(kind=kind_phys) :: prsl(NGPTC,LEVS),  prslk(NGPTC,LEVS),     &
+      real(kind=kind_phys) :: prsl(NGPTC,LEVS),  prslk(NGPTC,LEVS),     
      &                        prsi(NGPTC,LEVP1)
 
 !     real (kind=kind_phys) :: si_loc(LEVR+1)
 
-      real (kind=kind_phys) :: dswcmp(NGPTC,4), uswcmp(NGPTC,4),        &
-     &                         gt(NGPTC,LEVR),                          &
+      real (kind=kind_phys) :: dswcmp(NGPTC,4), uswcmp(NGPTC,4),        
+     &                         gt(NGPTC,LEVR),                          
      &                         gr(NGPTC,LEVR), gr1(NGPTC,LEVR,NTRAC-1)
 
       logical :: lmfshal, lmfdeep2
@@ -172,7 +172,7 @@
       real (kind=kind_phys) ::  fluxr_v(NGPTC,NFXR)
       real (kind=kind_phys) ::  work1, work2
 
-      real (kind=kind_phys), dimension(ngptc) :: coszen_v, coszdg_v,    &
+      real (kind=kind_phys), dimension(ngptc) :: coszen_v, coszdg_v,    
      &             sinlat_v, coslat_v, hprime_v, flgmin_v
 
 !     real (kind=kind_phys), dimension(LONR,LATS_NODE_R) ::             &
@@ -357,11 +357,11 @@
       endif
 
 !     if (me == 0) write(0,*)' in gloopr solhr=',solhr
-      call radupdate                                                    &
+      call radupdate                                                    
 !  ---  inputs:
-     &     ( idat, jdat, dtsw, deltim, lsswr, me,                       &
+     &     ( idat, jdat, dtsw, deltim, lsswr, me,                       
 !  ---  outputs:
-     &       slag, sdec, cdec, solcon                                   &
+     &       slag, sdec, cdec, solcon                                   
      &     )
 
 !  --- ...  generate 2-d random seeds array for sub-grid cloud-radiation
@@ -370,17 +370,17 @@
 !       ipseed = mod(nint(100.0*sqrt(fhour*3600)), ipsdlim) + 1 + ipsd0
         ipseed = mod(nint(100.0*sqrt(phour*3600)), ipsdlim) + 1 + ipsd0
 
-        call random_setseed                                             &
+        call random_setseed                                             
 !  ---  inputs:
-     &     ( ipseed,                                                    &
+     &     ( ipseed,                                                    
 !  ---  outputs:
-     &       stat                                                       &
+     &       stat                                                       
      &      )
-        call random_index                                               &
+        call random_index                                               
 !  ---  inputs:
-     &     ( ipsdlim,                                                   &
+     &     ( ipsdlim,                                                   
 !  ---  outputs:
-     &       numrdm, stat                                               &
+     &       numrdm, stat                                               
      &     )
 
         do k = 1, 2
@@ -682,34 +682,34 @@
 
           call grrad
 !  ---  inputs:
-     &     ( prsi,prsl,prslk,gt,gr,gr1,vvel,slmsk(lon,lan),             &
-     &       xlon(lon,lan),xlat(lon,lan),tsea(lon,lan),                 &
-     &       weasd(lon,lan),sncovr(lon,lan),snoalb(lon,lan),            &
-     &       zorl(lon,lan),hprime_v,                                    &
-     &       alvsf(lon,lan),alnsf(lon,lan),alvwf(lon,lan),              &
-     &       alnwf(lon,lan),facsf(lon,lan),facwf(lon,lan),              &
-     &       fice(lon,lan),tisfc(lon,lan),                              &
-     &       sinlat_v,coslat_v,solhr,jdat,solcon,                       &
-     &       cv(lon,lan),cvt(lon,lan),cvb(lon,lan),                     &
-     &       f_ice,f_rain,r_rime,flgmin_v,                              &
-     &       icsdsw,icsdlw,NTCW-1,NCLD,NTOZ-1,NTRAC-1,NFXR,             &
-!    &       dtlw,dtsw, lsswr,lslwr,lssav,                              &
-     &       dtlw,dtsw, lsswr,lslwr,lssav,shoc_cld,lmfshal,lmfdeep2,    &
-     &       NGPTC,njeff,LEVR,me, lprnt, ipt, kdt, deltaq,sup,cnvw,cnvc,&
+     &     ( prsi,prsl,prslk,gt,gr,gr1,vvel,slmsk(lon,lan),             
+     &       xlon(lon,lan),xlat(lon,lan),tsea(lon,lan),                 
+     &       weasd(lon,lan),sncovr(lon,lan),snoalb(lon,lan),            
+     &       zorl(lon,lan),hprime_v,                                    
+     &       alvsf(lon,lan),alnsf(lon,lan),alvwf(lon,lan),              
+     &       alnwf(lon,lan),facsf(lon,lan),facwf(lon,lan),              
+     &       fice(lon,lan),tisfc(lon,lan),                              
+     &       sinlat_v,coslat_v,solhr,jdat,solcon,                       
+     &       cv(lon,lan),cvt(lon,lan),cvb(lon,lan),                     
+     &       f_ice,f_rain,r_rime,flgmin_v,                              
+     &       icsdsw,icsdlw,NTCW-1,NCLD,NTOZ-1,NTRAC-1,NFXR,             
+!    &       dtlw,dtsw, lsswr,lslwr,lssav,                              
+     &       dtlw,dtsw, lsswr,lslwr,lssav,shoc_cld,lmfshal,lmfdeep2,    
+     &       NGPTC,njeff,LEVR,me, lprnt, ipt, kdt, deltaq,sup,cnvw,cnvc,
 
 !  ---  outputs:
-     &       swh(1:ngptc,1:levr,iblk,lan),topfsw,sfcfsw,dswcmp,uswcmp,  &
-     &       sfalb(lon,lan),coszen_v,coszdg_v,                          &
-     &       hlw(1:ngptc,1:levr,iblk,lan),topflw,sfcflw,tsflw(lon,lan), &
-     &       sfcemis(lon,lan),cldcov_v,                                 &
+     &       swh(1:ngptc,1:levr,iblk,lan),topfsw,sfcfsw,dswcmp,uswcmp,  
+     &       sfalb(lon,lan),coszen_v,coszdg_v,                          
+     &       hlw(1:ngptc,1:levr,iblk,lan),topflw,sfcflw,tsflw(lon,lan), 
+     &       sfcemis(lon,lan),cldcov_v,                                 
 !  ---  input/output:
-     &       fluxr_v,                                                   & 
-!    &       fluxr_v, dbgu                                              & 
+     &       fluxr_v,                                                    
+!    &       fluxr_v, dbgu                                               
 !! ---  optional outputs:
-     &       htrlw0=hlwc_v,htrsw0=swhc_v                                &
+     &       htrlw0=hlwc_v,htrsw0=swhc_v                                
 
-!!   &,      HTRSWB=htrswb(1,1,1,iblk,lan),                             &
-!!   &,      HTRLWB=htrlwb(1,1,1,iblk,lan)                              &
+!!   &,      HTRSWB=htrswb(1,1,1,iblk,lan),                             
+!!   &,      HTRLWB=htrlwb(1,1,1,iblk,lan)                              
 
      &     )
 
@@ -801,7 +801,7 @@
               do k=1,levr
                 do i=1,njeff
                   item = lon+i-1
-                  cldcov(k,item,lan) = cldcov(k,item,lan)                 &
+                  cldcov(k,item,lan) = cldcov(k,item,lan)                 
      &                               + cldcov_v(i,k) * raddt
                 enddo
               enddo

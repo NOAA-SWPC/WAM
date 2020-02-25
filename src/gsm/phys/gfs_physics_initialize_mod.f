@@ -135,6 +135,8 @@
       USE gfs_physics_gridgr_mod,  ONLY: gridvar_aldata  
       USE gfs_physics_g3d_mod,     ONLY: g3d_aldata
       USE gfs_physics_g2d_mod,     ONLY: g2d_aldata
+!VAY-2017
+      use wam_diag3d_mod,          only : g3dwamd_alloc
       use gfs_phy_tracer_config,   ONLY: gfs_phy_tracer, tracer_config_init
       use gfs_physics_nst_var_mod
       use module_radsw_parameters, only: nbdsw
@@ -155,7 +157,23 @@
 ! this subroutine sets up the internal state variables,
 ! allocate internal state arrays for initializing the gfs system.
 !----------------------------------------------------------------
-
+!----------------------------------------------------------------
+      use namelist_physics_def,    only: lsidea
+      use date_def,                only: idate
+      use idea_iau_gmao,           only: nxa, nya,nza
+      use idea_iau_gmao,           only: IDEA_INIT_IAU, irec_anl, Last_IAU_DATE8
+      use idea_iau_gmao,           only: Uanl, Vanl, Tanl, Qanl
+      use idea_iau_gmao,           only: Psanl, Tsanl
+      use idea_iau_gmao,           only: IAU_UPDATE_DATE8,  &
+       gpy_Uan, gpy_Van, gpy_Tan, gpy_Qan, gpy_Psan, gpy_Tsan
+    
+      use wam_pass_diag_types,          only : gis_wam
+      use idea_gdas_calendar,           only : IREC_GDAS,init_idea_gdas_calendar
+!      
+!VAY-2017
+! 
+      real, allocatable                  ::    wrkanl(:,:,:) 
+      INTEGER                            ::    IAU_DATE_8, IAU_Irec, Curr_NC_WAMDAY
       integer, parameter :: iunit=101
       type(gfs_physics_internal_state), pointer, intent(inout) :: gis_phy
       integer,                                   intent(out)   :: rc
@@ -297,16 +315,16 @@
       ngrids_sfcc2d = 32        ! No CV, CVB, CVT! includes T2M, Q2M, TISFC
       ngrids_sfcc3d = LSOIL*3   ! for smc,stc,slc
 
-     gis_phy%climate = climate
-     if (climate) then
+      gis_phy%climate = climate
+      if (climate) then
 !      ngrids_flx  = 66+36+8  ! additional 8 gocart avg output fields
 !      ngrids_flx  = 66+36+8+4! additional 8 gocart, 4 sw fluxes
        ngrids_flx  = 66+36+5  ! additional 4 sw fluxes + frozen precip fraction
-     else
+      else
 !      ngrids_flx  = 66+43+8  ! additional 8 gocart avg output fields
 !      ngrids_flx  = 66+43+8+4! additional 8 gocart, 4 sw fluxes
        ngrids_flx  = 66+43+5  ! additional 4 sw fluxes + frozen precip fraction
-     endif
+      endif
  
       nfxr        = 39               ! Add AOD
       ngrids_gg   = 2+LEVS*(4+ntrac)
@@ -608,6 +626,7 @@
 
       if (nstf_name(1) > 0) then
         call nstvar_aldata(lonr,lats_node_r_max,gis_phy%nst_fld,ierr)
+        call nst_init(gis_phy%nst_fld, ierr)
       endif
 
 !    Add (Xingren Wu)
@@ -820,6 +839,76 @@
 !      enddo                                             
 !!
 !!
+!VAY-2017
+
+      if (lsidea) then
+           print *, ' VAY_IDEA_INIT_IAU_FHOUr=', FHOUR
+!           CALL IAU_UPDATE_DATE8(Idate, Fhour,  Curr_NC_WAMDAY)   
+           IAU_DATE_8 = Idate(4)*10000+Idate(2)*100+Idate(3)
+
+           if (me == 0) then
+            print *, ' VAY_IDEA_INIT_IAU= ', IAU_IREC, IAU_DATE_8
+            print *, ' VAY_IDEA_INIT_IAU=Idate4 ', Idate(4)
+           endif
+!
+!              g3dwamd_alloc(dim1, dim2, dim3, g3d_wamfld, iret)
+!
+! How to pass "allocated-type" gis_wam => do_physics_one_step.f
+!
+       call g3dwamd_alloc(lonr, lats_node_r_max, levs, gis_wam, ierr)  
+!
+!
+       if (.not. allocated(gpy_Tan)) then
+       allocate ( gpy_Uan(lonr, lats_node_r, nza), stat = ierr)
+       allocate ( gpy_Van(lonr, lats_node_r, nza), stat = ierr)
+       allocate ( gpy_Tan(lonr, lats_node_r, nza), stat = ierr)
+       allocate ( gpy_Qan(lonr, lats_node_r, nza), stat = ierr)
+!
+       allocate ( gpy_Psan(lonr, lats_node_r),  stat = ierr)
+       allocate ( gpy_Tsan(lonr, lats_node_r),  stat = ierr)
+!
+!RELATE CHOICE of IAU_IREC with HOUR use IAU_DATE_8 => IAU_DATE_10 to select IAU_IREC=[1,2,3,4] =[00,06,12,18]
+!
+         IAU_IREC = 1            !
+	 CALL init_idea_gdas_calendar(IDATE)
+         IAU_IREC = IREC_GDAS
+	 print *, ' VAY2020 do_physics_one_step allocate  gpy_Uan' , ierr 
+       endif
+
+! 
+      
+          call IDEA_INIT_IAU(IAU_DATE_8, IAU_Irec, me)
+          irec_anl = IAU_Irec
+          Last_IAU_DATE8 = IAU_DATE_8
+!           wrkanl =Tanl
+!        print *, 'GM before wrkanl=Tanl ' , me,  maxval(Tanl), minval(Tanl)  
+!        print *, 'GM before wrkanl=Tanl ' , me,  maxval(wrkanl), minval(wrkanl)  
+!        print *, 'GM lonr, latr,levs ', lonr, latr,levs 
+!        print *, 'GM nxa, nya, nza ', nxa, nya, nza 
+!       endif
+!       print *, ' before mpi_bcast(wrkanl ' , me,  maxval(wrkanl), minval(wrkanl)       
+!           call mpi_bcast(wrkanl,lonr*latr*nza, MPI_REAL8, 0, MPI_COMM_ALL,info)
+!           call mpi_barrier(mpi_comm_all,info)
+!       print *, ' after mpi_bcast( wrkanl, ' , me, maxval(wrkanl), minval(wrkanl)      
+!
+!
+       print *, ' before IDEA_IAU_SPLIT3D ' , me
+
+       call IDEA_IAU_SPLIT3D(Uanl,nza, me, gpy_Uan, gis_phy%GLOBAL_LATS_R,gis_phy%LONSPERLAR)
+       call IDEA_IAU_SPLIT3D(Vanl,nza, me, gpy_Van, gis_phy%GLOBAL_LATS_R,gis_phy%LONSPERLAR)
+       call IDEA_IAU_SPLIT3D(Tanl,nza, me, gpy_Tan, gis_phy%GLOBAL_LATS_R,gis_phy%LONSPERLAR)
+       call IDEA_IAU_SPLIT3D(Qanl,nza, me, gpy_Qan, gis_phy%GLOBAL_LATS_R,gis_phy%LONSPERLAR)
+       call IDEA_IAU_SPLIT3D(Psanl,1, me, gpy_Psan, gis_phy%GLOBAL_LATS_R,gis_phy%LONSPERLAR)
+       call IDEA_IAU_SPLIT3D(Tsanl,1, me, gpy_Tsan, gis_phy%GLOBAL_LATS_R,gis_phy%LONSPERLAR)
+
+       print *, 'GM Tanl ' , me,  maxval(Tanl), minval(Tanl)
+       print *, 'GM gpy_Tan ' , me,  maxval(gpy_Tan), minval(gpy_Tan)
+       print *, ' after IDEA_IAU_SPLIT3D ' , me
+
+!     
+
+      endif      !lsidea   
+!           call mpi_barrier(mpi_comm_all,info)
 
 !  ---  set up sigma levels before radiation initialization
 

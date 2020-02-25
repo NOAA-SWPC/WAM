@@ -80,9 +80,9 @@
 !!!!!                       end descriptions                       !!!!!
 !!!!!  ==========================================================  !!!!!
 
-      use resol_def,               ONLY: latr, levs, levp1, lonr, nfxr, &
+      use resol_def,               ONLY: latr, levs, levp1, lonr, nfxr, 
      &                                   ngrids_aer
-      use layout1,                 ONLY: me, nodes, lats_node_r,        &
+      use layout1,                 ONLY: me, nodes, lats_node_r,        
      &                                   nodes_comp
       use namelist_physics_def,    ONLY: gen_coord_hybrid, ldiag3d, 
      &                                   hybrid, fhlwr, fhswr, ens_nam,
@@ -1624,12 +1624,12 @@
 !     integer i,j,k,itop,ibot,k4,l,nundef,ngrid2d,len
       integer ilpds,iyr,imo,ida,ihr,ifhr,ithr,lg,ierr
 
-      integer, dimension(lonr,lats_node_r_max) :: kmsk, kmsk0, kmskcv,  &
+      integer, dimension(lonr,lats_node_r_max) :: kmsk, kmsk0, kmskcv,  
      &                                            kmskgrib
 
       real (kind=kind_io8) :: rtime, rtimsw, rtimlw, rtimer(nfld)
-      real (kind=kind_io8), dimension(lonr,lats_node_r_max) :: slmskloc,&
-     &                                                         glolal,  &
+      real (kind=kind_io8), dimension(lonr,lats_node_r_max) :: slmskloc,
+     &                                                         glolal,  
      &                                                         buffo
 
       real (kind=kind_io8) :: rflux(lonr,lats_node_r_max,nfxr)
@@ -2053,7 +2053,7 @@
       enddo
 
       ngrid2d = ngrid2d+1
-      CALL uninterprez(2,kmsk0,buffo,glolal,global_lats_r,lonsperlar,   &
+      CALL uninterprez(2,kmsk0,buffo,glolal,global_lats_r,lonsperlar,   
      &                 buff_mult_piecef(1,1,ngrid2d))
 
 !     if (ierr /= 0) print*,'wrtsfc gribit_gsm ierr=',ierr,'  27) ',
@@ -2215,7 +2215,7 @@
       do j = 1, lats_node_r
         do i = 1, lonr
           if (rflux(i,j,4) > 0.) then
-            glolal(i,j) = max(0.0, 100.0                                &
+            glolal(i,j) = max(0.0, 100.0                                
      &                  * min(1.0,rflux(i,j,3)/rflux(i,j,4)))
           else
             glolal(i,j) = 0.
@@ -3818,10 +3818,10 @@
       return
       end subroutine flx_wrt_nemsio
 !------------------------------------------------------------------------
-      subroutine wrtflx_w                                               &
+      subroutine wrtflx_w                                               
 !...................................
 !  ---  inputs:
-     &     ( ioproc,noflx,zhour,fhour,idate,colat1,secswr,seclwr,       &
+     &     ( ioproc,noflx,zhour,fhour,idate,colat1,secswr,seclwr,       
      &       slmsk,global_lats_r,lonsperlar)
 !  ---  outputs: ( none )
 ! =================   subprogram documentation block   ================
@@ -3878,10 +3878,10 @@
 !!
 !
 !  ---  inputs:
-      integer, intent(in) :: ioproc, noflx, idate(4),                   &
+      integer, intent(in) :: ioproc, noflx, idate(4),                   
      &                       global_lats_r(latr), lonsperlar(latr)
 
-      real (kind=kind_io8), intent(in) :: zhour, fhour, colat1,         &
+      real (kind=kind_io8), intent(in) :: zhour, fhour, colat1,         
      &                                    secswr, seclwr
       real (kind=kind_io8), intent(in) :: slmsk(lonr,lats_node_r)
 
@@ -3890,30 +3890,30 @@
 !  ---  parameters:
       integer, parameter :: nfld = 29
 !!
-      integer, parameter ::        iprs  =  1, ihgt  =  7, itemp = 11,  &
-     &     itmx  = 15, itmn  = 16, iznlw = 33, imerw = 34, isphum= 51,  &
-     &     ipwat = 54, ipcpr = 59, isr=   194, isnowd= 65, isnod = 66,  &
-     &     icldf = 71, iccldf= 72, islmsk= 81, izorl = 83, ialbdo= 84,  &
-     &     istc  = 86, iveg  = 87, irnof = 90, icemsk= 91, isik  = 92,  &
-     &     ilhflx=121, ishflx=122, izws  =124, imws  =125, irst  =140,  &
-     &     isoilm=144, iep   =145, icldwk=146, izgw  =147, imgw  =148,  &
-     &     ighflx=155, icsusw=160, icsdsw=161, icsulw=162, icsdlw=163,  &
-     &     iuswfc=160, idswfc=161, iulwfc=162, idlwfc=163, inswfc=164,  &
-     &     inlwfc=165, idswvb=166, idswvd=167, idswnb=168, idswnd=169,  &
-     &     icmm  =179, isuntm=191, isbs  =198, ievbs =199, ievcw =200,  &
-     &     iuvbf =200, iuvbfc=201, idswf =204, idlwf =205, iqmx  =204,  &
-     &     iqmn  =205, ichh  =208, itran =210, iuswf =211, iulwf =212,  &
-     &     icpcpr=214, ismcwlt=219,ismcref=220,ihpbl =221, islo  =222,  &
-     &     icnp  =223, istp  =224, ivtp  =225, isnohf=229, isrf  =235,  &
+      integer, parameter ::        iprs  =  1, ihgt  =  7, itemp = 11,  
+     &     itmx  = 15, itmn  = 16, iznlw = 33, imerw = 34, isphum= 51,  
+     &     ipwat = 54, ipcpr = 59, isr=   194, isnowd= 65, isnod = 66,  
+     &     icldf = 71, iccldf= 72, islmsk= 81, izorl = 83, ialbdo= 84,  
+     &     istc  = 86, iveg  = 87, irnof = 90, icemsk= 91, isik  = 92,  
+     &     ilhflx=121, ishflx=122, izws  =124, imws  =125, irst  =140,  
+     &     isoilm=144, iep   =145, icldwk=146, izgw  =147, imgw  =148,  
+     &     ighflx=155, icsusw=160, icsdsw=161, icsulw=162, icsdlw=163,  
+     &     iuswfc=160, idswfc=161, iulwfc=162, idlwfc=163, inswfc=164,  
+     &     inlwfc=165, idswvb=166, idswvd=167, idswnb=168, idswnd=169,  
+     &     icmm  =179, isuntm=191, isbs  =198, ievbs =199, ievcw =200,  
+     &     iuvbf =200, iuvbfc=201, idswf =204, idlwf =205, iqmx  =204,  
+     &     iqmn  =205, ichh  =208, itran =210, iuswf =211, iulwf =212,  
+     &     icpcpr=214, ismcwlt=219,ismcref=220,ihpbl =221, islo  =222,  
+     &     icnp  =223, istp  =224, ivtp  =225, isnohf=229, isrf  =235,  
      &     isnc  =238, iust  =253
 
-      integer, parameter ::        isfc  =  1, itoa  =  8, ielev =105,  &
-     &     isglev=109, idbls =111, i2dbls=112, islc  =160, icolmn=200,  &
-     &     iblbl =209, ibltl =210, ibllyr=211, ilcbl =212, ilctl =213,  &
-     &     ilclyr=214, imcbl =222, imctl =223, imclyr=224, ihcbl =232,  &
+      integer, parameter ::        isfc  =  1, itoa  =  8, ielev =105,  
+     &     isglev=109, idbls =111, i2dbls=112, islc  =160, icolmn=200,  
+     &     iblbl =209, ibltl =210, ibllyr=211, ilcbl =212, ilctl =213,  
+     &     ilclyr=214, imcbl =222, imctl =223, imclyr=224, ihcbl =232,  
      &     ihctl =233, ihclyr=234, icvbl =242, icvtl =243, icvlyr=244 
 
-      integer, parameter ::        ifhour=  1, ifday =  2, inst  = 10,  &
+      integer, parameter ::        ifhour=  1, ifday =  2, inst  = 10,  
      &                             iwin  =  2, iavg  =  3, iacc  =  4
 
 !  ---  local variables:
@@ -3935,16 +3935,16 @@
 
 !  ---  label indexes:
       integer, dimension(nfld) :: ipur, itlr
-      data  ipur / iulwf , iuswf , iuswf , idswf , icldf , iprs  ,      &
-     &             iprs  , itemp , icldf , iprs  , iprs  , itemp ,      &
-     &             icldf , iprs  , iprs  , itemp , iuvbf , iuvbfc,      &
-     &             idswf , icsulw, icsusw, icsdlw, icsusw, icsdsw,      &
+      data  ipur / iulwf , iuswf , iuswf , idswf , icldf , iprs  ,      
+     &             iprs  , itemp , icldf , iprs  , iprs  , itemp ,      
+     &             icldf , iprs  , iprs  , itemp , iuvbf , iuvbfc,      
+     &             idswf , icsulw, icsusw, icsdlw, icsusw, icsdsw,      
      &             icsulw, idswvb, idswvd, idswnb, idswnd /
 
-      data  itlr / itoa  , itoa  , isfc  , isfc  , ihclyr, ihctl ,      &
-     &             ihcbl , ihctl , imclyr, imctl , imcbl , imctl ,      &
-     &             ilclyr, ilctl , ilcbl , ilctl , isfc  , isfc  ,      &
-     &             itoa  , itoa  , itoa  , isfc  , isfc  , isfc  ,      &
+      data  itlr / itoa  , itoa  , isfc  , isfc  , ihclyr, ihctl ,      
+     &             ihcbl , ihctl , imclyr, imctl , imcbl , imctl ,      
+     &             ilclyr, ilctl , ilcbl , ilctl , isfc  , isfc  ,      
+     &             itoa  , itoa  , itoa  , isfc  , isfc  , isfc  ,      
      &             isfc  , isfc  , isfc  , isfc  , isfc   /
 !
 !
@@ -4567,7 +4567,7 @@
         if (ierr == 0) then
           call wryte(noflx,lg,g)
         else
-          print*,'wrtsfc gribit ierr=',ierr,'  33) ',                   &
+          print*,'wrtsfc gribit ierr=',ierr,'  33) ',                   
      &     'Downward solar radiation flux (W/m**2) at TOA'
         endif
 !..........................................................

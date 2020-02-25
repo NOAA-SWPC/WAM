@@ -1,16 +1,21 @@
 noinst_LIBRARIES = libgfsphysf.a libgfsphys.a
 
 libgfsphys_a_FFLAGS = $(FC_MODINC) ../libutil $(FC_MODINC) ../dyn $(FC_MODINC) ../../phys $(FC_MODINC) ../../share
-libgfsphys_a_FFLAGS += $(FC_AUTODOUBLE) $(FCFLAGS_FIXED)
+libgfsphys_a_FFLAGS += $(FC_AUTODOUBLE) $(FCFLAGS_FIXED) -132 -g -traceback -check bounds
 
 libgfsphys_a_SOURCES = aoicpl_prep.f compns_physics.f coordinate_def.f \
 	coundummy.f d3d_def.f dfi_fixwr.f do_physics_one_step.f fix_fields.f fix_fields_idea_rst.f \
 	fld_collect.f fld_collect_nst.f gbphys_adv_hyb_gc.f gbphys_adv_hyb_gc_h.f gcycle.f \
 	getcon_physics.f get_lats_node_shuff_r_fix.f GFS_simple_scatter.f gg_def.f \
-	glats_physics.f gloopb.f gloopr.f gribit_gsm.f hpmdummy.f info.f lats_shuff.f layout1.f \
+	glats_physics.f gloopb.f gloopr.f gribit_gsm.f hpmdummy.f idea_das_gain3d.f \
+	idea_das_ioproc.f idea_das_smlt.f idea_das_utils.f idea_gdas_calendar.f \
+	idea_iau_split.f idea_lat62_gaus.f idea_ncout_diag.f \
+	idea_ncout_gain3d.f idea_ncout_phys.f idea_saber.f idea_wamdiag3d_mod.f wam_pass_diag_types.f \
+	idea_write_wamday.f idea_write_wamhour.f idea_writediag_wamday.f info.f lats_shuff.f layout1.f \
 	lon_lat_para.f mod_state.f mpi_def.f mpi_quit.f namelist_physics_def.f \
 	para_fixio_w.f para_nst_w.f read_fix.f reduce_lons_grid_module.f \
-	resol_def.f setlats.f setlats_r_slg.f sortrx.f vert_def.f wrt3d.f \
+	resol_def.f setlats.f setlats_r_slg.f sortrx.f \
+	vert_def.f wrt3d.f \
 	wrt3d_hyb.f wrtout_physics.f function_indlsev function_indlsod
 
 libgfsphysf_a_FFLAGS = -I $(top_srcdir)/include \
@@ -49,7 +54,9 @@ libgfsphys_a-do_physics_one_step.$(OBJEXT) : libgfsphys_a-namelist_physics_def.$
 	libgfsphys_a-d3d_def.$(OBJEXT) libgfsphysf_a-gfs_physics_sfc_flx_mod.$(OBJEXT) \
 	libgfsphysf_a-gfs_physics_gridgr_mod.$(OBJEXT) libgfsphysf_a-gfs_physics_aoi_var_mod.$(OBJEXT) \
 	libgfsphysf_a-gfs_physics_nst_var_mod.$(OBJEXT) libgfsphys_a-vert_def.$(OBJEXT) \
-	libgfsphysf_a-gfs_physics_g3d_mod.$(OBJEXT) libgfsphys_a-layout1.$(OBJEXT)
+	libgfsphys_a-idea_ncout_phys.$(OBJEXT) libgfsphys_a-idea_ncout_diag.$(OBJEXT) \
+	libgfsphys_a-idea_saber.$(OBJEXT) libgfsphysf_a-gfs_physics_g3d_mod.$(OBJEXT) \
+	libgfsphys_a-layout1.$(OBJEXT) libgfsphys_a-wam_pass_diag_types.$(OBJEXT)
 libgfsphys_a-fix_fields.$(OBJEXT) : libgfsphys_a-namelist_physics_def.$(OBJEXT) \
 	libgfsphys_a-resol_def.$(OBJEXT) libgfsphysf_a-gfs_physics_sfc_flx_mod.$(OBJEXT) \
 	libgfsphysf_a-gfs_physics_nst_var_mod.$(OBJEXT) libgfsphys_a-layout1.$(OBJEXT) libgfsphys_a-gg_def.$(OBJEXT)
@@ -69,15 +76,41 @@ libgfsphys_a-getcon_physics.$(OBJEXT) : function_indlsev function_indlsod libgfs
 libgfsphys_a-get_lats_node_shuff_r_fix.$(OBJEXT) : libgfsphys_a-resol_def.$(OBJEXT) libgfsphys_a-layout1.$(OBJEXT)
 libgfsphys_a-GFS_simple_scatter.$(OBJEXT) : libgfsphys_a-resol_def.$(OBJEXT) libgfsphys_a-layout1.$(OBJEXT)
 libgfsphys_a-gloopb.$(OBJEXT) : libgfsphys_a-namelist_physics_def.$(OBJEXT) libgfsphysf_a-gfs_physics_gridgr_mod.$(OBJEXT) \
-	libgfsphysf_a-gfs_physics_nst_var_mod.$(OBJEXT) libgfsphys_a-coordinate_def.$(OBJEXT) \
-	libgfsphys_a-resol_def.$(OBJEXT) libgfsphys_a-mpi_def.$(OBJEXT) libgfsphys_a-d3d_def.$(OBJEXT) \
-	libgfsphysf_a-gfs_physics_sfc_flx_mod.$(OBJEXT) libgfsphysf_a-gfs_physics_aoi_var_mod.$(OBJEXT) \
-	libgfsphys_a-vert_def.$(OBJEXT) libgfsphysf_a-gfs_physics_g3d_mod.$(OBJEXT) libgfsphys_a-layout1.$(OBJEXT) libgfsphys_a-gg_def.$(OBJEXT)
+        libgfsphysf_a-gfs_physics_nst_var_mod.$(OBJEXT) libgfsphys_a-coordinate_def.$(OBJEXT) \
+        libgfsphys_a-resol_def.$(OBJEXT) libgfsphys_a-mpi_def.$(OBJEXT) libgfsphys_a-d3d_def.$(OBJEXT) \
+        libgfsphysf_a-gfs_physics_sfc_flx_mod.$(OBJEXT) libgfsphysf_a-gfs_physics_aoi_var_mod.$(OBJEXT) \
+        libgfsphys_a-vert_def.$(OBJEXT) libgfsphysf_a-gfs_physics_g3d_mod.$(OBJEXT) \
+	libgfsphys_a-layout1.$(OBJEXT) libgfsphys_a-gg_def.$(OBJEXT) libgfsphys_a-idea_wamdiag3d_mod.$(OBJEXT)
 libgfsphys_a-gloopr.$(OBJEXT) : libgfsphys_a-namelist_physics_def.$(OBJEXT) \
-	libgfsphysf_a-gfs_physics_gridgr_mod.$(OBJEXT) libgfsphys_a-resol_def.$(OBJEXT) \
-	libgfsphys_a-d3d_def.$(OBJEXT) libgfsphysf_a-gfs_physics_aoi_var_mod.$(OBJEXT) \
-	libgfsphysf_a-gfs_physics_g3d_mod.$(OBJEXT) libgfsphys_a-layout1.$(OBJEXT) libgfsphys_a-gg_def.$(OBJEXT)
+        libgfsphysf_a-gfs_physics_gridgr_mod.$(OBJEXT) libgfsphys_a-resol_def.$(OBJEXT) \
+        libgfsphys_a-d3d_def.$(OBJEXT) libgfsphysf_a-gfs_physics_aoi_var_mod.$(OBJEXT) \
+        libgfsphysf_a-gfs_physics_g3d_mod.$(OBJEXT) libgfsphys_a-layout1.$(OBJEXT) libgfsphys_a-gg_def.$(OBJEXT)
 libgfsphys_a-gribit_gsm.$(OBJEXT) : libgfsphys_a-namelist_physics_def.$(OBJEXT)
+libgfsphys_a-idea_das_gain3d.$(OBJEXT) : libgfsphys_a-resol_def.$(OBJEXT)
+libgfsphys_a-idea_das_ioproc.$(OBJEXT) : libgfsphys_a-idea_das_smlt.$(OBJEXT) libgfsphys_a-idea_saber.$(OBJEXT)
+libgfsphys_a-idea_das_smlt.$(OBJEXT) : libgfsphys_a-resol_def.$(OBJEXT) libgfsphys_a-idea_das_utils.$(OBJEXT)
+libgfsphys_a-idea_das_utils.$(OBJEXT) : libgfsphys_a-resol_def.$(OBJEXT)
+libgfsphys_a-idea_gdas_calendar.$(OBJEXT) : libgfsphys_a-resol_def.$(OBJEXT)
+libgfsphys_a-idea_iau_split.$(OBJEXT) : libgfsphys_a-resol_def.$(OBJEXT) libgfsphys_a-layout1.$(OBJEXT)
+libgfsphys_a-idea_lat62_gaus.$(OBJEXT) :libgfsphys_a-resol_def.$(OBJEXT)
+libgfsphys_a-idea_ncout_diag.$(OBJEXT) : libgfsphys_a-resol_def.$(OBJEXT) libgfsphys_a-layout1.$(OBJEXT) \
+          libgfsphys_a-idea_wamdiag3d_mod.$(OBJEXT) libgfsphys_a-wam_pass_diag_types.$(OBJEXT) 
+libgfsphys_a-idea_ncout_gain3d.$(OBJEXT) : libgfsphys_a-resol_def.$(OBJEXT) libgfsphys_a-layout1.$(OBJEXT) \
+          libgfsphys_a-mpi_def.$(OBJEXT)
+libgfsphys_a-idea_ncout_phys.$(OBJEXT) : libgfsphys_a-resol_def.$(OBJEXT) libgfsphys_a-layout1.$(OBJEXT)
+libgfsphys_a-idea_saber.$(OBJEXT) : libgfsphys_a-idea_das_smlt.$(OBJEXT)
+libgfsphys_a-idea_wamdiag3d_mod.$(OBJEXT) : libgfsphys_a-resol_def.$(OBJEXT)
+libgfsphys_a-wam_pass_diag_types.$(OBJEXT) : libgfsphys_a-idea_wamdiag3d_mod.$(OBJEXT)
+libgfsphys_a-idea_write_wamday.$(OBJEXT) : libgfsphys_a-resol_def.$(OBJEXT) libgfsphys_a-layout1.$(OBJEXT) \
+          libgfsphys_a-mpi_def.$(OBJEXT) libgfsphys_a-idea_ncout_phys.$(OBJEXT) libgfsphys_a-gg_def.$(OBJEXT) \
+	  libgfsphys_a-coordinate_def.$(OBJEXT) libgfsphys_a-idea_gdas_calendar.$(OBJEXT) \
+	  libgfsphys_a-idea_wamdiag3d_mod.$(OBJEXT)
+libgfsphys_a-idea_write_wamhour.$(OBJEXT) : libgfsphys_a-resol_def.$(OBJEXT) libgfsphys_a-layout1.$(OBJEXT) \
+          libgfsphys_a-idea_wamdiag3d_mod.$(OBJEXT) libgfsphysf_a-gfs_physics_gridgr_mod.$(OBJEXT) \
+	  libgfsphys_a-wam_pass_diag_types.$(OBJEXT)
+libgfsphys_a-idea_writediag_wamday.$(OBJEXT) : libgfsphys_a-resol_def.$(OBJEXT) libgfsphys_a-layout1.$(OBJEXT) \
+          libgfsphys_a-mpi_def.$(OBJEXT) libgfsphys_a-idea_ncout_diag.$(OBJEXT) libgfsphys_a-gg_def.$(OBJEXT) \
+	  libgfsphys_a-coordinate_def.$(OBJEXT) libgfsphys_a-idea_gdas_calendar.$(OBJEXT) 
 libgfsphys_a-info.$(OBJEXT) : libgfsphys_a-resol_def.$(OBJEXT) libgfsphys_a-layout1.$(OBJEXT)
 libgfsphys_a-lats_shuff.$(OBJEXT) : libgfsphys_a-resol_def.$(OBJEXT) libgfsphys_a-layout1.$(OBJEXT)
 libgfsphys_a-lon_lat_para.$(OBJEXT) : libgfsphys_a-resol_def.$(OBJEXT) libgfsphys_a-layout1.$(OBJEXT) libgfsphys_a-gg_def.$(OBJEXT)
@@ -108,7 +141,8 @@ libgfsphysf_a-gfs_physics_finalize_mod.$(OBJEXT) : libgfsphysf_a-gfs_physics_int
 libgfsphysf_a-gfs_physics_getcf_mod.$(OBJEXT) : libgfsphysf_a-gfs_physics_err_msg_mod.$(OBJEXT) \
 	libgfsphysf_a-gfs_physics_internal_state_mod.$(OBJEXT)
 libgfsphysf_a-gfs_physics_grid_comp_mod.$(OBJEXT) : libgfsphys_a-namelist_physics_def.$(OBJEXT) \
-	libgfsphys_a-resol_def.$(OBJEXT) libgfsphys_a-mpi_def.$(OBJEXT) libgfsphysf_a-gfs_physics_finalize_mod.$(OBJEXT) \
+	libgfsphys_a-resol_def.$(OBJEXT) libgfsphys_a-mpi_def.$(OBJEXT) \
+	libgfsphysf_a-gfs_physics_finalize_mod.$(OBJEXT) \
 	libgfsphysf_a-gfs_physics_initialize_mod.$(OBJEXT) libgfsphysf_a-gfs_physics_err_msg_mod.$(OBJEXT) \
 	libgfsphysf_a-gfs_phy_states_mod.$(OBJEXT) libgfsphysf_a-gfs_physics_internal_state_mod.$(OBJEXT) \
 	libgfsphysf_a-gfs_physics_getcf_mod.$(OBJEXT) libgfsphysf_a-gfs_physics_run_mod.$(OBJEXT) \
@@ -123,6 +157,7 @@ libgfsphysf_a-gfs_physics_initialize_mod.$(OBJEXT) : libgfsphys_a-namelist_physi
 	libgfsphys_a-d3d_def.$(OBJEXT) libgfsphysf_a-gfs_physics_aoi_var_mod.$(OBJEXT) \
 	libgfsphys_a-vert_def.$(OBJEXT) libgfsphysf_a-gfs_physics_g3d_mod.$(OBJEXT) \
 	libgfsphys_a-layout1.$(OBJEXT) libgfsphys_a-gg_def.$(OBJEXT)
+libgfsphysf_a-gfs_physics_gridgr_mod.$(OBJEXT) : libgfsphys_a-resol_def.$(OBJEXT)
 libgfsphysf_a-gfs_physics_internal_state_mod.$(OBJEXT) : libgfsphysf_a-gfs_physics_gridgr_mod.$(OBJEXT) \
 	libgfsphysf_a-gfs_physics_nst_var_mod.$(OBJEXT) libgfsphysf_a-gfs_physics_g2d_mod.$(OBJEXT) \
 	libgfsphysf_a-gfs_physics_sfc_flx_mod.$(OBJEXT) libgfsphysf_a-gfs_physics_namelist_mod.$(OBJEXT) \
@@ -137,5 +172,6 @@ libgfsphysf_a-gfs_physics_start_time_get_mod.$(OBJEXT) : libgfsphysf_a-sfcio_mod
 libgfsphysf_a-gfs_phy_states_mod.$(OBJEXT) : libgfsphys_a-namelist_physics_def.$(OBJEXT) \
 	libgfsphysf_a-gfs_physics_grid_create_mod.$(OBJEXT) libgfsphysf_a-gfs_physics_g2d_mod.$(OBJEXT) \
 	libgfsphysf_a-gfs_physics_err_msg_mod.$(OBJEXT) libgfsphysf_a-gfs_physics_internal_state_mod.$(OBJEXT) \
-	libgfsphysf_a-gfs_physics_namelist_mod.$(OBJEXT) libgfsphysf_a-gfs_physics_add_get_state_ESMFField_mod.$(OBJEXT) \
+	libgfsphysf_a-gfs_physics_namelist_mod.$(OBJEXT) \
+	libgfsphysf_a-gfs_physics_add_get_state_ESMFField_mod.$(OBJEXT) \
 	libgfsphys_a-gg_def.$(OBJEXT)

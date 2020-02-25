@@ -7,7 +7,8 @@
      &                     xlon,xlat,oro,cozen,swh,hlw,dt6dt,           
      &                     thermodyn_id,sfcpress_id,gen_coord_hybrid,me,
      &                     mpi_ior,mpi_comm, fhour, kstep,
-     &                     gzmt, gmmt, gjhr, gshr, go2dr)
+     &                     a_gu, a_gv, a_gt, a_gqh, a_ps, a_ts, nzza,
+     &                     gzmt, gmmt, gjhr, gshr, go2dr,zgwam)
 
 !-----------------------------------------------------------------------
 ! add temp, wind changes due to viscosity and thermal conductivity
@@ -64,6 +65,10 @@
 !     use  wam_f107_kp_mod, only : f107_fix, f107d_fix, kp_fix
       use  idea_solar_input,only : f107_fix, f107a_fix, kp_fix 
 !
+!
+      use idea_iau_gmao,     only : nza                   !upper level + nudging parameters
+      use idea_iau_gmao,     only : ktrans, knudge, wa_nudge, wm_nudge
+
       use  wam_f107_kp_mod, only : fix_spweather_data
 !     use  wam_f107_kp_mod, only : swpcf107_fix, swpcf107d_fix, swpckp_fix
 !
@@ -98,6 +103,7 @@
       integer, intent(in) :: im              ! number of data points in adt (first dim)
       integer, intent(in) :: ix              ! max data points in adt (first dim)
       integer, intent(in) :: levs            ! number of pressure levels
+      integer, intent(in) :: nzza            ! number of pressure levels for
       integer, intent(in) :: lat             ! latitude index
       integer, intent(in) :: ntrac           ! number of tracer
       integer, intent(in) :: me              ! my pe
@@ -124,12 +130,17 @@
       real, intent(inout) :: adt(ix,levs)       ! temperature
       real, intent(inout) :: adu(ix,levs)       ! W-E u
       real, intent(inout) :: adv(ix,levs)       ! S-N v
-!
+      real, intent(inout) :: zgwam(ix,levs)     ! geopotential in KM
       real, intent(inout) :: dt6dt(ix,levs,6)   ! diagnostic 3D-array ....never used 
 !                                               !
 ! (2)-wtot-merged (SH-LW, H2O, CO2, O2,O3), (4-5-6) for Strobel +Cooling
 ! (1)-MT_SHEAT(EUV+?),  (3) - Joule heating
 !
+      real, dimension(ix, nzza), intent(in) :: a_gu, a_gv, a_gt, a_gqh
+      real, dimension(im), intent(in)       :: a_ps, a_ts
+!
+
+
       integer,intent(in)  :: thermodyn_id, sfcpress_id
       logical,intent(in)  :: gen_coord_hybrid
 !
@@ -212,6 +223,14 @@
 !===============================================
 ! option 1:  SPW_DRIVERS ='swpc_fst'
 !
+
+        dudt = 0.
+	dvdt = 0.
+	dtdt = 0.
+
+        
+       CALL  CURRENT_NCEP_JDAT(idat_wam, Fhour, Mjdat, Hcur) 
+       
        if (trim(SPW_DRIVERS)=='swpc_fst') then
           f107_curdt  = f107_wy (kdt_interval) * interpolate_weight  + f107_wy (kdt_interval+1) * (1-interpolate_weight)
           kp_curdt    = kp_wy   (kdt_interval) * interpolate_weight  + kp_wy   (kdt_interval+1) * (1-interpolate_weight)
@@ -240,7 +259,7 @@
        endif
 !===============================================
 ! option 2:  SPW_DRIVERS ='sair_wam', only year of 2012
-!
+         
          if (trim(SPW_DRIVERS)=='sair_wam') then
  
 !--------------------------------------------------------------------
@@ -311,7 +330,24 @@
           f107d_curdt = f107a_fix
         endif
 !
-
+!          if (me == 0 .and. kstep <= 10) then
+!            print *  
+!            print *, 'idea_phys VAY-SPW_DRIVERS:', trim(SPW_DRIVERS)
+!            print *, f107_curdt, kp_curdt, 'F107-kp-VAY    '      
+!               
+!            print *, 'GMAO: VAY TS ', minval(a_ts), maxval(a_ts)
+!            print *, 'GMAO: VAY PS ', minval(a_ps), maxval(a_ps)
+!            print *, 'GMAO: VAY U',minval(a_gu(1:im,:)), maxval(a_gu(1:im,:))
+!            print *, 'GMAO: VAY V',minval(a_gv(1:im,:)), maxval(a_gv(1:im,:))
+!            print *
+!            do k=1, ktrans
+!            print *, k, wa_nudge(k),wm_nudge(k), 'wa-wm:VAY-nudge'
+!         enddo
+!         print *
+!         endif
+!            print *, 'GMAO: VAY TS ', minval(a_ts), maxval(a_ts)
+!            print *, 'GMAO: VAY PS ', minval(a_ps), maxval(a_ps)
+!      print *, 'GMAO: VAY U',minval(a_gu(1:im,:)), maxval(a_gu(1:im,:))
 !       if (me == 0 .and. kstep <= 1) then
 !           print *
 !           print *, kdt_interval, interpolate_weight
@@ -355,18 +391,37 @@
 !
 !VAY, Nov 2016: single call for: phii,phil, zg, grav, exner, delpa
 !
+
+
+
+      do k=1, ktrans
+      do i=1,im
+         adt(i,k) = wm_nudge(k)*adt(i,k)+wa_nudge(k)*a_gt(i,k)
+         adu(i,k) = wm_nudge(k)*adu(i,k)+wa_nudge(k)*a_gu(i,k)
+         adv(i,k) = wm_nudge(k)*adV(i,k)+wa_nudge(k)*a_gv(i,k)
+       enddo
+      enddo
+!      if (me == 0 ) then 
+!      print *, 'ADT_BEFOREget_exner_phi_zgrav ', maxval(adt), minval(adt) 
+!      endif
+
+      
       CALL get_exner_phi_zgrav(ix, im, levs, ntrac,
      & adr, adt,
      & prsl,  prsi, rdelp, prsik, prslk,phii,phil, 
      & thermodyn_id, sfcpress_id, gen_coord_hybrid,                                    
      & oro, zg, grav, exner, delpa) 
-!
+!      if (me == 0 ) then 
+!      print *, 'ADT_AFTERget_exner_phi_zgrav ', maxval(adt), minval(adt) 
+!      endif
 !      print *,'VAY:Grav-g81',maxval(prsi),maxval(zg),maxval(nint(grav))   
 !      call mpi_WAM_quit(me, 'after get_exner_phi_zgrav in idea_phys.f ')
 !
 !    get presolar-related: cos solar zenith angle (instant)
 !
 !
+
+          
       call presolar(im,ix,solhr,slag,                                   
      &              sinlat,coslat,sdec,cdec,xlon,xlat                   
      &              ,cospass,dayno,utsec,sda                            
@@ -407,12 +462,17 @@
 ! Get all needed vertical related parameters for merging the 
 ! coupling back IPE arrays into the WAM model arrays.
 !===============================================================
+        do k=1, levs
+        do i=1, im
+          zgwam(i,k) = zg(i,k)*.001
+       enddo
+       enddo
       IF(ipe_to_wam_coupling) THEN
         call get_vertical_parameters_for_merge(gzmt,  
      &    im, ix, lowst_ipe_level, levs, plow, phigh, 
      &    xpk_low, xpk_high, prsl)
       END IF
-
+      
 !=================================================================
 !=> compute rho
 !=> mid-layers: [o_n, o2_n, o3_n, n2_n, nair]
@@ -422,14 +482,18 @@
      &                 dtp,o_n,o2_n,o3_n, n2_n,nair,rho,am, am29,
      & cospass, dayno, zg, f107_curdt, f107d_curdt, me, go2dr, plow,
      & phigh, xpk_low, xpk_high)
-!        if ( me == 0) print *, maxval(am29), minval(am29), 'VAY-am29C
+!      if (me == 0 ) then 
+!      print *, 'ADT_AFTERidea_tracer ', maxval(adt), minval(adt) 
+!      endif
 !
 !
 ! calculate cp and precompute [1/cp/rho =array] for dT/dt = Q/cp/rho
 !=================================================================
+!      print *,'getcp_idea'
+      
       call getcp_idea(im,ix,levs,ntrac,adr,cp,                          
      &                thermodyn_id,gen_coord_hybrid)
-
+      
 !============================================
 ! dissipation +GW physics/turbulent eddies
 ! VAY-2016/11  version will be available
@@ -449,9 +513,13 @@
 !  dissipation of 2013-idea: 
 !  only molecular diss. (viscosity + conductivity) no eddy diff. for tracers
 !  dissipation of 2013-idea:
+!      print *,'idea_phys_dissipation'
+      
       call idea_phys_dissipation(im,ix,levs,grav,prsi,prsl,             
      &      adu,adv,adt,o_n,o2_n,n2_n,dtp,cp, rho,dt6dt)
-!
+!      if (me == 0 ) then 
+!      print *, 'ADT_AFTERidea_phys_dissipation ', maxval(adt), minval(adt) 
+!      endif
 !--------------------------------------------------------------------------
 !      endif
 !============================================
@@ -467,16 +535,21 @@
 !
 !  Start WAM radiation...o3_n ...compilation of global O3 + O3_gsm[1:k71]
 !
+      
       call o3pro(im,ix,levs,ntrac,adr,am,nair,o3_ng)
 !
 ! get solar heating (EUV, UV-SRC-SRV-Lya) and NO cooling
 ! 
+      
       call idea_sheat(im,ix,levs,adt,dtRad,cospass,o_n,o2_n,o3_n,n2_n,      
      &                rho, cp,lat,dayno,prsl,zg,grav,am,maglat,dt6dt,
      &                f107_curdt, f107d_curdt, kpa_curdt)
-
+!      if (me == 0 ) then 
+!      print *, 'ADT_AFTERidea_sheat ', maxval(adt), minval(adt) 
+!      endif
 ! Merge the  IPE back coupling WAM dtrad array into WAM.
 !-------------------------------------------------------
+      
       IF(ipe_to_wam_coupling) THEN
         DO k = lowst_ipe_level, levs
           DO i = 1, im
@@ -489,11 +562,12 @@
      &    im, ix, levs, lowst_ipe_level, prsl, plow, phigh,
      &    xpk_low, xpk_high)
       END IF
+       
 !  
 ! 
 ! radiation
 ! co2 cooling, heating
-
+!      print *,'idea_co2'
       call idea_co2(im,ix,levs,nlev_co2,ntrac,grav,cp,adr,adt,          
      &              dtco2c,cospass,dtco2h)
 
@@ -536,6 +610,8 @@
 ! VAY-2017: new add thermospheric/MLT dtrad to merge take-out dt6dt
 !
 !====================================================================== 
+
+      
       call rad_merge(im,ix,levs,hlw,swh,prsi,prsl,wtot,
      &               xmu,dtrad,dtco2c,dtco2h,dth2oh,dth2oc,dto3)
       do k=1,levs
@@ -546,6 +622,9 @@
 ! 
         enddo
       enddo
+          if (me == 0 ) then
+!	  print *,'adtbeforeion=',maxval(adt)
+	  endif
 !=========================================================================
 ! the last piece "simple" ionospheric block with empirical ION-RE moddels
 !=========================================================================
@@ -553,10 +632,22 @@
      &              adu,adv,adt,dudt,dvdt,dtdt,rho,xlat,xlon,ix,im,levs,
      &              dayno,utsec,sda,maglon,maglat,btot,dipang,essa,
      &              f107_curdt, f107d_curdt, kp_curdt, nhp_curdt, 
-     &              nhpi_curdt, shp_curdt, shpi_curdt, SPW_DRIVERS,
-     &              swbz_curdt, swvel_curdt)                                                
+     &              nhpi_curdt, shp_curdt, shpi_curdt,
+     &              swbz_curdt, swvel_curdt,me)                                     !      subroutine idea_ion(pres,solhr,cospass,zg,grav,o_n,o2_n,n2_n,cp,       
+!     &  adu,adv,adt,dudt,dvdt,dtdt,rho,rlat,rlon,ix,im,levs,              
+!     &  dayno,utsec,sda,maglon,maglat,btot,dipang,essa,
+!     &  f107, f107d, kp, nhp, nhpi, shp, shpi, SPW_DRIVERS,
+!     &  swbz, swvel)           
 ! Merge the  IPE back coupling WAM dudt, dvdt and dtdt arrays into WAM.
 !----------------------------------------------------------------------
+      if (me == 0 ) then 
+!      print *, 'ADT_AFTERidea_ion ', maxval(adt), minval(adt) 
+      endif
+!       goto 888
+!      if (me == 0) then
+!         print *, 'Vphys.f-Tadt: ',  maxval(adT)
+!	 endif
+      
       IF(ipe_to_wam_coupling) THEN
         call idea_merge_ipe_to_wam(GZMT, dudt,
      &    im, ix, levs, lowst_ipe_level, prsl, plow, phigh,
@@ -568,7 +659,16 @@
      &    im, ix, levs, lowst_ipe_level, prsl, plow, phigh,
      &    xpk_low, xpk_high)
       END IF
-!
+!       if (me == 0) then
+!         print *, 'Vphys.f-Tadtipedtdt: ',  maxval(adT),maxval(dtdt)
+!	 endif
+!      goto 888
+!       if (me == 0) then
+!         print *, 'dtpphys.f-T: ',  maxval(adT), minval(dtdt), kstep, dtp
+!	endif 
+	
+888    continue
+      
       do k=1,levs
         do i=1,im
           adu(i,k) = adu(i,k) + dtp*dudt(i,k)
@@ -576,18 +676,25 @@
           adt(i,k) = adt(i,k) + dtp*dtdt(i,k)
         enddo
       enddo
+
+!       if (me == 0) then
+!         print *, 'afterdtpphys.f-T: ',  maxval(adT), minval(dtdt), kstep, dtp
+!	endif 
+
+
 !======================= WAM-IPE physics is completed ========
-      return
+!      return
 !=============================================================
 !
 !   debug print-outs
 !
 !================================================================
-!       if (me == 0) then
-!        print *, 'i_phys.f-T: ', maxval(adT), minval(adT)
-!         print *, 'i_phys.f-U: ', maxval(adU), minval(adu)
-!         print *, 'i_phys.f-U: ', maxval(adV), minval(adV)
-!       endif
+
+       if (me == 0) then
+         print *, 'i_phys.f-T: ',  maxval(adT), minval(adT), kstep, dtp
+!         print *, 'i_phys.f-U: ', maxval(adU), minval(adu),  kstep
+!         print *, 'i_phys.f-U: ', maxval(adV), minval(adV),  kstep
+       endif
       return
       end subroutine idea_phys
 

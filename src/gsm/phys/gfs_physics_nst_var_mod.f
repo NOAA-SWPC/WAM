@@ -9,6 +9,8 @@
 !
 !  May 2008      Shrinivas Moorthi Initial code.
 !  Aug 2009      Xu Li for DTM-1p
+!  Jun 2016      Fanglin Yang remove pointer for digital filter
+!  Jun 2016      Xu Li add nst_init
 !
 ! !INTERFACE:
 !
@@ -19,25 +21,10 @@
  IMPLICIT none
 
  TYPE Nst_Var_Data
-    real(kind_phys),pointer:: slmsk    (:,:)=>null()
-    real(kind_phys),pointer:: xt       (:,:)=>null()
-    real(kind_phys),pointer:: xs       (:,:)=>null()
-    real(kind_phys),pointer:: xu       (:,:)=>null()
-    real(kind_phys),pointer:: xv       (:,:)=>null()
-    real(kind_phys),pointer:: xz       (:,:)=>null()
-    real(kind_phys),pointer:: zm       (:,:)=>null()
-    real(kind_phys),pointer:: xtts     (:,:)=>null()
-    real(kind_phys),pointer:: xzts     (:,:)=>null()
-    real(kind_phys),pointer:: dt_cool  (:,:)=>null()
-    real(kind_phys),pointer:: z_c      (:,:)=>null()
-    real(kind_phys),pointer:: c_0      (:,:)=>null()
-    real(kind_phys),pointer:: c_d      (:,:)=>null()
-    real(kind_phys),pointer:: w_0      (:,:)=>null()
-    real(kind_phys),pointer:: w_d      (:,:)=>null()
-    real(kind_phys),pointer:: d_conv   (:,:)=>null()
-    real(kind_phys),pointer:: ifd      (:,:)=>null()
-    real(kind_phys),pointer:: tref     (:,:)=>null()
-    real(kind_phys),pointer:: Qrain    (:,:)=>null()
+    real(kind_phys),allocatable, dimension(:,:) ::                &
+           slmsk,   xt,   xs,  xu,  xv,  xz,  zm,     xtts, xzts, &
+           dt_cool, z_c,  c_0, c_d, w_0, w_d, d_conv, ifd,        &
+           tref,    Qrain
  end type Nst_Var_Data
 !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
     contains
@@ -68,7 +55,47 @@ allocate(                         &
       data%tref    (dim1,dim2),   &
       data%Qrain   (dim1,dim2),   &
       stat=iret)
-    if(iret.ne.0) iret=-3
+      if(iret.ne.0) iret=-3
+      return
+    end subroutine nstvar_aldata
+
+    subroutine nst_init(nst_fld,iret)
+       implicit none
+       type(nst_var_data),intent(inout)  :: nst_fld
+       integer, intent(out)              :: iret
+!
+      nst_fld%slmsk   = 0.0 
+      nst_fld%xt      = 0.0      
+      nst_fld%xs      = 0.0      
+      nst_fld%xu      = 0.0      
+      nst_fld%xv      = 0.0      
+      nst_fld%xz      = 0.0      
+      nst_fld%zm      = 0.0      
+      nst_fld%xtts    = 0.0    
+      nst_fld%xzts    = 0.0    
+      nst_fld%dt_cool = 0.0 
+      nst_fld%z_c     = 0.0     
+      nst_fld%c_0     = 0.0     
+      nst_fld%c_d     = 0.0     
+      nst_fld%w_0     = 0.0     
+      nst_fld%w_d     = 0.0     
+      nst_fld%d_conv  = 0.0  
+      nst_fld%ifd     = 0.0     
+      nst_fld%tref    = 0.0   
+      nst_fld%Qrain   = 0.0   
+      if(iret.ne.0) iret=-3
+      return
+    end subroutine nst_init
+    subroutine nstvar_axdata(data)
+       implicit none
+       type(nst_var_data),intent(inout)  :: data
+
+       deallocate(                                                              &
+           data%slmsk,  data%xt,   data%xs,   data%xu,      data%xv,   data%xz, &
+           data%zm,     data%xtts, data%xzts, data%dt_cool, data%z_c,  data%c_0,&
+           data%c_d,    data%w_0,  data%w_d,  data%d_conv,  data%ifd,           &
+           data%tref,   data%Qrain )
+
     return
-  end subroutine nstvar_aldata
+    end subroutine nstvar_axdata
  END MODULE gfs_physics_nst_var_mod

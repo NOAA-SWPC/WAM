@@ -1,9 +1,8 @@
       subroutine gloopb(grid_fld,     g3d_fld,       sfc_fld,
-     &                  flx_fld,      aoi_fld,       nst_fld,
+     &                  flx_fld,      aoi_fld,       nst_fld, gis_wam,
      &                  lats_nodes_r, global_lats_r, lonsperlar,
      &                  tstep,        phour,         sfalb,   xlon,
      &                  swh,          swhc,          hlw,     hlwc,
-!    &                  nbdsw,        nbdlw,         htrsw    htrlwb,
      &                  hprime,       slag,          sdec,    cdec,
      &                  ozplin,       jindx1,        jindx2,  ddy,
      &                  phy_f3d,      phy_f2d,       phy_fctd, nctp,
@@ -89,6 +88,7 @@
       use gfs_physics_aoi_var_mod
       use gfs_physics_gridgr_mod, ONLY: Grid_Var_Data
       use gfs_physics_g3d_mod,    ONLY: G3D_Var_Data
+      use mpi_def,                ONLY: mpi_r_io_r, mpi_comm_all 
       use nuopc_physics,
      &   only: state_fields_in, state_fields_out, sfc_properties,
      &         diagnostics, dynamic_parameters,
@@ -100,8 +100,23 @@
 !     &         sfc_prop_setphys, cld_prop_setphys, tbd_set,
      &         phys_run_savein, phys_run_readin, phys_run_saveout,
      &         phys_run_readout, use_nuopc
-      use mpi_def,                only: mpi_r_io_r, mpi_comm_all
+    
 !
+!WAM-2017
+      use wam_diag3d_mod, ONLY:   G3D_WAMD
+! 
+      use idea_iau_gmao,           only: nxa, nya,nza
+!      use idea_iau_gmao,           only: IDEA_INIT_IAU
+!      use idea_iau_gmao,           only: Uanl, Vanl, Tanl, Qanl
+!      use idea_iau_gmao,           only: Psanl, Tsanl
+      use idea_iau_gmao,           only:   
+     &  gpy_Uan, gpy_Van, gpy_Tan, gpy_Qan, gpy_Psan, gpy_Tsan      
+!
+
+
+
+
+
 !================================================================= WAM-related 201702
       use wam_f107_kp_mod,        ONLY: read_wam_f107_kp_txt, 
      &                                  f107_wy, kp_wy, f107_kp_size, 
@@ -124,6 +139,7 @@
       implicit none
       include 'mpif.h'
 !
+      TYPE(G3D_WAMD)             :: gis_wam
       TYPE(Grid_Var_Data)       :: grid_fld
       TYPE(Sfc_Var_Data)        :: sfc_fld
       TYPE(Flx_Var_Data)        :: flx_fld
@@ -308,6 +324,16 @@
 
       integer :: lonbnd   ! upper lon dimension in lon/lan loop
       logical :: savecon  ! Save nuopc driver in/out states
+!      real ::         dtphys_gw 
+      real(kind=kind_phys),dimension(ngptc,nza):: a_gu,a_gv,a_gt,a_gqh
+      real(kind=kind_phys),dimension(ngptc) :: a_ps,a_ts
+      real(kind=kind_phys),dimension(ngptc,levs) :: daxz,dayz,deps,dked
+      real(kind=kind_phys),dimension(ngptc,levs) :: zgwam
+
+      integer   :: kstep_rest
+      integer   :: nzza
+      nzza=nza 
+
 
 !
 !---------------------------------------------------------------------------
@@ -540,9 +566,21 @@
 !
           call ideaca_init(prsilvl,levs+1)
 !          CALL GW_unified_init(levs, me)
+        do i=1, ngptc
+           do k=1,nzza
+         a_gu(i,k) = 0.
+         a_gv(i,k) = 0.
+         a_gt(i,k) = 300.
+         a_gqh(i,k)= 0.
+         a_ps(i) = 0.
+         a_ts(i) = 0.   
+           enddo
+         enddo
+
+
         endif
 !***************************************idea above****************************************
-
+        kstep_rest = kdt
         first = .false.
 
         gb_ini_time = gb_ini_time + (timef() - btime)
@@ -603,11 +641,12 @@
 !
 ! do ozone i/o and latitudinal interpolation to local gaussian lats
 !
+!       write(0,*) 'BEFORE ozinterol ntoz=',ntoz
       if (ntoz > 0) then
        call ozinterpol(me,lats_node_r,lats_node_r,idate,fhour,
      &                 jindx1,jindx2,ozplin,ozplout,ddy)
       endif
-
+!       write(0,*) 'AFTER ozinterol ntoz=',ntoz
 !-------------------------------------------------------------------------
 !  for stochastic physics
 !     if (sppt > tiny(sppt)) then
@@ -735,7 +774,7 @@
               vvel(i,k)   = grid_fld%dpdt(item,lan,k) ! pascal/sec
             enddo
           enddo
-
+!          write(0,*) 'BEFORE lsidea ope-to'
           IF(lsidea .AND. ipe_to_wam_coupling) THEN
             do k = lowst_ipe_level, LEVS
               do i = 1, njeff
@@ -766,6 +805,7 @@
           do i=1,njeff
             pgr(i) = prsi(i,1)
           enddo
+!          write(0,*) 'beforegrid_fld%tracers(n)' 
           do n=1,ntrac
             do k=1,levs
               do i=1,njeff
@@ -773,7 +813,7 @@
               enddo
             enddo
           enddo
-
+!          write(0,*) 'aftergrid_fld%tracers(n)'
           do i=1,njeff
             phil(i,levs) = 0.0 ! will force calculation of geopotential in gbphys.
             dpshc(i)     = 0.3 * prsi(i,1)
@@ -815,6 +855,7 @@
               slc_v(i,k) = sfc_fld%slc(k,item,lan)
             enddo
           enddo
+      
           do k=1,nmtvr
             do i=1,njeff
               hprime_v(i,k) = hprime(k,lon+i-1,lan)
@@ -826,7 +867,7 @@
               phy_f2dv(i,j) = phy_f2d(lon+i-1,lan,j)
             enddo
           enddo
-
+!          write(0,*) 'beforecscnv'
           if(cscnv) then
             do j=1,nctp
               do i=1,njeff
@@ -834,7 +875,7 @@
               enddo
             enddo
           endif
-
+!          write(0,*) 'aftercscnv' 
           if (ldiag3d) then
             do k=1,6
               do j=1,levs
@@ -879,14 +920,44 @@
 !
 !*************************************idea below**************************
           if( lsidea ) then
+	  
 !
-!            if ( me == 0 .and. kdt<= 1) then
-!              print *, 'GLOOPB print'
-!              print *, 'kdt=', kdt
+            if ( me == 0 .and. kdt<= 1) then
+             print *, 'GLOOPB print'
+              print *, 'maxval(gpy_Tan)kdt=', maxval(gpy_tan),kdt
 !              print *, 'njeff(im)=',njeff,'ngptc(ix)=',ngptc                             
-!            endif
-
+            endif
+!          print *,'njeff=',njeff
+!	   print *,'lon=',lon
+           do i=1,njeff
+              item =lon+i-1
+!	      print *,'gpy_psan(item,lan)=',gpy_psan(item,lan)
+              a_ps(i) = gpy_psan(item,lan)
+              a_ts(i) = gpy_tsan(item,lan)
+           enddo
+!            write(0,*) 'a_ps'
+              do k=1,nzza
+                do i=1,njeff
+                 item =lon+i-1
+                a_gu(i,k)  = gpy_Uan(item,lan,k)
+                a_gv(i,k)  = gpy_Van(item,lan,k)
+                a_gt(i,k)  = gpy_Tan(item,lan,k)
+                a_gqh(i,k) = gpy_Qan(item,lan,k)
+              enddo
+            enddo    
 !
+!            print *, 'BEFORE IDEA_PHYS'
+!      subroutine idea_phys(im,ix,levs,prsi,prsl,                        
+!     &                     adu,adv,adt,adr,ntrac,dtp,lat,               
+!     &                     solhr,slag,sdec,cdec,sinlat,coslat,          
+!     &                     xlon,xlat,oro,cozen,swh,hlw,dt6dt,           
+!     &                     thermodyn_id,sfcpress_id,gen_coord_hybrid,me,
+!     &                     mpi_ior,mpi_comm, fhour, kstep,
+!     &                     a_gu, a_gv, a_gt, a_gqh, a_ps, a_ts, nzza,
+!     &                     gzmt, gmmt, gjhr, gshr, go2dr)
+
+!           print *, 'VAY2020  maxval a_gt ', maxval(a_gt), minval(a_gt) 
+!	   print *, 'VAY2020  maxval gt ', maxval(gt), minval(gt) 
             call idea_phys(njeff,ngptc,levs,prsi,prsl,
      &                     gu,gv,gt,gr,ntrac,dtp,lat,
      &                     solhr,slag,sdec,cdec,sinlat_v,coslat_v,
@@ -895,9 +966,28 @@
      &                     swh(1,1,iblk,lan),hlw(1,1,iblk,lan),hlwd,
      &                     thermodyn_id,sfcpress_id,gen_coord_hybrid,
      &                     me,mpi_r_io_r,MPI_COMM_ALL, fhour, kdt,
-     &                     gzmt, gmmt, gjhr, gshr, go2dr)
-!
-!
+     &                      a_gu, a_gv, a_gt, a_gqh, a_ps(1:njeff), a_ts(1:njeff), nzza,
+     &                     gzmt, gmmt, gjhr, gshr, go2dr,zgwam)
+            do k=1,levs
+              do i=1,njeff
+!               gis_wam%daxz(lon+i-1,lan,k)     = daxz(i,k) 
+!               gis_wam%dayz(lon+i-1,lan,k)     = dayz(i,k)
+!               gis_wam%deps(lon+i-1,lan,k)     = deps(i,k)
+!               gis_wam%dked(lon+i-1,lan,k)     = dked(i,k)
+               gis_wam%zgkm(lon+i-1,lan,k)     = zgwam(i,k)
+              enddo        
+            enddo         
+!           if ( me == 0 .and. kdt<= 10) then
+	   
+!              print *, 'afteridea_physprint nzza', nzza
+!              print *, 'VAY2020 maxval(a_gt)=', maxval(a_gt), kdt
+!	      print *, 'VAY2020 maxval(a_gu)=', maxval(a_gu), kdt
+!	      print *, 'VAY2020 maxval(a_gv)=', maxval(a_gv), kdt
+!	      print *, 'VAY2020 maxval(a_gh)=', maxval(a_gqh), kdt
+!	      print *, 'VAY2020 maxval(gt)=',maxval(gt), kdt
+	      
+!              print *, 'njeff(im)=',njeff,'ngptc(ix)=',ngptc                             
+!            endif
 !
           endif
 !*************************************idea above**************************
@@ -1246,106 +1336,104 @@
 
             else
 
-            call gbphys                                                 &
+            call gbphys                                                 
 !  ---  inputs:
-     &    ( njeff,ngptc,levs,lsoil,lsm,ntrac,ncld,ntoz,ntcw,ntke,       &
-     &      nmtvr,nrcm,levozp,lonr,latr,jcap,                           &
-     &      num_p3d,num_p2d,npdf3d,ncnvcld3d,                           &
-     &      kdt,lat,me,pl_coeff,nlons_v,ncw,flgmin,crtrh,cdmbgwd,       &
-     &      ccwf,dlqf,ctei_rm,clstp,cgwf,prslrd0,ral_ts,dtp,dtf,fhour,  &
-     &      solhr,slag,sdec,cdec,sinlat_v,coslat_v,pgr,gu,gv,           &
-     &      gt,gr,vvel,prsi,prsl,prslk,prsik,phii,phil,                 &
-     &      rannum_v,ozplout_v,pl_pres,dpshc,fscav,fswtr,               &
-     &      hprime_v, xlon(lon,lan),xlat(lon,lan),                      &
-     &      sfc_fld%slope (lon,lan),    sfc_fld%shdmin(lon,lan),        &
-     &      sfc_fld%shdmax(lon,lan),    sfc_fld%snoalb(lon,lan),        &
-     &      sfc_fld%tg3   (lon,lan),    sfc_fld%slmsk (lon,lan),        &
-     &      sfc_fld%vfrac (lon,lan),    sfc_fld%vtype (lon,lan),        &
-     &      sfc_fld%stype (lon,lan),    sfc_fld%uustar(lon,lan),        &
-     &      sfc_fld%oro   (lon,lan),    sfc_fld%oro_uf(lon,lan),        &
-     &      flx_fld%coszen(lon,lan),                                    &
-     &      flx_fld%sfcdsw(lon,lan),    flx_fld%sfcnsw(lon,lan),        &
+     &    ( njeff,ngptc,levs,lsoil,lsm,ntrac,ncld,ntoz,ntcw,ntke,       
+     &      nmtvr,nrcm,levozp,lonr,latr,jcap,                           
+     &      num_p3d,num_p2d,npdf3d,ncnvcld3d,                           
+     &      kdt,lat,me,pl_coeff,nlons_v,ncw,flgmin,crtrh,cdmbgwd,       
+     &      ccwf,dlqf,ctei_rm,clstp,cgwf,prslrd0,ral_ts,dtp,dtf,fhour,  
+     &      solhr,slag,sdec,cdec,sinlat_v,coslat_v,pgr,gu,gv,           
+     &      gt,gr,vvel,prsi,prsl,prslk,prsik,phii,phil,                 
+     &      rannum_v,ozplout_v,pl_pres,dpshc,fscav,fswtr,               
+     &      hprime_v, xlon(lon,lan),xlat(lon,lan),                      
+     &      sfc_fld%slope (lon,lan),    sfc_fld%shdmin(lon,lan),        
+     &      sfc_fld%shdmax(lon,lan),    sfc_fld%snoalb(lon,lan),        
+     &      sfc_fld%tg3   (lon,lan),    sfc_fld%slmsk (lon,lan),        
+     &      sfc_fld%vfrac (lon,lan),    sfc_fld%vtype (lon,lan),        
+     &      sfc_fld%stype (lon,lan),    sfc_fld%uustar(lon,lan),        
+     &      sfc_fld%oro   (lon,lan),    sfc_fld%oro_uf(lon,lan),        
+     &      flx_fld%coszen(lon,lan),                                    
+     &      flx_fld%sfcdsw(lon,lan),    flx_fld%sfcnsw(lon,lan),        
 
-     &      nirbmdi, nirdfdi, visbmdi, visdfdi,                         &
-     &      nirbmui, nirdfui, visbmui, visdfui,                         &
-     &      aoi_slimskin,     aoi_ulwsfcin,                             &
-     &      aoi_dusfcin, aoi_dvsfcin, aoi_dtsfcin, aoi_dqsfcin,         &
+     &      nirbmdi, nirdfdi, visbmdi, visdfdi,                         
+     &      nirbmui, nirdfui, visbmui, visdfui,                         
+     &      aoi_slimskin,     aoi_ulwsfcin,                             
+     &      aoi_dusfcin, aoi_dvsfcin, aoi_dtsfcin, aoi_dqsfcin,         
 
-     &      flx_fld%sfcdlw(lon,lan),    flx_fld%tsflw (lon,lan),        &
-     &      flx_fld%sfcemis(lon,lan),   sfalb(lon,lan),                 &
-     &      swh(1,1,iblk,lan),swhc(1,1,iblk,lan),                       &
-     &      hlw(1,1,iblk,lan),hlwc(1,1,iblk,lan), hlwd, lsidea,         &
-     &      ras,pre_rad,ldiag3d,lgocart,lssav,cplflx,                   &
-     &      bkgd_vdif_m,bkgd_vdif_h,bkgd_vdif_s,psautco,prautco,evpco,  &
-     &      wminco,pdfcld,shcnvcw,sup,redrag,hybedmf,dspheat,           &
-     &      flipv,old_monin,cnvgwd,shal_cnv,                            &
-     &      imfshalcnv,imfdeepcnv,cal_pre,                              &
-     &      mom4ice,mstrat,trans_trac,nstf_name,moist_adj,               &
-     &      thermodyn_id, sfcpress_id, gen_coord_hybrid,levr,adjtrc,nn, &
-     &      cscnv,nctp,do_shoc,shocaftcnv,ntot3d,ntot2d,                &
+     &      flx_fld%sfcdlw(lon,lan),    flx_fld%tsflw (lon,lan),        
+     &      flx_fld%sfcemis(lon,lan),   sfalb(lon,lan),                 
+     &      swh(1,1,iblk,lan),swhc(1,1,iblk,lan),                       
+     &      hlw(1,1,iblk,lan),hlwc(1,1,iblk,lan), hlwd, lsidea,         
+     &      ras,pre_rad,ldiag3d,lgocart,lssav,cplflx,                   
+     &      bkgd_vdif_m,bkgd_vdif_h,bkgd_vdif_s,psautco,prautco,evpco,  
+     &      wminco,pdfcld,shcnvcw,sup,redrag,hybedmf,dspheat,           
+     &      flipv,old_monin,cnvgwd,shal_cnv,                            
+     &      imfshalcnv,imfdeepcnv,cal_pre,                              
+     &      mom4ice,mstrat,trans_trac,nstf_name,moist_adj,               
+     &      thermodyn_id, sfcpress_id, gen_coord_hybrid,levr,adjtrc,nn, 
+     &      cscnv,nctp,do_shoc,shocaftcnv,ntot3d,ntot2d,                
 !  ---  input/outputs:
-     &      sfc_fld%hice  (lon,lan),    sfc_fld%fice  (lon,lan),        &
-     &      sfc_fld%tisfc (lon,lan),    sfc_fld%tsea  (lon,lan),        &
-     &      sfc_fld%tprcp (lon,lan),    sfc_fld%cv    (lon,lan),        &
-     &      sfc_fld%cvb   (lon,lan),    sfc_fld%cvt   (lon,lan),        &
-     &      sfc_fld%srflag(lon,lan),    sfc_fld%snwdph(lon,lan),        &
-     &      sfc_fld%weasd(lon,lan),     sfc_fld%sncovr(lon,lan),        &
-     &      sfc_fld%zorl  (lon,lan),    sfc_fld%canopy(lon,lan),        &
-     &      sfc_fld%ffmm  (lon,lan),    sfc_fld%ffhh  (lon,lan),        &
-     &      sfc_fld%f10m  (lon,lan),    flx_fld%srunoff(lon,lan),       &
-     &      flx_fld%evbsa (lon,lan),    flx_fld%evcwa (lon,lan),        &
-     &      flx_fld%snohfa(lon,lan),    flx_fld%transa(lon,lan),        &
-     &      flx_fld%sbsnoa(lon,lan),    flx_fld%snowca(lon,lan),        &
-     &      flx_fld%soilm (lon,lan),    flx_fld%tmpmin(lon,lan),        &
-     &      flx_fld%tmpmax(lon,lan),    flx_fld%dusfc (lon,lan),        &
-     &      flx_fld%dvsfc (lon,lan),    flx_fld%dtsfc (lon,lan),        &
-     &      flx_fld%dqsfc (lon,lan),    flx_fld%geshem(lon,lan),        &
-     &      flx_fld%gflux (lon,lan),    flx_fld%dlwsfc(lon,lan),        &
-     &      flx_fld%ulwsfc(lon,lan),    flx_fld%suntim(lon,lan),        &
-     &      flx_fld%runoff(lon,lan),    flx_fld%ep    (lon,lan),        &
-     &      flx_fld%cldwrk(lon,lan),    flx_fld%dugwd (lon,lan),        &
-     &      flx_fld%dvgwd (lon,lan),    flx_fld%psmean(lon,lan),        &
-     &      flx_fld%bengsh(lon,lan),    flx_fld%spfhmin(lon,lan),       &
-     &      flx_fld%spfhmax(lon,lan),                                   &
-     &      flx_fld%rain(lon,lan),      flx_fld%rainc(lon,lan),         &
-     &      dt3dt_v, dq3dt_v,  du3dt_v, dv3dt_v, dqdt_v,cnvqc_v,        & ! added for GOCART
-     &      acv(lon,lan), acvb(lon,lan), acvt(lon,lan),                 &
-     &      slc_v, smc_v, stc_v, upd_mfv, dwn_mfv, det_mfv,             &
-     &      phy_f3d(1,1,1,iblk,lan), phy_f2dv,                          &
-     &      aoi_du,     aoi_dv, aoi_dt, aoi_dq, aoi_dlw, aoi_dsw,       &
-     &      aoi_dnirbm, aoi_dnirdf, aoi_dvisbm, aoi_dvisdf, aoi_rain,   &
-     &      aoi_nlw,    aoi_nsw,    aoi_nnirbm, aoi_nnirdf,             &
-     &      aoi_nvisbm, aoi_nvisdf, aoi_snow,                           &
-
-     &      nst_xt,      nst_xs,   nst_xu,   nst_xv,     nst_xz,        &
-     &      nst_zm,      nst_xtts, nst_xzts, nst_d_conv, nst_ifd,       &
-     &      nst_dt_cool, nst_Qrain,                                     &
-     &      phy_fctdv,                                                  &
+     &      sfc_fld%hice  (lon,lan),    sfc_fld%fice  (lon,lan),        
+     &      sfc_fld%tisfc (lon,lan),    sfc_fld%tsea  (lon,lan),        
+     &      sfc_fld%tprcp (lon,lan),    sfc_fld%cv    (lon,lan),        
+     &      sfc_fld%cvb   (lon,lan),    sfc_fld%cvt   (lon,lan),        
+     &      sfc_fld%srflag(lon,lan),    sfc_fld%snwdph(lon,lan),        
+     &      sfc_fld%weasd(lon,lan),     sfc_fld%sncovr(lon,lan),        
+     &      sfc_fld%zorl  (lon,lan),    sfc_fld%canopy(lon,lan),        
+     &      sfc_fld%ffmm  (lon,lan),    sfc_fld%ffhh  (lon,lan),        
+     &      sfc_fld%f10m  (lon,lan),    flx_fld%srunoff(lon,lan),       
+     &      flx_fld%evbsa (lon,lan),    flx_fld%evcwa (lon,lan),        
+     &      flx_fld%snohfa(lon,lan),    flx_fld%transa(lon,lan),        
+     &      flx_fld%sbsnoa(lon,lan),    flx_fld%snowca(lon,lan),        
+     &      flx_fld%soilm (lon,lan),    flx_fld%tmpmin(lon,lan),        
+     &      flx_fld%tmpmax(lon,lan),    flx_fld%dusfc (lon,lan),        
+     &      flx_fld%dvsfc (lon,lan),    flx_fld%dtsfc (lon,lan),        
+     &      flx_fld%dqsfc (lon,lan),    flx_fld%geshem(lon,lan),        
+     &      flx_fld%gflux (lon,lan),    flx_fld%dlwsfc(lon,lan),        
+     &      flx_fld%ulwsfc(lon,lan),    flx_fld%suntim(lon,lan),        
+     &      flx_fld%runoff(lon,lan),    flx_fld%ep    (lon,lan),        
+     &      flx_fld%cldwrk(lon,lan),    flx_fld%dugwd (lon,lan),        
+     &      flx_fld%dvgwd (lon,lan),    flx_fld%psmean(lon,lan),        
+     &      flx_fld%bengsh(lon,lan),    flx_fld%spfhmin(lon,lan),       
+     &      flx_fld%spfhmax(lon,lan),                                   
+     &      flx_fld%rain(lon,lan),      flx_fld%rainc(lon,lan),         
+     &      dt3dt_v, dq3dt_v,  du3dt_v, dv3dt_v, dqdt_v,cnvqc_v,         ! added for GOCART
+     &      acv(lon,lan), acvb(lon,lan), acvt(lon,lan),                 
+     &      slc_v, smc_v, stc_v, upd_mfv, dwn_mfv, det_mfv,             
+     &      phy_f3d(1,1,1,iblk,lan), phy_f2dv,                         
+     &      aoi_du,     aoi_dv, aoi_dt, aoi_dq, aoi_dlw, aoi_dsw,       
+     &      aoi_dnirbm, aoi_dnirdf, aoi_dvisbm, aoi_dvisdf, aoi_rain,   
+     &      aoi_nlw,    aoi_nsw,    aoi_nnirbm, aoi_nnirdf,             
+     &      aoi_nvisbm, aoi_nvisdf, aoi_snow,                           
+     &      nst_xt,      nst_xs,   nst_xu,   nst_xv,     nst_xz,        
+     &      nst_zm,      nst_xtts, nst_xzts, nst_d_conv, nst_ifd,       
+     &      nst_dt_cool, nst_Qrain,                                     
+     &      phy_fctdv,                                                  
 !  ---  outputs:
-     &      adt, adr, adu, adv,                                         &
-     &      sfc_fld%t2m   (lon,lan),    sfc_fld%q2m   (lon,lan),        &
-     &      flx_fld%u10m  (lon,lan),    flx_fld%v10m  (lon,lan),        &
-     &      flx_fld%zlvl  (lon,lan),    flx_fld%psurf (lon,lan),        &
-     &      flx_fld%hpbl  (lon,lan),    flx_fld%pwat  (lon,lan),        &
-     &      flx_fld%t1    (lon,lan),    flx_fld%q1    (lon,lan),        &
-     &      flx_fld%u1    (lon,lan),    flx_fld%v1    (lon,lan),        &
-     &      flx_fld%chh   (lon,lan),    flx_fld%cmm   (lon,lan),        &
-     &      flx_fld%dlwsfci(lon,lan),   flx_fld%ulwsfci(lon,lan),       &
-     &      flx_fld%dswsfci(lon,lan),   flx_fld%uswsfci(lon,lan),       &
-     &      flx_fld%dusfci(lon,lan),    flx_fld%dvsfci(lon,lan),        &
-     &      flx_fld%dtsfci(lon,lan),    flx_fld%dqsfci(lon,lan),        &
-     &      flx_fld%gfluxi(lon,lan),    flx_fld%epi   (lon,lan),        &
-     &      flx_fld%smcwlt2(lon,lan),   flx_fld%smcref2(lon,lan),       &
-     &      flx_fld%wet1(lon,lan),      flx_fld%sr(lon,lan),            &
-     &      rqtk,                                                       &! rqtkD
-     &      dtdt,                                                       &
-
-     &      aoi_dusfci,     aoi_dvsfci,  aoi_dtsfci,   aoi_dqsfci,      &
-     &      aoi_dlwsfci,    aoi_dswsfci, aoi_dnirbmi,  aoi_dnirdfi,     &
-     &      aoi_dvisbmi,    aoi_dvisdfi, aoi_nlwsfci,  aoi_nswsfci,     &
-     &      aoi_nnirbmi,    aoi_nnirdfi, aoi_nvisbmi,  aoi_nvisdfi,     &
-     &      aoi_t2mi,       aoi_q2mi,    aoi_u10mi,    aoi_v10mi,       &
-     &      aoi_tseai,      aoi_psurfi,                                 &
+     &      adt, adr, adu, adv,                                         
+     &      sfc_fld%t2m   (lon,lan),    sfc_fld%q2m   (lon,lan),        
+     &      flx_fld%u10m  (lon,lan),    flx_fld%v10m  (lon,lan),        
+     &      flx_fld%zlvl  (lon,lan),    flx_fld%psurf (lon,lan),        
+     &      flx_fld%hpbl  (lon,lan),    flx_fld%pwat  (lon,lan),        
+     &      flx_fld%t1    (lon,lan),    flx_fld%q1    (lon,lan),        
+     &      flx_fld%u1    (lon,lan),    flx_fld%v1    (lon,lan),        
+     &      flx_fld%chh   (lon,lan),    flx_fld%cmm   (lon,lan),        
+     &      flx_fld%dlwsfci(lon,lan),   flx_fld%ulwsfci(lon,lan),       
+     &      flx_fld%dswsfci(lon,lan),   flx_fld%uswsfci(lon,lan),       
+     &      flx_fld%dusfci(lon,lan),    flx_fld%dvsfci(lon,lan),        
+     &      flx_fld%dtsfci(lon,lan),    flx_fld%dqsfci(lon,lan),        
+     &      flx_fld%gfluxi(lon,lan),    flx_fld%epi   (lon,lan),        
+     &      flx_fld%smcwlt2(lon,lan),   flx_fld%smcref2(lon,lan),       
+     &      flx_fld%wet1(lon,lan),      flx_fld%sr(lon,lan),            
+     &      rqtk,                                                       ! rqtkD
+     &      dtdt,                                                       
+     &      aoi_dusfci,     aoi_dvsfci,  aoi_dtsfci,   aoi_dqsfci,      
+     &      aoi_dlwsfci,    aoi_dswsfci, aoi_dnirbmi,  aoi_dnirdfi,     
+     &      aoi_dvisbmi,    aoi_dvisdfi, aoi_nlwsfci,  aoi_nswsfci,     
+     &      aoi_nnirbmi,    aoi_nnirdfi, aoi_nvisbmi,  aoi_nvisdfi,     
+     &      aoi_t2mi,       aoi_q2mi,    aoi_u10mi,    aoi_v10mi,       
+     &      aoi_tseai,      aoi_psurfi,                                 
      &      nst_Tref, nst_z_c, nst_c_0, nst_c_d, nst_w_0, nst_w_d)
 
 

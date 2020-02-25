@@ -121,8 +121,24 @@ am_libgfsphys_a_OBJECTS = libgfsphys_a-aoicpl_prep.$(OBJEXT) \
 	libgfsphys_a-glats_physics.$(OBJEXT) \
 	libgfsphys_a-gloopb.$(OBJEXT) libgfsphys_a-gloopr.$(OBJEXT) \
 	libgfsphys_a-gribit_gsm.$(OBJEXT) \
-	libgfsphys_a-hpmdummy.$(OBJEXT) libgfsphys_a-info.$(OBJEXT) \
-	libgfsphys_a-lats_shuff.$(OBJEXT) \
+	libgfsphys_a-hpmdummy.$(OBJEXT) \
+	libgfsphys_a-idea_das_gain3d.$(OBJEXT) \
+	libgfsphys_a-idea_das_ioproc.$(OBJEXT) \
+	libgfsphys_a-idea_das_smlt.$(OBJEXT) \
+	libgfsphys_a-idea_das_utils.$(OBJEXT) \
+	libgfsphys_a-idea_gdas_calendar.$(OBJEXT) \
+	libgfsphys_a-idea_iau_split.$(OBJEXT) \
+	libgfsphys_a-idea_lat62_gaus.$(OBJEXT) \
+	libgfsphys_a-idea_ncout_diag.$(OBJEXT) \
+	libgfsphys_a-idea_ncout_gain3d.$(OBJEXT) \
+	libgfsphys_a-idea_ncout_phys.$(OBJEXT) \
+	libgfsphys_a-idea_saber.$(OBJEXT) \
+	libgfsphys_a-idea_wamdiag3d_mod.$(OBJEXT) \
+	libgfsphys_a-wam_pass_diag_types.$(OBJEXT) \
+	libgfsphys_a-idea_write_wamday.$(OBJEXT) \
+	libgfsphys_a-idea_write_wamhour.$(OBJEXT) \
+	libgfsphys_a-idea_writediag_wamday.$(OBJEXT) \
+	libgfsphys_a-info.$(OBJEXT) libgfsphys_a-lats_shuff.$(OBJEXT) \
 	libgfsphys_a-layout1.$(OBJEXT) \
 	libgfsphys_a-lon_lat_para.$(OBJEXT) \
 	libgfsphys_a-mod_state.$(OBJEXT) \
@@ -368,15 +384,21 @@ top_srcdir = @top_srcdir@
 noinst_LIBRARIES = libgfsphysf.a libgfsphys.a
 libgfsphys_a_FFLAGS = $(FC_MODINC) ../libutil $(FC_MODINC) ../dyn \
 	$(FC_MODINC) ../../phys $(FC_MODINC) ../../share \
-	$(FC_AUTODOUBLE) $(FCFLAGS_FIXED)
+	$(FC_AUTODOUBLE) $(FCFLAGS_FIXED) -132 -g -traceback -check \
+	bounds
 libgfsphys_a_SOURCES = aoicpl_prep.f compns_physics.f coordinate_def.f \
 	coundummy.f d3d_def.f dfi_fixwr.f do_physics_one_step.f fix_fields.f fix_fields_idea_rst.f \
 	fld_collect.f fld_collect_nst.f gbphys_adv_hyb_gc.f gbphys_adv_hyb_gc_h.f gcycle.f \
 	getcon_physics.f get_lats_node_shuff_r_fix.f GFS_simple_scatter.f gg_def.f \
-	glats_physics.f gloopb.f gloopr.f gribit_gsm.f hpmdummy.f info.f lats_shuff.f layout1.f \
+	glats_physics.f gloopb.f gloopr.f gribit_gsm.f hpmdummy.f idea_das_gain3d.f \
+	idea_das_ioproc.f idea_das_smlt.f idea_das_utils.f idea_gdas_calendar.f \
+	idea_iau_split.f idea_lat62_gaus.f idea_ncout_diag.f \
+	idea_ncout_gain3d.f idea_ncout_phys.f idea_saber.f idea_wamdiag3d_mod.f wam_pass_diag_types.f \
+	idea_write_wamday.f idea_write_wamhour.f idea_writediag_wamday.f info.f lats_shuff.f layout1.f \
 	lon_lat_para.f mod_state.f mpi_def.f mpi_quit.f namelist_physics_def.f \
 	para_fixio_w.f para_nst_w.f read_fix.f reduce_lons_grid_module.f \
-	resol_def.f setlats.f setlats_r_slg.f sortrx.f vert_def.f wrt3d.f \
+	resol_def.f setlats.f setlats_r_slg.f sortrx.f \
+	vert_def.f wrt3d.f \
 	wrt3d_hyb.f wrtout_physics.f function_indlsev function_indlsod
 
 libgfsphysf_a_FFLAGS = -I $(top_srcdir)/include $(FC_MODINC) \
@@ -587,6 +609,102 @@ libgfsphys_a-hpmdummy.o: hpmdummy.f
 
 libgfsphys_a-hpmdummy.obj: hpmdummy.f
 	$(AM_V_F77)$(F77) $(libgfsphys_a_FFLAGS) $(FFLAGS) -c -o libgfsphys_a-hpmdummy.obj `if test -f 'hpmdummy.f'; then $(CYGPATH_W) 'hpmdummy.f'; else $(CYGPATH_W) '$(srcdir)/hpmdummy.f'; fi`
+
+libgfsphys_a-idea_das_gain3d.o: idea_das_gain3d.f
+	$(AM_V_F77)$(F77) $(libgfsphys_a_FFLAGS) $(FFLAGS) -c -o libgfsphys_a-idea_das_gain3d.o `test -f 'idea_das_gain3d.f' || echo '$(srcdir)/'`idea_das_gain3d.f
+
+libgfsphys_a-idea_das_gain3d.obj: idea_das_gain3d.f
+	$(AM_V_F77)$(F77) $(libgfsphys_a_FFLAGS) $(FFLAGS) -c -o libgfsphys_a-idea_das_gain3d.obj `if test -f 'idea_das_gain3d.f'; then $(CYGPATH_W) 'idea_das_gain3d.f'; else $(CYGPATH_W) '$(srcdir)/idea_das_gain3d.f'; fi`
+
+libgfsphys_a-idea_das_ioproc.o: idea_das_ioproc.f
+	$(AM_V_F77)$(F77) $(libgfsphys_a_FFLAGS) $(FFLAGS) -c -o libgfsphys_a-idea_das_ioproc.o `test -f 'idea_das_ioproc.f' || echo '$(srcdir)/'`idea_das_ioproc.f
+
+libgfsphys_a-idea_das_ioproc.obj: idea_das_ioproc.f
+	$(AM_V_F77)$(F77) $(libgfsphys_a_FFLAGS) $(FFLAGS) -c -o libgfsphys_a-idea_das_ioproc.obj `if test -f 'idea_das_ioproc.f'; then $(CYGPATH_W) 'idea_das_ioproc.f'; else $(CYGPATH_W) '$(srcdir)/idea_das_ioproc.f'; fi`
+
+libgfsphys_a-idea_das_smlt.o: idea_das_smlt.f
+	$(AM_V_F77)$(F77) $(libgfsphys_a_FFLAGS) $(FFLAGS) -c -o libgfsphys_a-idea_das_smlt.o `test -f 'idea_das_smlt.f' || echo '$(srcdir)/'`idea_das_smlt.f
+
+libgfsphys_a-idea_das_smlt.obj: idea_das_smlt.f
+	$(AM_V_F77)$(F77) $(libgfsphys_a_FFLAGS) $(FFLAGS) -c -o libgfsphys_a-idea_das_smlt.obj `if test -f 'idea_das_smlt.f'; then $(CYGPATH_W) 'idea_das_smlt.f'; else $(CYGPATH_W) '$(srcdir)/idea_das_smlt.f'; fi`
+
+libgfsphys_a-idea_das_utils.o: idea_das_utils.f
+	$(AM_V_F77)$(F77) $(libgfsphys_a_FFLAGS) $(FFLAGS) -c -o libgfsphys_a-idea_das_utils.o `test -f 'idea_das_utils.f' || echo '$(srcdir)/'`idea_das_utils.f
+
+libgfsphys_a-idea_das_utils.obj: idea_das_utils.f
+	$(AM_V_F77)$(F77) $(libgfsphys_a_FFLAGS) $(FFLAGS) -c -o libgfsphys_a-idea_das_utils.obj `if test -f 'idea_das_utils.f'; then $(CYGPATH_W) 'idea_das_utils.f'; else $(CYGPATH_W) '$(srcdir)/idea_das_utils.f'; fi`
+
+libgfsphys_a-idea_gdas_calendar.o: idea_gdas_calendar.f
+	$(AM_V_F77)$(F77) $(libgfsphys_a_FFLAGS) $(FFLAGS) -c -o libgfsphys_a-idea_gdas_calendar.o `test -f 'idea_gdas_calendar.f' || echo '$(srcdir)/'`idea_gdas_calendar.f
+
+libgfsphys_a-idea_gdas_calendar.obj: idea_gdas_calendar.f
+	$(AM_V_F77)$(F77) $(libgfsphys_a_FFLAGS) $(FFLAGS) -c -o libgfsphys_a-idea_gdas_calendar.obj `if test -f 'idea_gdas_calendar.f'; then $(CYGPATH_W) 'idea_gdas_calendar.f'; else $(CYGPATH_W) '$(srcdir)/idea_gdas_calendar.f'; fi`
+
+libgfsphys_a-idea_iau_split.o: idea_iau_split.f
+	$(AM_V_F77)$(F77) $(libgfsphys_a_FFLAGS) $(FFLAGS) -c -o libgfsphys_a-idea_iau_split.o `test -f 'idea_iau_split.f' || echo '$(srcdir)/'`idea_iau_split.f
+
+libgfsphys_a-idea_iau_split.obj: idea_iau_split.f
+	$(AM_V_F77)$(F77) $(libgfsphys_a_FFLAGS) $(FFLAGS) -c -o libgfsphys_a-idea_iau_split.obj `if test -f 'idea_iau_split.f'; then $(CYGPATH_W) 'idea_iau_split.f'; else $(CYGPATH_W) '$(srcdir)/idea_iau_split.f'; fi`
+
+libgfsphys_a-idea_lat62_gaus.o: idea_lat62_gaus.f
+	$(AM_V_F77)$(F77) $(libgfsphys_a_FFLAGS) $(FFLAGS) -c -o libgfsphys_a-idea_lat62_gaus.o `test -f 'idea_lat62_gaus.f' || echo '$(srcdir)/'`idea_lat62_gaus.f
+
+libgfsphys_a-idea_lat62_gaus.obj: idea_lat62_gaus.f
+	$(AM_V_F77)$(F77) $(libgfsphys_a_FFLAGS) $(FFLAGS) -c -o libgfsphys_a-idea_lat62_gaus.obj `if test -f 'idea_lat62_gaus.f'; then $(CYGPATH_W) 'idea_lat62_gaus.f'; else $(CYGPATH_W) '$(srcdir)/idea_lat62_gaus.f'; fi`
+
+libgfsphys_a-idea_ncout_diag.o: idea_ncout_diag.f
+	$(AM_V_F77)$(F77) $(libgfsphys_a_FFLAGS) $(FFLAGS) -c -o libgfsphys_a-idea_ncout_diag.o `test -f 'idea_ncout_diag.f' || echo '$(srcdir)/'`idea_ncout_diag.f
+
+libgfsphys_a-idea_ncout_diag.obj: idea_ncout_diag.f
+	$(AM_V_F77)$(F77) $(libgfsphys_a_FFLAGS) $(FFLAGS) -c -o libgfsphys_a-idea_ncout_diag.obj `if test -f 'idea_ncout_diag.f'; then $(CYGPATH_W) 'idea_ncout_diag.f'; else $(CYGPATH_W) '$(srcdir)/idea_ncout_diag.f'; fi`
+
+libgfsphys_a-idea_ncout_gain3d.o: idea_ncout_gain3d.f
+	$(AM_V_F77)$(F77) $(libgfsphys_a_FFLAGS) $(FFLAGS) -c -o libgfsphys_a-idea_ncout_gain3d.o `test -f 'idea_ncout_gain3d.f' || echo '$(srcdir)/'`idea_ncout_gain3d.f
+
+libgfsphys_a-idea_ncout_gain3d.obj: idea_ncout_gain3d.f
+	$(AM_V_F77)$(F77) $(libgfsphys_a_FFLAGS) $(FFLAGS) -c -o libgfsphys_a-idea_ncout_gain3d.obj `if test -f 'idea_ncout_gain3d.f'; then $(CYGPATH_W) 'idea_ncout_gain3d.f'; else $(CYGPATH_W) '$(srcdir)/idea_ncout_gain3d.f'; fi`
+
+libgfsphys_a-idea_ncout_phys.o: idea_ncout_phys.f
+	$(AM_V_F77)$(F77) $(libgfsphys_a_FFLAGS) $(FFLAGS) -c -o libgfsphys_a-idea_ncout_phys.o `test -f 'idea_ncout_phys.f' || echo '$(srcdir)/'`idea_ncout_phys.f
+
+libgfsphys_a-idea_ncout_phys.obj: idea_ncout_phys.f
+	$(AM_V_F77)$(F77) $(libgfsphys_a_FFLAGS) $(FFLAGS) -c -o libgfsphys_a-idea_ncout_phys.obj `if test -f 'idea_ncout_phys.f'; then $(CYGPATH_W) 'idea_ncout_phys.f'; else $(CYGPATH_W) '$(srcdir)/idea_ncout_phys.f'; fi`
+
+libgfsphys_a-idea_saber.o: idea_saber.f
+	$(AM_V_F77)$(F77) $(libgfsphys_a_FFLAGS) $(FFLAGS) -c -o libgfsphys_a-idea_saber.o `test -f 'idea_saber.f' || echo '$(srcdir)/'`idea_saber.f
+
+libgfsphys_a-idea_saber.obj: idea_saber.f
+	$(AM_V_F77)$(F77) $(libgfsphys_a_FFLAGS) $(FFLAGS) -c -o libgfsphys_a-idea_saber.obj `if test -f 'idea_saber.f'; then $(CYGPATH_W) 'idea_saber.f'; else $(CYGPATH_W) '$(srcdir)/idea_saber.f'; fi`
+
+libgfsphys_a-idea_wamdiag3d_mod.o: idea_wamdiag3d_mod.f
+	$(AM_V_F77)$(F77) $(libgfsphys_a_FFLAGS) $(FFLAGS) -c -o libgfsphys_a-idea_wamdiag3d_mod.o `test -f 'idea_wamdiag3d_mod.f' || echo '$(srcdir)/'`idea_wamdiag3d_mod.f
+
+libgfsphys_a-idea_wamdiag3d_mod.obj: idea_wamdiag3d_mod.f
+	$(AM_V_F77)$(F77) $(libgfsphys_a_FFLAGS) $(FFLAGS) -c -o libgfsphys_a-idea_wamdiag3d_mod.obj `if test -f 'idea_wamdiag3d_mod.f'; then $(CYGPATH_W) 'idea_wamdiag3d_mod.f'; else $(CYGPATH_W) '$(srcdir)/idea_wamdiag3d_mod.f'; fi`
+
+libgfsphys_a-wam_pass_diag_types.o: wam_pass_diag_types.f
+	$(AM_V_F77)$(F77) $(libgfsphys_a_FFLAGS) $(FFLAGS) -c -o libgfsphys_a-wam_pass_diag_types.o `test -f 'wam_pass_diag_types.f' || echo '$(srcdir)/'`wam_pass_diag_types.f
+
+libgfsphys_a-wam_pass_diag_types.obj: wam_pass_diag_types.f
+	$(AM_V_F77)$(F77) $(libgfsphys_a_FFLAGS) $(FFLAGS) -c -o libgfsphys_a-wam_pass_diag_types.obj `if test -f 'wam_pass_diag_types.f'; then $(CYGPATH_W) 'wam_pass_diag_types.f'; else $(CYGPATH_W) '$(srcdir)/wam_pass_diag_types.f'; fi`
+
+libgfsphys_a-idea_write_wamday.o: idea_write_wamday.f
+	$(AM_V_F77)$(F77) $(libgfsphys_a_FFLAGS) $(FFLAGS) -c -o libgfsphys_a-idea_write_wamday.o `test -f 'idea_write_wamday.f' || echo '$(srcdir)/'`idea_write_wamday.f
+
+libgfsphys_a-idea_write_wamday.obj: idea_write_wamday.f
+	$(AM_V_F77)$(F77) $(libgfsphys_a_FFLAGS) $(FFLAGS) -c -o libgfsphys_a-idea_write_wamday.obj `if test -f 'idea_write_wamday.f'; then $(CYGPATH_W) 'idea_write_wamday.f'; else $(CYGPATH_W) '$(srcdir)/idea_write_wamday.f'; fi`
+
+libgfsphys_a-idea_write_wamhour.o: idea_write_wamhour.f
+	$(AM_V_F77)$(F77) $(libgfsphys_a_FFLAGS) $(FFLAGS) -c -o libgfsphys_a-idea_write_wamhour.o `test -f 'idea_write_wamhour.f' || echo '$(srcdir)/'`idea_write_wamhour.f
+
+libgfsphys_a-idea_write_wamhour.obj: idea_write_wamhour.f
+	$(AM_V_F77)$(F77) $(libgfsphys_a_FFLAGS) $(FFLAGS) -c -o libgfsphys_a-idea_write_wamhour.obj `if test -f 'idea_write_wamhour.f'; then $(CYGPATH_W) 'idea_write_wamhour.f'; else $(CYGPATH_W) '$(srcdir)/idea_write_wamhour.f'; fi`
+
+libgfsphys_a-idea_writediag_wamday.o: idea_writediag_wamday.f
+	$(AM_V_F77)$(F77) $(libgfsphys_a_FFLAGS) $(FFLAGS) -c -o libgfsphys_a-idea_writediag_wamday.o `test -f 'idea_writediag_wamday.f' || echo '$(srcdir)/'`idea_writediag_wamday.f
+
+libgfsphys_a-idea_writediag_wamday.obj: idea_writediag_wamday.f
+	$(AM_V_F77)$(F77) $(libgfsphys_a_FFLAGS) $(FFLAGS) -c -o libgfsphys_a-idea_writediag_wamday.obj `if test -f 'idea_writediag_wamday.f'; then $(CYGPATH_W) 'idea_writediag_wamday.f'; else $(CYGPATH_W) '$(srcdir)/idea_writediag_wamday.f'; fi`
 
 libgfsphys_a-info.o: info.f
 	$(AM_V_F77)$(F77) $(libgfsphys_a_FFLAGS) $(FFLAGS) -c -o libgfsphys_a-info.o `test -f 'info.f' || echo '$(srcdir)/'`info.f
@@ -1070,7 +1188,9 @@ libgfsphys_a-do_physics_one_step.$(OBJEXT) : libgfsphys_a-namelist_physics_def.$
 	libgfsphys_a-d3d_def.$(OBJEXT) libgfsphysf_a-gfs_physics_sfc_flx_mod.$(OBJEXT) \
 	libgfsphysf_a-gfs_physics_gridgr_mod.$(OBJEXT) libgfsphysf_a-gfs_physics_aoi_var_mod.$(OBJEXT) \
 	libgfsphysf_a-gfs_physics_nst_var_mod.$(OBJEXT) libgfsphys_a-vert_def.$(OBJEXT) \
-	libgfsphysf_a-gfs_physics_g3d_mod.$(OBJEXT) libgfsphys_a-layout1.$(OBJEXT)
+	libgfsphys_a-idea_ncout_phys.$(OBJEXT) libgfsphys_a-idea_ncout_diag.$(OBJEXT) \
+	libgfsphys_a-idea_saber.$(OBJEXT) libgfsphysf_a-gfs_physics_g3d_mod.$(OBJEXT) \
+	libgfsphys_a-layout1.$(OBJEXT) libgfsphys_a-wam_pass_diag_types.$(OBJEXT)
 libgfsphys_a-fix_fields.$(OBJEXT) : libgfsphys_a-namelist_physics_def.$(OBJEXT) \
 	libgfsphys_a-resol_def.$(OBJEXT) libgfsphysf_a-gfs_physics_sfc_flx_mod.$(OBJEXT) \
 	libgfsphysf_a-gfs_physics_nst_var_mod.$(OBJEXT) libgfsphys_a-layout1.$(OBJEXT) libgfsphys_a-gg_def.$(OBJEXT)
@@ -1090,15 +1210,41 @@ libgfsphys_a-getcon_physics.$(OBJEXT) : function_indlsev function_indlsod libgfs
 libgfsphys_a-get_lats_node_shuff_r_fix.$(OBJEXT) : libgfsphys_a-resol_def.$(OBJEXT) libgfsphys_a-layout1.$(OBJEXT)
 libgfsphys_a-GFS_simple_scatter.$(OBJEXT) : libgfsphys_a-resol_def.$(OBJEXT) libgfsphys_a-layout1.$(OBJEXT)
 libgfsphys_a-gloopb.$(OBJEXT) : libgfsphys_a-namelist_physics_def.$(OBJEXT) libgfsphysf_a-gfs_physics_gridgr_mod.$(OBJEXT) \
-	libgfsphysf_a-gfs_physics_nst_var_mod.$(OBJEXT) libgfsphys_a-coordinate_def.$(OBJEXT) \
-	libgfsphys_a-resol_def.$(OBJEXT) libgfsphys_a-mpi_def.$(OBJEXT) libgfsphys_a-d3d_def.$(OBJEXT) \
-	libgfsphysf_a-gfs_physics_sfc_flx_mod.$(OBJEXT) libgfsphysf_a-gfs_physics_aoi_var_mod.$(OBJEXT) \
-	libgfsphys_a-vert_def.$(OBJEXT) libgfsphysf_a-gfs_physics_g3d_mod.$(OBJEXT) libgfsphys_a-layout1.$(OBJEXT) libgfsphys_a-gg_def.$(OBJEXT)
+        libgfsphysf_a-gfs_physics_nst_var_mod.$(OBJEXT) libgfsphys_a-coordinate_def.$(OBJEXT) \
+        libgfsphys_a-resol_def.$(OBJEXT) libgfsphys_a-mpi_def.$(OBJEXT) libgfsphys_a-d3d_def.$(OBJEXT) \
+        libgfsphysf_a-gfs_physics_sfc_flx_mod.$(OBJEXT) libgfsphysf_a-gfs_physics_aoi_var_mod.$(OBJEXT) \
+        libgfsphys_a-vert_def.$(OBJEXT) libgfsphysf_a-gfs_physics_g3d_mod.$(OBJEXT) \
+	libgfsphys_a-layout1.$(OBJEXT) libgfsphys_a-gg_def.$(OBJEXT) libgfsphys_a-idea_wamdiag3d_mod.$(OBJEXT)
 libgfsphys_a-gloopr.$(OBJEXT) : libgfsphys_a-namelist_physics_def.$(OBJEXT) \
-	libgfsphysf_a-gfs_physics_gridgr_mod.$(OBJEXT) libgfsphys_a-resol_def.$(OBJEXT) \
-	libgfsphys_a-d3d_def.$(OBJEXT) libgfsphysf_a-gfs_physics_aoi_var_mod.$(OBJEXT) \
-	libgfsphysf_a-gfs_physics_g3d_mod.$(OBJEXT) libgfsphys_a-layout1.$(OBJEXT) libgfsphys_a-gg_def.$(OBJEXT)
+        libgfsphysf_a-gfs_physics_gridgr_mod.$(OBJEXT) libgfsphys_a-resol_def.$(OBJEXT) \
+        libgfsphys_a-d3d_def.$(OBJEXT) libgfsphysf_a-gfs_physics_aoi_var_mod.$(OBJEXT) \
+        libgfsphysf_a-gfs_physics_g3d_mod.$(OBJEXT) libgfsphys_a-layout1.$(OBJEXT) libgfsphys_a-gg_def.$(OBJEXT)
 libgfsphys_a-gribit_gsm.$(OBJEXT) : libgfsphys_a-namelist_physics_def.$(OBJEXT)
+libgfsphys_a-idea_das_gain3d.$(OBJEXT) : libgfsphys_a-resol_def.$(OBJEXT)
+libgfsphys_a-idea_das_ioproc.$(OBJEXT) : libgfsphys_a-idea_das_smlt.$(OBJEXT) libgfsphys_a-idea_saber.$(OBJEXT)
+libgfsphys_a-idea_das_smlt.$(OBJEXT) : libgfsphys_a-resol_def.$(OBJEXT) libgfsphys_a-idea_das_utils.$(OBJEXT)
+libgfsphys_a-idea_das_utils.$(OBJEXT) : libgfsphys_a-resol_def.$(OBJEXT)
+libgfsphys_a-idea_gdas_calendar.$(OBJEXT) : libgfsphys_a-resol_def.$(OBJEXT)
+libgfsphys_a-idea_iau_split.$(OBJEXT) : libgfsphys_a-resol_def.$(OBJEXT) libgfsphys_a-layout1.$(OBJEXT)
+libgfsphys_a-idea_lat62_gaus.$(OBJEXT) :libgfsphys_a-resol_def.$(OBJEXT)
+libgfsphys_a-idea_ncout_diag.$(OBJEXT) : libgfsphys_a-resol_def.$(OBJEXT) libgfsphys_a-layout1.$(OBJEXT) \
+          libgfsphys_a-idea_wamdiag3d_mod.$(OBJEXT) libgfsphys_a-wam_pass_diag_types.$(OBJEXT) 
+libgfsphys_a-idea_ncout_gain3d.$(OBJEXT) : libgfsphys_a-resol_def.$(OBJEXT) libgfsphys_a-layout1.$(OBJEXT) \
+          libgfsphys_a-mpi_def.$(OBJEXT)
+libgfsphys_a-idea_ncout_phys.$(OBJEXT) : libgfsphys_a-resol_def.$(OBJEXT) libgfsphys_a-layout1.$(OBJEXT)
+libgfsphys_a-idea_saber.$(OBJEXT) : libgfsphys_a-idea_das_smlt.$(OBJEXT)
+libgfsphys_a-idea_wamdiag3d_mod.$(OBJEXT) : libgfsphys_a-resol_def.$(OBJEXT)
+libgfsphys_a-wam_pass_diag_types.$(OBJEXT) : libgfsphys_a-idea_wamdiag3d_mod.$(OBJEXT)
+libgfsphys_a-idea_write_wamday.$(OBJEXT) : libgfsphys_a-resol_def.$(OBJEXT) libgfsphys_a-layout1.$(OBJEXT) \
+          libgfsphys_a-mpi_def.$(OBJEXT) libgfsphys_a-idea_ncout_phys.$(OBJEXT) libgfsphys_a-gg_def.$(OBJEXT) \
+	  libgfsphys_a-coordinate_def.$(OBJEXT) libgfsphys_a-idea_gdas_calendar.$(OBJEXT) \
+	  libgfsphys_a-idea_wamdiag3d_mod.$(OBJEXT)
+libgfsphys_a-idea_write_wamhour.$(OBJEXT) : libgfsphys_a-resol_def.$(OBJEXT) libgfsphys_a-layout1.$(OBJEXT) \
+          libgfsphys_a-idea_wamdiag3d_mod.$(OBJEXT) libgfsphysf_a-gfs_physics_gridgr_mod.$(OBJEXT) \
+	  libgfsphys_a-wam_pass_diag_types.$(OBJEXT)
+libgfsphys_a-idea_writediag_wamday.$(OBJEXT) : libgfsphys_a-resol_def.$(OBJEXT) libgfsphys_a-layout1.$(OBJEXT) \
+          libgfsphys_a-mpi_def.$(OBJEXT) libgfsphys_a-idea_ncout_diag.$(OBJEXT) libgfsphys_a-gg_def.$(OBJEXT) \
+	  libgfsphys_a-coordinate_def.$(OBJEXT) libgfsphys_a-idea_gdas_calendar.$(OBJEXT) 
 libgfsphys_a-info.$(OBJEXT) : libgfsphys_a-resol_def.$(OBJEXT) libgfsphys_a-layout1.$(OBJEXT)
 libgfsphys_a-lats_shuff.$(OBJEXT) : libgfsphys_a-resol_def.$(OBJEXT) libgfsphys_a-layout1.$(OBJEXT)
 libgfsphys_a-lon_lat_para.$(OBJEXT) : libgfsphys_a-resol_def.$(OBJEXT) libgfsphys_a-layout1.$(OBJEXT) libgfsphys_a-gg_def.$(OBJEXT)
@@ -1129,7 +1275,8 @@ libgfsphysf_a-gfs_physics_finalize_mod.$(OBJEXT) : libgfsphysf_a-gfs_physics_int
 libgfsphysf_a-gfs_physics_getcf_mod.$(OBJEXT) : libgfsphysf_a-gfs_physics_err_msg_mod.$(OBJEXT) \
 	libgfsphysf_a-gfs_physics_internal_state_mod.$(OBJEXT)
 libgfsphysf_a-gfs_physics_grid_comp_mod.$(OBJEXT) : libgfsphys_a-namelist_physics_def.$(OBJEXT) \
-	libgfsphys_a-resol_def.$(OBJEXT) libgfsphys_a-mpi_def.$(OBJEXT) libgfsphysf_a-gfs_physics_finalize_mod.$(OBJEXT) \
+	libgfsphys_a-resol_def.$(OBJEXT) libgfsphys_a-mpi_def.$(OBJEXT) \
+	libgfsphysf_a-gfs_physics_finalize_mod.$(OBJEXT) \
 	libgfsphysf_a-gfs_physics_initialize_mod.$(OBJEXT) libgfsphysf_a-gfs_physics_err_msg_mod.$(OBJEXT) \
 	libgfsphysf_a-gfs_phy_states_mod.$(OBJEXT) libgfsphysf_a-gfs_physics_internal_state_mod.$(OBJEXT) \
 	libgfsphysf_a-gfs_physics_getcf_mod.$(OBJEXT) libgfsphysf_a-gfs_physics_run_mod.$(OBJEXT) \
@@ -1144,6 +1291,7 @@ libgfsphysf_a-gfs_physics_initialize_mod.$(OBJEXT) : libgfsphys_a-namelist_physi
 	libgfsphys_a-d3d_def.$(OBJEXT) libgfsphysf_a-gfs_physics_aoi_var_mod.$(OBJEXT) \
 	libgfsphys_a-vert_def.$(OBJEXT) libgfsphysf_a-gfs_physics_g3d_mod.$(OBJEXT) \
 	libgfsphys_a-layout1.$(OBJEXT) libgfsphys_a-gg_def.$(OBJEXT)
+libgfsphysf_a-gfs_physics_gridgr_mod.$(OBJEXT) : libgfsphys_a-resol_def.$(OBJEXT)
 libgfsphysf_a-gfs_physics_internal_state_mod.$(OBJEXT) : libgfsphysf_a-gfs_physics_gridgr_mod.$(OBJEXT) \
 	libgfsphysf_a-gfs_physics_nst_var_mod.$(OBJEXT) libgfsphysf_a-gfs_physics_g2d_mod.$(OBJEXT) \
 	libgfsphysf_a-gfs_physics_sfc_flx_mod.$(OBJEXT) libgfsphysf_a-gfs_physics_namelist_mod.$(OBJEXT) \
@@ -1158,7 +1306,8 @@ libgfsphysf_a-gfs_physics_start_time_get_mod.$(OBJEXT) : libgfsphysf_a-sfcio_mod
 libgfsphysf_a-gfs_phy_states_mod.$(OBJEXT) : libgfsphys_a-namelist_physics_def.$(OBJEXT) \
 	libgfsphysf_a-gfs_physics_grid_create_mod.$(OBJEXT) libgfsphysf_a-gfs_physics_g2d_mod.$(OBJEXT) \
 	libgfsphysf_a-gfs_physics_err_msg_mod.$(OBJEXT) libgfsphysf_a-gfs_physics_internal_state_mod.$(OBJEXT) \
-	libgfsphysf_a-gfs_physics_namelist_mod.$(OBJEXT) libgfsphysf_a-gfs_physics_add_get_state_ESMFField_mod.$(OBJEXT) \
+	libgfsphysf_a-gfs_physics_namelist_mod.$(OBJEXT) \
+	libgfsphysf_a-gfs_physics_add_get_state_ESMFField_mod.$(OBJEXT) \
 	libgfsphys_a-gg_def.$(OBJEXT)
 
 # Tell versions [3.59,3.63) of GNU make to not export all variables.

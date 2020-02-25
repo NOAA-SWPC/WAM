@@ -20,17 +20,18 @@
       real               :: glon(NXMAG)
       real, dimension(NXMAG, NYMAG) ::    cormag, btot, dipang
 !=====================================================================
-      real  :: emaps1(21,20,7),cmaps1(21,20,7), djspectra1(15,21)
+      
 !
       integer, parameter :: NT_21 = 21   ! TIROS-21  1st dimension
       integer, parameter :: NT_20 = 20   ! TIROS-20  2nd dimension
       integer, parameter :: NT_7  =  7   ! TIROS-7   3rd dimension
 !
       real, dimension(NT_21, NT_20, NT_7) :: EMAPS, CMAPS     ! TIROS
-
+      real  :: emaps1(21,20,7),cmaps1(21,20,7)
       integer, parameter :: N_FLX    = 15               ! TIROS
       integer, parameter :: N_BND    = 21               ! TIROS
       real               :: djspectra(N_FLX, N_BND)     ! TIROS
+      real               :: djspectra1(15,21)
 !=====================================================================
       integer, parameter :: jmaxwell = 6
       real, parameter    :: width_maxwell = 0.050
