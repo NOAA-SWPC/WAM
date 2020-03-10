@@ -12,7 +12,9 @@ c***********************************************************************
       use gfs_dyn_gg_def
       use gfs_dyn_physcons, pi => con_pi
 
-      use module_CPLFIELDS,        ONLY: setupGauss2d, createWAMGrid
+      use module_CPLFIELDS, ONLY: setupGauss2d,
+     &                            wam2dmesh, MeshCreateReducedGaussian,
+     &                            wamlevels
 
       implicit none
 
@@ -53,8 +55,10 @@ c***********************************************************************
       call setupGauss2d(lonsperlat(latg2), 2*latg2, pi, colrad_a, 
      & lats_node_a, global_lats_a, lonsperlat)
  
-      call createWAMGrid(lonf, latg, levs, ipt_lats_node_a, lats_node_a,
-     & global_lats_a, lonsperlat, XLON, XLAT)
+      wam2dmesh = MeshCreateReducedGaussian(ipt_lats_node_a,
+     &  lats_node_a, lonsperlat, global_lats_a, colrad_a)
+      wamlevels = levs
+
       RETURN
       END
  
