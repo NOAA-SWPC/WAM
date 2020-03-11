@@ -808,7 +808,6 @@
       character(len=80), allocatable  :: fieldNameList(:)
       type(ESMF_Field)                :: field
       type(ESMF_StateItem_Flag)       :: itemType
-      real(ESMF_KIND_R8), pointer     :: fptr(:,:)
 
       if (present(rc)) rc = ESMF_SUCCESS
       
@@ -838,12 +837,12 @@
             line=__LINE__, &
             file=__FILE__)) &
             return  ! bail out
-	  call ESMF_FieldGet(field, farrayPtr=fptr, rc=rc)
-	  if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
+          call ESMF_FieldFill(field, dataFillScheme="const", &
+            const1=0._ESMF_KIND_R8, rc=rc)
+          if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
             line=__LINE__, &
             file=__FILE__)) &
             return  ! bail out
-          fptr=0.d0 ! zero out the entire field
           call NUOPC_SetAttribute(field, name="Updated", value="true", rc=rc)
           if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
             line=__LINE__, &
