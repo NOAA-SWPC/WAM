@@ -136,11 +136,12 @@ module module_CPLFIELDS
   !-----------------------------------------------------------------------------
   
   subroutine fillExportFields(data_a2oi, lonr, latr, rootPet, rc)
-    real(kind=ESMF_KIND_R8), target, intent(in) :: data_a2oi(:,:,:)
-    integer, intent(in)                         :: lonr, latr, rootPet
-    integer, intent(out), optional              :: rc
+    real(kind=ESMF_KIND_R8), target, intent(in)  :: data_a2oi(:,:,:)
+    integer,                         intent(in)  :: lonr, latr, rootPet
+    integer, optional,               intent(out) :: rc
     
-    integer           :: n
+    integer :: localrc, n
+    logical :: isCreated
     !-----
     ! Fill updated data into the export Fields.
     !-----
@@ -148,14 +149,14 @@ module module_CPLFIELDS
     if (present(rc)) rc=ESMF_SUCCESS
     
     do n=1, size(exportFields)
-      if (ESMF_FieldIsCreated(exportFields(n))) then
+      isCreated = ESMF_FieldIsCreated(exportFields(n), rc=localrc)
+      ESMF_ERR_RETURN(localrc,rc)
+      if (isCreated) then
         call ESMF_FieldScatter(exportFields(n), data_a2oi(:,:,n), &
-          rootPet=rootPet, rc=rc)
-        ESMF_ERR_RETURN(rc,rc)
+          rootPet=rootPet, rc=localrc)
+        ESMF_ERR_RETURN(localrc,rc)
       endif
     enddo
-
-    ESMF_ERR_RETURN(rc,rc)
 
   end subroutine
   
@@ -805,107 +806,87 @@ module module_CPLFIELDS
 
   end subroutine
 
-  ! Create analytical fields for the 2D WAM built on a ESMF_Mesh
-  subroutine fillWAMFields(uug, vvg, wwg, ttg, zzg, n2g, rqg, ipt_lats_node_a, global_lats_a, rc)
-    
-    real(ESMF_KIND_R8), target :: uug(:,:,:)
-    real(ESMF_KIND_R8), target :: vvg(:,:,:)
-    real(ESMF_KIND_R8), target :: wwg(:,:,:)
-    real(ESMF_KIND_R8), target :: ttg(:,:,:)
-    real(ESMF_KIND_R8), target :: zzg(:,:,:)
-    real(ESMF_KIND_R8), target :: n2g(:,:,:)
-    real(ESMF_KIND_R8), intent(in) :: rqg(:,:,:)
-    integer, optional :: ipt_lats_node_a
-    integer, optional, intent(in) :: global_lats_a(:)
-    integer, optional :: rc
+  !-----------------------------------------------------------------------------
 
-    real(ESMF_KIND_R8), pointer   :: fptr(:,:), infptr(:,:,:)
-    integer :: i, j, n, k, kk, levels
-    integer :: PetNo, PetCnt
-    type(ESMF_VM) :: vm
-    character(len=128):: fieldName
-    character(len=128):: fileName
-    real(ESMF_KIND_R8), pointer   :: varbuf(:,:,:)
-    integer                         :: nc, varid, status
-    integer                         :: start3(3), count3(3)  
+  subroutine fillWAMFields(uug, vvg, wwg, ttg, zzg, n2g, rqg, rc)
 
-    if (present(rc)) rc=ESMF_SUCCESS
+    real(ESMF_KIND_R8), target     :: uug(:,:,:)
+    real(ESMF_KIND_R8), target     :: vvg(:,:,:)
+    real(ESMF_KIND_R8), target     :: wwg(:,:,:)
+    real(ESMF_KIND_R8), target     :: ttg(:,:,:)
+    real(ESMF_KIND_R8), target     :: zzg(:,:,:)
+    real(ESMF_KIND_R8), target     :: n2g(:,:,:)
+    real(ESMF_KIND_R8), target     :: rqg(:,:,:)
+    integer, optional, intent(out) :: rc
 
-    !------------------------------------------------------------------------
-    ! get global vm information
-    !
-    call ESMF_VMGetCurrent(vm, rc=rc)
-    if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-      line=__LINE__, &
-      file=__FILE__)) &
-      return  ! bail out
+    ! local variables
+    integer                     :: localrc
+    integer                     :: i, item, j, levelCount, nodeCount
+    logical                     :: isCreated
+    real(ESMF_KIND_R8), pointer :: fptr(:,:)
+    real(ESMF_KIND_R8), pointer :: infptr(:,:,:)
+    character(len=ESMF_MAXSTR)  :: fieldName
 
-    ! set up local pet info
-    call ESMF_VMGet(vm, localPet=PetNo, petCount=PetCnt, rc=rc)
-    if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-      line=__LINE__, &
-      file=__FILE__)) &
-      return  ! bail out
+    ! begin
+    if (present(rc)) rc = ESMF_SUCCESS
 
-    do n=1, NexportFields
-       if (ESMF_FieldIsCreated(exportFields(n))) then
-         call ESMF_FieldGet(exportFields(n), name=fieldName, rc=rc)
-         if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-            line=__LINE__, &
-            file=__FILE__)) &
-            return  ! bail out
-         call ESMF_FieldGet(exportFields(n), farrayPtr=fptr, rc=rc)
-         if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-            line=__LINE__, &
-            file=__FILE__)) &
-            return  ! bail out
-         print *, 'bound wwg', ubound(wwg), lbound(wwg)
-         print *, trim(fieldName), ' wwg size and field size', size(wwg,1),size(wwg,2),&
-	       size(wwg,3), size(fptr,1),size(fptr,2)
-        
-         levels = size(fptr,2)
-         if (trim(fieldName) == "O_Density" .or. trim(fieldName)=="O2_Density") then
-            if (trim(fieldName) == "O_Density") then
-               kk = 3
-            else
-               kk = 4
-            endif
-            allocate(varbuf(size(rqg,1),size(rqg,2),levels))
-            do i=1,size(rqg,1)
-              do j=1,size(rqg,2)
-                 do k=1,levels
-                   varbuf(i,j,k)=rqg(i,j,levels*kk+k)
-                 enddo
-              enddo
-            enddo
-            infptr=>varbuf
-         elseif (trim(fieldName) == "northward_wind_neutral") then
-            infptr=>vvg
-         elseif (trim(fieldName) == "eastward_wind_neutral") then
-            infptr=>uug
-         elseif (trim(fieldName) == "upward_wind_neutral") then
-            infptr=>wwg
-         elseif (trim(fieldName) == "temp_neutral") then
-            infptr=>ttg
-         elseif (trim(fieldName) == "N2_Density") then
-            infptr=>n2g
-         elseif (trim(fieldName) == "height") then
-            infptr=>zzg
-         endif
-         do i=1,size(fptr,1)
-           do j=1,levels
-             fptr(i,j)=infptr(localNodeToIndexMap(i,1),&
-                              localNodeToIndexMap(i,2),j)
-           enddo
-         enddo
-         if (trim(fieldName) == "O_Density" .or. trim(fieldName)=="O2_Density") then
-	    deallocate(varbuf)
-         endif
-	 print *, trim(fieldName), ' min/max ', minval(fptr), maxval(fptr)
-      endif
-   enddo
+    do item = 1, nExportFields
+      isCreated = ESMF_FieldIsCreated(exportFields(item), rc=localrc)
+      if (ESMF_LogFoundError(rcToCheck=localrc, msg=ESMF_LOGERR_PASSTHRU, &
+        line=__LINE__, &
+        file=__FILE__,  &
+        rcToReturn=rc)) &
+        return  ! bail out
+      if (isCreated) then
+        call ESMF_FieldGet(exportFields(item), name=fieldName, rc=localrc)
+        if (ESMF_LogFoundError(rcToCheck=localrc, msg=ESMF_LOGERR_PASSTHRU, &
+          line=__LINE__, &
+          file=__FILE__,  &
+          rcToReturn=rc)) &
+          return  ! bail out
+        nullify(fptr)
+        call ESMF_FieldGet(exportFields(item), localDE=0, &
+          farrayPtr=fptr, rc=localrc)
+        if (ESMF_LogFoundError(rcToCheck=localrc, msg=ESMF_LOGERR_PASSTHRU, &
+          line=__LINE__, &
+          file=__FILE__,  &
+          rcToReturn=rc)) &
+          return  ! bail out
+        nodeCount  = size(fptr, 1)
+        levelCount = size(fptr, 2)
+        nullify(infptr)
+        select case (trim(fieldName))
+          case ("northward_wind_neutral")
+            infptr => vvg
+          case ("eastward_wind_neutral")
+            infptr => uug
+          case ("upward_wind_neutral")
+            infptr => wwg
+          case ("temp_neutral")
+            infptr => ttg
+          case ("N2_Density")
+            infptr => n2g
+          case ("height")
+            infptr => zzg
+          case ("O_Density")
+            infptr => rqg(:,:,3*levelCount+1:)
+          case ("O2_Density")
+            infptr => rqg(:,:,4*levelCount+1:)
+          case default
+            cycle
+        end select
+        do j = 1, levelCount
+          do i = 1, nodeCount
+            fptr(i,j) = infptr(localNodeToIndexMap(i,1), &
+                               localNodeToIndexMap(i,2),j)
+          end do
+        end do
+      end if
+    end do
 
   end subroutine
+
+  !-----------------------------------------------------------------------------
 
   integer function queryFieldList(fieldlist, fieldname, abortflag, rc)
     ! returns integer index of first found fieldname in fieldlist
@@ -936,7 +917,8 @@ module module_CPLFIELDS
     enddo
 
     if (labort .and. queryFieldList < 1) then
-      call ESMF_LogWrite('queryFieldList ABORT on fieldname '//trim(fieldname), ESMF_LOGMSG_INFO, line=__LINE__, file=__FILE__, rc=rc)
+      call ESMF_LogWrite('queryFieldList ABORT on fieldname '//trim(fieldname), &
+        ESMF_LOGMSG_INFO, line=__LINE__, file=__FILE__, rc=rc)
       CALL ESMF_Finalize(endflag=ESMF_END_ABORT)
     endif
   end function queryFieldList

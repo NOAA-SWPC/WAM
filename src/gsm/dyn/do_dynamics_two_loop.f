@@ -1061,8 +1061,7 @@
 !     &               PDDEV_A,PDDOD_A,SNNP1EV,SNNP1OD)
      &               PDDEV_A,PDDOD_A,SNNP1EV,SNNP1OD, kdt, deltim)
 
-        call fillWAMFields(uug, vvg, wwg, ttg, zzg, n2g, rqg, 
-     &              ipt_lats_node_a,global_lats_a)
+        call fillWAMFields(uug, vvg, wwg, ttg, zzg, n2g, rqg)
       endif
 !
 ! =====================================================================
