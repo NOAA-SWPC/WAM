@@ -434,6 +434,8 @@
 !     (indirectly) N2
 ! October 2017 Rashid Akmaev
 
+      use namelist_wamphysics_def, only : keddy0_tracer    
+
       implicit none
 ! Arguments
       integer, intent(in) :: im    ! number of long data points in fields
@@ -459,8 +461,7 @@
 ! Keddy parameters: mean, width in scale heights, height of max
 
       real, parameter:: pi = 3.141592653
-!     real, parameter:: kmax = 120.
-      real, parameter:: kmax = 140.
+!      real, parameter:: kmax = 140.
 ! semiannual amp
       real, parameter:: kampsa = 60.
 !      real, parameter:: dkeddy = 2.
@@ -472,12 +473,14 @@
       if(dkeddy <= 1e-10) then
 !         keddy(:) = kmax
 ! Add semiannual variation
-         keddy(:) = kmax + kampsa*(cos(4.*pi*(dayno+9.)/365.))
+!        keddy(:) = kmax + kampsa*(cos(4.*pi*(dayno+9.)/365.))
+         keddy(:) = keddy0_tracer + kampsa*(cos(4.*pi*(dayno+9.)/365.))
       else
          do k=1,levs+1
 ! height in scale heights
             x = alog(1e5/prsi(1,k))
-            keddy(k)= kmax*exp(-((x-xmax)/dkeddy)**2)
+!            keddy(k)= kmax*exp(-((x-xmax)/dkeddy)**2)
+            keddy(k)= keddy0_tracer*exp(-((x-xmax)/dkeddy)**2)
          enddo
       endif
 !      print *, 'kampsa=',kampsa,'keddy=', keddy(135)
