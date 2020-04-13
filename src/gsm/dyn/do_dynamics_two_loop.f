@@ -1051,17 +1051,20 @@
 
 ! Get w hydrostatically.
 !-----------------------
-      if( wam_ipe_coupling ) then
+      if( wam_ipe_coupling .or. (nc_output .and.
+     &           MOD(NINT(shour),DELOUT_NC) == 0) ) then
         call get_w_z(grid_gr,
      &               trie_ls,trio_ls,
      &               LS_NODE,LS_NODES,MAX_LS_NODES,
      &               LATS_NODES_A,GLOBAL_LATS_A,LONSPERLAT,
      &               EPSE,EPSO,EPSEDN,EPSODN,
      &               PLNEV_A,PLNOD_A,PLNEW_A,PLNOW_A,
-!     &               PDDEV_A,PDDOD_A,SNNP1EV,SNNP1OD)
-     &               PDDEV_A,PDDOD_A,SNNP1EV,SNNP1OD, kdt, deltim)
-
-        call fillWAMFields(uug, vvg, wwg, ttg, zzg, n2g, rqg)
+     &               PDDEV_A,PDDOD_A,SNNP1EV,SNNP1OD,
+     &               kdt,deltim,restart_step)
+      endif
+      if ( wam_ipe_coupling ) then
+        call fillWAMFields(uug, vvg, wwg, ttg, zzg, n2g, rqg,
+     &              ipt_lats_node_a,global_lats_a)
       endif
 !
 ! =====================================================================
