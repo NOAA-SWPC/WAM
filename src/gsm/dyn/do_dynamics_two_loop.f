@@ -1063,8 +1063,7 @@
      &               kdt,deltim,restart_step)
       endif
       if ( wam_ipe_coupling ) then
-        call fillWAMFields(uug, vvg, wwg, ttg, zzg, n2g, rqg,
-     &              ipt_lats_node_a,global_lats_a)
+        call fillWAMFields(uug, vvg, wwg, ttg, zzg, n2g, rqg)
       endif
 !
 ! =====================================================================
