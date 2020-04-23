@@ -307,7 +307,7 @@
 
     do n = 1,nImportFields
       call realizeConnectedInternCplField(importState, &
-        field=importFields(n), standardName=trim(importFieldsList(n)), &
+        field=importFields(n), fieldName=trim(importFieldsList(n)), &
         grid=gridIn, rc=rc)
       if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
         line=__LINE__, &
@@ -317,7 +317,7 @@
 
     do n = 1,nExportFields
       call realizeConnectedInternCplField(exportState, &
-        field=exportFields(n), standardName=trim(exportFieldsList(n)), &
+        field=exportFields(n), fieldName=trim(exportFieldsList(n)), &
         grid=gridOut, rc=rc)
       if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
         line=__LINE__, &
@@ -327,65 +327,70 @@
 
   contains  !- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   
-    subroutine realizeConnectedInternCplField(state, field, standardName, grid, rc)
+    subroutine realizeConnectedInternCplField(state, field, fieldName, grid, rc)
       type(ESMF_State)                :: state
       type(ESMF_Field)                :: field
-      character(len=*)                :: standardName
+      character(len=*)                :: fieldName
       type(ESMF_Grid)                 :: grid
       integer, intent(out), optional  :: rc
       
       ! local variables
-      character(len=80)               :: fieldName
-      type(ESMF_ArraySpec)            :: arrayspec
-      integer                         :: i
+      integer :: localrc
+      logical :: isConnected
 
+      ! begin
       if (present(rc)) rc = ESMF_SUCCESS
-      
-      fieldName = standardName  ! use standard name as field name
 
-      !! Create fields using wam2dmesh if they are WAM fields 
-      if (NUOPC_IsConnected(state, fieldName=fieldName)) then
-         if (fieldName == "northward_wind_neutral" .or. &
-             fieldName == "eastward_wind_neutral" .or. &
-             fieldName == "upward_wind_neutral" .or. &
-             fieldName == "temp_neutral" .or. &
-             fieldName == "O_Density" .or. &
-             fieldName == "O2_Density" .or. &
-             fieldName == "N2_Density" .or. &
-             fieldName == "height")  then
-           call ESMF_ArraySpecSet(arrayspec,2,ESMF_TYPEKIND_R8, rc=rc)
-           if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-              line=__LINE__, &
-              file=__FILE__)) &
+      isConnected = NUOPC_IsConnected(state, fieldName=fieldName, rc=localrc)
+      if (ESMF_LogFoundError(rcToCheck=localrc, msg=ESMF_LOGERR_PASSTHRU, &
+        line=__LINE__,  &
+        file=__FILE__,  &
+        rcToReturn=rc)) &
+        return  ! bail out
+
+      if (isConnected) then
+        select case (trim(fieldName))
+          case ("northward_wind_neutral", &
+                "eastward_wind_neutral",  &
+                "upward_wind_neutral",    &
+                "temp_neutral",           &
+                "O_Density",              &
+                "O2_Density",             &
+                "N2_Density",             &
+                "height"                  )
+            field = ESMF_FieldCreate(wam2dmesh, ESMF_TYPEKIND_R8,   &
+              ungriddedLBound=(/1/), ungriddedUBound=(/wamlevels/), &
+              name=fieldName, rc=localrc)
+            if (ESMF_LogFoundError(rcToCheck=localrc, msg=ESMF_LOGERR_PASSTHRU, &
+              line=__LINE__,  &
+              file=__FILE__,  &
+              rcToReturn=rc)) &
               return  ! bail out
-           field = ESMF_FieldCreate(wam2dmesh, arrayspec, &
-              ungriddedLBound=(/1/), ungriddedUBound=(/wamlevels/),&
-              name=fieldName, rc=rc)
-           if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-              line=__LINE__, &
-              file=__FILE__)) &
+          case default
+            field = ESMF_FieldCreate(grid, ESMF_TYPEKIND_R8,   &
+              name=fieldName, rc=localrc)
+            if (ESMF_LogFoundError(rcToCheck=localrc, msg=ESMF_LOGERR_PASSTHRU, &
+              line=__LINE__,  &
+              file=__FILE__,  &
+              rcToReturn=rc)) &
               return  ! bail out
-         else
-           ! realize the connected Field pass back up for internal cpl fields
-           field = ESMF_FieldCreate(grid, ESMF_TYPEKIND_R8, name=fieldName, rc=rc)
-           if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-             line=__LINE__, &
-             file=__FILE__)) &
-             return  ! bail out
-         endif
-         call NUOPC_Realize(state, field=field, rc=rc)
-         if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-           line=__LINE__, &
-           file=__FILE__)) &
-           return  ! bail out
-      else
-        ! remove a not connected Field from State
-        call ESMF_StateRemove(state, (/fieldName/), rc=rc)
-        if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
-          line=__LINE__, &
-          file=__FILE__)) &
+        end select
+        call NUOPC_Realize(state, field, rc=localrc)
+        if (ESMF_LogFoundError(rcToCheck=localrc, msg=ESMF_LOGERR_PASSTHRU, &
+          line=__LINE__,  &
+          file=__FILE__,  &
+          rcToReturn=rc)) &
           return  ! bail out
-      endif
+      else
+        ! remove unconnected field from state
+        call ESMF_StateRemove(state, (/fieldName/), rc=localrc)
+        if (ESMF_LogFoundError(rcToCheck=localrc, msg=ESMF_LOGERR_PASSTHRU, &
+          line=__LINE__,  &
+          file=__FILE__,  &
+          rcToReturn=rc)) &
+          return  ! bail out
+      end if
+
     end subroutine
 
   end subroutine
@@ -801,16 +806,15 @@
   contains  !- - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
   
     subroutine setAllFieldsUpdated(state, rc)
-      type(ESMF_State)                :: state
-      integer, intent(out), optional  :: rc
+      type(ESMF_State)     :: state
+      integer, intent(out) :: rc
       
-      integer                         :: i, fieldCount
-      character(len=80), allocatable  :: fieldNameList(:)
-      type(ESMF_Field)                :: field
-      type(ESMF_StateItem_Flag)       :: itemType
-      real(ESMF_KIND_R8), pointer     :: fptr(:,:)
+      integer                                 :: i, fieldCount
+      character(len=ESMF_MAXSTR), allocatable :: fieldNameList(:)
+      type(ESMF_Field)                        :: field
+      type(ESMF_StateItem_Flag)               :: itemType
 
-      if (present(rc)) rc = ESMF_SUCCESS
+      rc = ESMF_SUCCESS
       
       call ESMF_StateGet(State, itemCount=fieldCount, rc=rc)
       if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
@@ -838,12 +842,12 @@
             line=__LINE__, &
             file=__FILE__)) &
             return  ! bail out
-	  call ESMF_FieldGet(field, farrayPtr=fptr, rc=rc)
-	  if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
+          call ESMF_FieldFill(field, dataFillScheme="const", &
+            const1=0._ESMF_KIND_R8, rc=rc)
+          if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
             line=__LINE__, &
             file=__FILE__)) &
             return  ! bail out
-          fptr=0.d0 ! zero out the entire field
           call NUOPC_SetAttribute(field, name="Updated", value="true", rc=rc)
           if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
             line=__LINE__, &
@@ -855,10 +859,13 @@
       ! JAS : 1/25/2018 : Added call to fillWAMFields so that IPE has access
       ! to the data read in the module
       ! NEMS/src/atmos/gsm/dyn/input_for_wam_ipe_rst.f
-
       
       if(wam_ipe_cpl_rst_input) then
-        call fillWAMFields(uug, vvg, wwg, ttg, zzg, n2g, rqg)
+        call fillWAMFields(uug, vvg, wwg, ttg, zzg, n2g, rqg, rc=rc)
+        if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
+          line=__LINE__, &
+          file=__FILE__)) &
+          return  ! bail out
       endif
 
     end subroutine
