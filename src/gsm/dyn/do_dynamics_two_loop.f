@@ -1062,9 +1062,7 @@
      &               PDDEV_A,PDDOD_A,SNNP1EV,SNNP1OD,
      &               kdt,deltim,restart_step)
       endif
-      if ( wam_ipe_coupling ) then
-        call fillWAMFields(uug, vvg, wwg, ttg, zzg, n2g, rqg)
-      endif
+      if ( wam_ipe_coupling ) call fillWAMFields()
 !
 ! =====================================================================
       IF(.not.restart_step) THEN

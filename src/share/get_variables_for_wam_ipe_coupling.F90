@@ -1,10 +1,16 @@
-      module get_variables_for_WAM_IPE_coupling
+module get_variables_for_WAM_IPE_coupling
 
-      USE ESMF
-      IMPLICIT NONE
+  IMPLICIT NONE
 
-      REAL(ESMF_KIND_R8), DIMENSION(:, :, :), ALLOCATABLE :: wwg, zzg, uug,vvg, ttg, rqg, n2g, ppg
-      REAL(ESMF_KIND_R8), DIMENSION(:, :),    ALLOCATABLE :: ps
+  INTEGER, PARAMETER, PRIVATE :: kind_grid = 8
 
-      END module get_variables_for_WAM_IPE_coupling
+  REAL(kind=kind_grid), DIMENSION(:, :, :), ALLOCATABLE, TARGET :: wwg, zzg, &
+                                                                   uug, vvg, &
+                                                                   ttg, rqg, &
+                                                                   n2g, den, &
+                                                                   gmol
+  REAL(kind=kind_grid), DIMENSION(:, :, :), ALLOCATABLE :: ppg
+  REAL(kind=kind_grid), DIMENSION(:, :),    ALLOCATABLE :: ps
+
+END module get_variables_for_WAM_IPE_coupling
 
