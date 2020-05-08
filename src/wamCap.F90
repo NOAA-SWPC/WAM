@@ -42,7 +42,6 @@
         model_label_CheckImport     => label_CheckImport, &
         model_label_Advance         => label_Advance
       use module_CPLFIELDS
-      use get_variables_for_WAM_IPE_coupling
  
       USE module_ATM_INTERNAL_STATE,ONLY: ATM_INTERNAL_STATE            &
                                          ,WRAP_ATM_INTERNAL_STATE
@@ -350,14 +349,17 @@
 
       if (isConnected) then
         select case (trim(fieldName))
-          case ("northward_wind_neutral", &
-                "eastward_wind_neutral",  &
-                "upward_wind_neutral",    &
-                "temp_neutral",           &
-                "O_Density",              &
-                "O2_Density",             &
-                "N2_Density",             &
-                "height"                  )
+
+          case ("northward_wind_neutral",           &
+                "eastward_wind_neutral",            &
+                "upward_wind_neutral",              &
+                "temp_neutral",                     &
+                "O_Density",                        &
+                "O2_Density",                       &
+                "N2_Density",                       &
+                "thermosphere_mean_molecular_mass", &
+                "thermosphere_mass_density",        &
+                "height"                            )
             field = ESMF_FieldCreate(wam2dmesh, ESMF_TYPEKIND_R8,   &
               ungriddedLBound=(/1/), ungriddedUBound=(/wamlevels/), &
               name=fieldName, rc=localrc)
@@ -861,7 +863,7 @@
       ! NEMS/src/atmos/gsm/dyn/input_for_wam_ipe_rst.f
       
       if(wam_ipe_cpl_rst_input) then
-        call fillWAMFields(uug, vvg, wwg, ttg, zzg, n2g, rqg, rc=rc)
+        call fillWAMFields(rc=rc)
         if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
           line=__LINE__, &
           file=__FILE__)) &
