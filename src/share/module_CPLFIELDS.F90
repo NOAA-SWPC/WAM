@@ -31,7 +31,7 @@ module module_CPLFIELDS
   integer           :: wamlevels
   
   ! Export Fields ----------------------------------------
-  integer, public, parameter :: NexportFields = 56
+  integer, public, parameter :: NexportFields = 58
   type(ESMF_Field), public   :: exportFields(NexportFields)
   character(len=40), public, parameter :: exportFieldsList(NexportFields) = (/ &
       "mean_zonal_moment_flx                  ", &
@@ -86,6 +86,8 @@ module module_CPLFIELDS
       "inst_pres_height_lowest                ", &
       "inst_height_lowest                     ", &
       "mean_fprec_rate                        ", &
+      "thermosphere_mean_molecular_mass       ", &
+      "thermosphere_mass_density              ", &
       "northward_wind_neutral                 ", &
       "eastward_wind_neutral                  ", &
       "upward_wind_neutral                    ", &
@@ -808,24 +810,19 @@ module module_CPLFIELDS
 
   !-----------------------------------------------------------------------------
 
-  subroutine fillWAMFields(uug, vvg, wwg, ttg, zzg, n2g, rqg, rc)
+  subroutine fillWAMFields(rc)
 
-    real(ESMF_KIND_R8), target     :: uug(:,:,:)
-    real(ESMF_KIND_R8), target     :: vvg(:,:,:)
-    real(ESMF_KIND_R8), target     :: wwg(:,:,:)
-    real(ESMF_KIND_R8), target     :: ttg(:,:,:)
-    real(ESMF_KIND_R8), target     :: zzg(:,:,:)
-    real(ESMF_KIND_R8), target     :: n2g(:,:,:)
-    real(ESMF_KIND_R8), target     :: rqg(:,:,:)
+    use get_variables_for_WAM_IPE_coupling
+
     integer, optional, intent(out) :: rc
 
     ! local variables
-    integer                     :: localrc
-    integer                     :: i, item, j, levelCount, nodeCount
-    logical                     :: isCreated
-    real(ESMF_KIND_R8), pointer :: fptr(:,:)
-    real(ESMF_KIND_R8), pointer :: infptr(:,:,:)
-    character(len=ESMF_MAXSTR)  :: fieldName
+    integer                       :: localrc
+    integer                       :: i, item, j, levelCount, nodeCount
+    logical                       :: isCreated
+    real(kind=kind(uug)), pointer :: infptr(:,:,:)
+    real(ESMF_KIND_R8),   pointer :: fptr(:,:)
+    character(len=ESMF_MAXSTR)    :: fieldName
 
     ! begin
     if (present(rc)) rc = ESMF_SUCCESS
@@ -856,6 +853,10 @@ module module_CPLFIELDS
         levelCount = size(fptr, 2)
         nullify(infptr)
         select case (trim(fieldName))
+          case ("thermosphere_mass_density")
+            infptr => den
+          case ("thermosphere_mean_molecular_mass")
+            infptr => gmol
           case ("northward_wind_neutral")
             infptr => vvg
           case ("eastward_wind_neutral")

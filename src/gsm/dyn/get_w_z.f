@@ -1,23 +1,3 @@
-      module get_variables_for_WAM_IPE_coupling
-
-      use gfs_dyn_resol_def, ONLY: lonf, levs, levh
-      use gfs_dyn_layout1,   ONLY: lats_node_a
-      use gfs_dyn_machine
-      use namelist_dynamics_def, ONLY: wam_ipe_cpl_rst_output,
-     &                                 NC_output, nc_fields,
-     &                                 DELOUT_NC, FHRES
-      use gci, only: grid_collect_ipe
-
-      IMPLICIT NONE
-
-      REAL, DIMENSION(:, :, :), ALLOCATABLE :: wwg, zzg, uug,
-     &                                         vvg, ttg, rqg,
-     &                                         n2g, ppg, den,
-     &                                         gmol
-      REAL, DIMENSION(:, :),    ALLOCATABLE :: ps
-
-      END module get_variables_for_WAM_IPE_coupling
-
       subroutine get_w_z(grid_gr,
      &                 trie_ls,trio_ls,
      &                 LS_NODE,LS_NODES,MAX_LS_NODES,
@@ -57,6 +37,7 @@
      &,                           con_amo3, con_boltz
       use do_dynamics_mod
       use gfs_dyn_tracer_const, only: cpi
+      use gci,                  only: grid_collect_ipe
       use get_variables_for_WAM_IPE_coupling
 !!     
       IMPLICIT NONE
@@ -351,7 +332,7 @@
              n2g(i, lan, k)       = n2g(i, lan, k)       * rmdn2 * pptt
 
              den (i, lan, k) = mmm * 1.0e-3 / con_avgd * ppttbz ! unit ~ kg/m^3.
-             gmol(i, lan, k) = mmm * 1.0e-3 ! unit ~ kg/mol.
+             gmol(i, lan, k) = mmm ! unit ~ g/mol (amu).
            end do
          end do
        enddo
