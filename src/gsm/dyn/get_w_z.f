@@ -332,7 +332,7 @@
              n2g(i, lan, k)       = n2g(i, lan, k)       * rmdn2 * pptt
 
              den (i, lan, k) = mmm * 1.0e-3 / con_avgd * ppttbz ! unit ~ kg/m^3.
-             gmol(i, lan, k) = mmm * 1.0e-3 ! unit ~ kg/mol.
+             gmol(i, lan, k) = mmm ! unit ~ g/mol (amu).
            end do
          end do
        enddo
