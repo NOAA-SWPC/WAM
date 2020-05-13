@@ -140,6 +140,9 @@
 ! driver      dtdt(i,k)=jh(i,k)/cp(i,k), dudt dvdt
 !              ion darge and Joule heating
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
+
+      use namelist_wamphysics_def, only : JH0, JH_semiann,
+     &                                    JH_ann, JH_tanh
       
       implicit none
       REAL  , INTENT(IN)   :: f107, f107d, kp  ! solar-geo inputs from different WAM applications
@@ -217,8 +220,8 @@
 !      endif
       call GetIonParams(pres,
 !     &   dayno,utsec,F107,KP,sda,sza,rlat,zg,grav,      
-     &   dayno,utsec,F107,f107d,KP,NHP,NHPI,spw_drivers,sda,sza,rlat,zg,grav,      
-     &   o_n, o2_n, n2_n,adu,adv,adt,rho,rlt,rlon,ix,im,levs,k91,       
+     &   dayno,utsec,F107,f107d,KP,NHP,NHPI,spw_drivers,sda,sza,rlat,zg,
+     &   grav,o_n, o2_n, n2_n,adu,adv,adt,rho,rlt,rlon,ix,im,levs,k91,       
      &   btot,dipang,maglon,maglat,essa,                                
      &   dudt,dvdt,jh) 
 
@@ -232,9 +235,12 @@
 !   Joule heating factor to consider the seasonal variation and
 !   semiannual variation, Zhuxiao.Li
 
-!  JH0_6
-           jh_fac = 1.75+0.5*tanh(2.*rlat(i))*cos((dayno+9.)*2.*pi/365.)
-     &                  +0.5*(cos(4.*pi*(dayno-80.)/365.))
+!  JH0_5
+!           jh_fac = 1.75+0.5*tanh(2.*rlat(i))*cos((dayno+9.)*2.*pi/365.)
+!     &                  +0.5*(cos(4.*pi*(dayno-80.)/365.))
+
+        jh_fac = JH0+JH_tanh*tanh(2.*rlat(i))*cos((dayno+9.)*2.*pi/365.)
+     &              +JH_semiann*(cos(4.*pi*(dayno-80.)/365.))
 
 ! VBz adjustment
 
