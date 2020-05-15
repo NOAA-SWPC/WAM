@@ -186,24 +186,6 @@
       nctiros_fpath= trim(Dir_ion)//trim(tiros_file) 
       ncimf_fpath= trim(Dir_imf)//trim(imf_file) 
 
-      if (mpi_id.eq.0) then     
-      write(iulog,*) GW_fix, 'idea_ion_input GW_fix '
-      write(iulog,*) tiros_activity_fix, ' tiros_activity_level   '
-
-
-      write(iulog,*)    '+++++++++++ ncfile_fpath '
-      write(iulog,133) ncfile_fpath
-      write(iulog,*)    '+++++++++++  '
-!                                                       write(iulog,*) idea_IMF_fix, 'idea_IMF_fix - flag (1-fixed) '
-      write(iulog,*)    '+++++++++++ nctiros_fpath '
-      write(iulog,133)  nctiros_fpath
-      write(iulog,*)    '+++++++++++  '
-
-      write(iulog,*)    '+++++++++++ ncimf_fpath '
-      write(iulog,133)   ncimf_fpath
-      write(iulog,*)    '+++++++++++ '
-      write(iulog,*) idea_imf_fix, 'idea_ion_input ... idea_imf_fix ' 
-      endif
 133   format(A122)
 !                                  
       GW_fixnam = GW_fix
@@ -235,10 +217,6 @@
 !        integer, dimension(nf90_max_var_dims) :: dimidT         
  
 
-        if(mpi_id.eq.0) then
-           write(iulog,*)file        
-           write(iulog,*) 'TIROS_READ...: opening file ', trim(file) 
-        endif
 !--------------------------------------------------------------------------------------
 !         double emaps(nt_21, nt_20, nt_7) ;
 !         double cmaps(nt_21, nt_20, nt_7) ;
@@ -266,15 +244,6 @@
  !      write(iulog,*) ' alloc_err in read_waccm_solar for dates,times', ntimes 
  !      end if     
 
-      if(mpi_id.eq.0) then
-      write(iulog,*) '  tiros_read_wam_init '   
-      write(iulog,*) maxval(emaps),   minval(emaps), ' EMAPS-tiros '
-      write(iulog,*) maxval(cmaps),   minval(cmaps), ' CMAPS-tiros ' 
-      write(iulog,*)  maxval(djspectra),   minval(djspectra), 
-     &                    ' DJSPECT-tiros '      
-          write(iulog,*)  ' completed tiros_read_wam_init'
-      endif
-
       RETURN    ! Here RETURN is a temporary FIX of mpif.h MPI_REAL8/mpi_integer for THEIA
                   ! ALL PEs read nc-file on THEIA 
 !
@@ -290,9 +259,6 @@
 !       call mpi_bcast(SWDEN  ,ntimes_imf,MPI_REAL8,0,MPI_COMM_ALL,info)
 !       call mpi_bcast(SWVEL  ,ntimes_imf,MPI_REAL8,0,MPI_COMM_ALL,info)
 !       call mpi_barrier(mpi_comm_all,info)         
-       if(mpi_id.eq.0) then
-          write(iulog,*)  ' completed IMF_read_wam_init'
-       endif
 !
 !
        end  subroutine tiros_read_wam_init
@@ -321,10 +287,6 @@
 !        integer, dimension(nf90_max_var_dims) :: dimidT         
  
 
-        if(mpi_id.eq.0) then
-           write(iulog,*)  file        
-           write(iulog,*) 'TIROS_READ...: opening file ', trim(file) 
-        endif
 !--------------------------------------------------------------------------------------
 !        double cormag(nxmag, nymag) ;
 !        double btot(nxmag, nymag) ;
@@ -346,18 +308,6 @@
         iernc=nf90_inq_varid( ncid, 'dipang', vid )
         iernc= nf90_get_var( ncid, vid, dipang)
         iernc=nf90_close(ncid)    
-
-      if(mpi_id.eq.0) then
-       write(iulog,*) '  ion_read_wam_init '   
-       write(iulog,*) maxval(glon),   minval(glon), ' GLON-ion '
-       write(iulog,*) maxval(glat),   minval(glat), ' GLAT-ion ' 
-        
-
-       write(iulog,*)  maxval(btot),   minval(btot), ' BTOT-ion '    
-       write(iulog,*)  maxval(cormag),minval(cormag),' CORMAG-ion '   
-       write(iulog,*)  maxval(dipang),minval(dipang),' DIPANG-ion '  
-       write(iulog,*)  ' completed ION_read_wam_init'
-      endif
 
       RETURN    ! Here RETURN is a temporary FIX of mpif.h MPI_REAL8/mpi_integer for THEIA
                   ! ALL PEs read nc-file on THEIA

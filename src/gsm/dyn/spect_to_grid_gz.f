@@ -66,7 +66,6 @@
 !
 ! ................................................................
 !
-      print *,'in spect_to_grib,trie,lotls=',lotls,'synlots=',lots
       call f_hpmstart(1,"ga delnpe")
       call delnpe(trie_ls(1,1,P_q   ),
      x            trio_ls(1,1,P_dphi),
@@ -126,9 +125,6 @@
         trio_ls(i,1,p_zz)=trio_ls(i,1,p_gz)
         trio_ls(i,2,p_zz)=trio_ls(i,2,p_gz)
       enddo
-      print *,'bf sumflna,p_ze=',p_ze,'p_di=',p_di,p_te,p_rq,p_dp,
-     &  'p_q=',p_q,'p_zslam=',p_zslam,p_zsphi,'p_ze+lots=',p_ze+lots-1,
-     &  'p_zz=',p_zz
       call sumflna(trie_ls(1,1,P_ze),
      x            trio_ls(1,1,P_ze),
      x            lat1s_a,

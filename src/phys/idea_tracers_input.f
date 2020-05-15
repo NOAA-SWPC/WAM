@@ -88,10 +88,6 @@
 !"names: h2o o3 n2 o o2 h oh ho2 no n co2 ndens tg mu zkm"
 !
 !==========================================================
-       print *, ' ozone global ', maxval( vmr_glob(1:levs,2)),
-     & minval( vmr_glob(1:levs,2)) 
-       print *, ' o3p global ', maxval( vmr_glob(1:levs,4)),
-     & minval( vmr_glob(1:levs,4)) 
 !  
 !
        END SUBROUTINE WAM_GLOBAL_TRACERS

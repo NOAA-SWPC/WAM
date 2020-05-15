@@ -186,7 +186,7 @@
 !-----------------------------------------------------------------------
 !
       IF(RC_WRT==ESMF_SUCCESS)THEN
-        WRITE(6,*)"PASS: Write_Register."
+!        WRITE(6,*)"PASS: Write_Register."
       ELSE
         WRITE(6,*)"FAIL: Write_Register."
       ENDIF

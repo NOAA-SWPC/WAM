@@ -110,7 +110,6 @@ c$$$      REAL(KIND=KIND_IO4) Z(lnt2)
       INCLUDE 'function2'
 !!
 !!
-      print *,' enter treadeo.io_fd '					! hmhj
       if (semilag) then
          lon1=lon_dim_a
          lon2=lonf

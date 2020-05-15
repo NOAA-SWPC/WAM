@@ -402,7 +402,7 @@
 
       call GridGetInterior_ (mGrid,i1,in,j1,jn)
 
-      write(0,*)'LU_DYN: mGrid, i1,in,j1,jn ', i1,in,j1,jn        !chlu_debug
+!      write(0,*)'LU_DYN: mGrid, i1,in,j1,jn ', i1,in,j1,jn        !chlu_debug
 
 !$omp parallel do private(i,j)
       do j = 1, iState%lats_node_a

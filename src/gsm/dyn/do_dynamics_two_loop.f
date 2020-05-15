@@ -590,8 +590,8 @@
               pcorr = (pdryini-pdryg)/sumto*sqrt(2.)
             endif                                                    
 !
-            if (me == 0) write(0,*)'pcorr pdryini pdryg ',pcorr,pdryini,
-     &                              pdryg
+!            if (me == 0) write(0,*)'pcorr pdryini pdryg ',pcorr,pdryini,
+!     &                              pdryg
 
             if (glbsum .and. me == me_l_0) then                          !glbsum
               write(70,111) kdt,fhour,idate                              !glbsum
@@ -1036,7 +1036,7 @@
 !--------------------------------------------
 !**jw digital filter state collect
 !--------------------------------------------
-      if (me == 0) print *,'in two loop,call gfs_dfi_coll,ldfi=',ldfi
+!      if (me == 0) print *,'in two loop,call gfs_dfi_coll,ldfi=',ldfi
       IF (ldfi) then
         call gfs_dficoll_dynamics(grid_gr,grid_gr_dfi)
       endif
@@ -1937,7 +1937,7 @@
            spdmax(k) = sqrt(spdmax(k))
          enddo
 !
-!         print*,'in do_dynamics_two_loop for spdmx at kdt=',kdt
+         print*,'in do_dynamics_two_loop at kdt=',kdt
 !         print 100,(spdmax(k),k=1,levs)
 !100      format(' spdmx(001:010)=',10f5.0,:/' spdmx(011:020)=',10f5.0,
 !     &        :/' spdmx(021:030)=',10f5.0,:/' spdmx(031:040)=',10f5.0,

@@ -137,8 +137,6 @@ c$$$      REAL(KIND=KIND_IO4) Z(lnt2)
       INCLUDE 'function2'
 !!
 !!
-      print *,' enter treadeo.io_fd '					! hmhj
-
       nft=152
       call sigio_rropen(nft,cfile,iret)
       call sigio_alhead(head,iret)
@@ -454,7 +452,6 @@ csela print*,' levh=',levh
           CALL TRISEORI(TRISCA,RQE(1,1,lv,KK),RQO(1,1,lv,KK),1,LS_NODE)
         END DO
       END DO
-      print *,'in sigio read, ixgr=',ixgr,'nxss=',head%nxss
 !
 !jw      if (((ixgr .eq. 4 .and. num_p3d .eq. 4) .or.   ! Zhao Scheme!
 !jw     &     (ixgr .eq. 5 .and. num_p3d .eq. 3))       ! Ferrier Scheme!
@@ -780,23 +777,7 @@ csela print*,' levh=',levh
 !        write(991)grid_gr(1:lonf,1:lats_node_a,g_qm)
 !        close(991)
 !      endif
-      print *,'in treadeo.io, ps=',
-     &   maxval(grid_gr(:,1:lats_node_a,g_q)),
-     &   minval(grid_gr(:,1:lats_node_a,g_q)),'gz=',
-     &   maxval(grid_gr(:,1:lats_node_a,g_gz)),
-     &   minval(grid_gr(:,1:lats_node_a,g_gz)),'dp=',
-     &   maxval(grid_gr(:,1:lats_node_a,g_dp:g_dp+levs-1)),
-     &   minval(grid_gr(:,1:lats_node_a,g_dp:g_dp+levs-1)),'t=',
-     &   maxval(grid_gr(:,1:lats_node_a,g_tt:g_tt+levs-1)),
-     &   minval(grid_gr(:,1:lats_node_a,g_tt:g_tt+levs-1)),'q=',
-     &   maxval(grid_gr(:,1:lats_node_a,g_rq:g_rq+levh-1)),
-     &   minval(grid_gr(:,1:lats_node_a,g_rq:g_rq+levh-1)),'u=',
-     &   maxval(grid_gr(:,1:lats_node_a,g_uu:g_uu+levs-1)),
-     &   minval(grid_gr(:,1:lats_node_a,g_uu:g_uu+levs-1)),'v=',
-     &   maxval(grid_gr(:,1:lats_node_a,g_vv:g_vv+levs-1)),
-     &   minval(grid_gr(:,1:lats_node_a,g_vv:g_vv+levs-1))
 !  
-      print *,' leave treadeo.io_fd '
 
       RETURN
       END
