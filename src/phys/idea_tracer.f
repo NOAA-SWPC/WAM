@@ -37,7 +37,6 @@
       call init_tracer_constants     
 
       call WAM_GLOBAL_TRACERS(levs, nvmr, vmr_glob)
-      print *, ' VAY WAM_GLOBAL_TRACERS INIT'
       return
       end subroutine idea_tracer_init
 !cccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc

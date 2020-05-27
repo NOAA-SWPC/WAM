@@ -108,10 +108,6 @@
 !----------------------------------------------------------------------
 !	... open the netcdf file
 !----------------------------------------------------------------------
-       if(mpi_id.eq.0) then
-           write(iulog,*)file        
-           write(iulog,*) 'idea_solar_input: opening file for readno', trim(file) 
-        endif
        ierNC=NF90_OPEN(trim(File), nf90_nowrite, ncid)   
        if (iernc /=0) write(iulog,*) ncid, 'ncid ', iernc, ' iernc '     
 !----------------------------------------------------------------------
@@ -123,8 +119,6 @@
          iernc = nf90_inquire_dimension(ncid, dimidT(2), len=nz)
          iernc = nf90_inquire_dimension(ncid, dimidT(1), len=ny)
          if(mpi_id.eq.0) then
-          write(iulog,*) neofs, nz, ny, ' ne-nz-ny of NO-EOFs VAY'
-          write(iulog,*) no_neofs, no_nz16, no_ny33,' ne-nz-ny of NO-EOFs VAY'
           if (nz .ne. no_nz16 .or. ny.ne.no_ny33 .or. neofs.ne.no_neofs) then
           write(iulog,*)'snoe_rdeof: failed to read expected neofs=nz=ny'
            call mpi_quit(23901)
@@ -161,11 +155,6 @@
 !	... close the netcdf file
 !----------------------------------------------------------------------
         iernc=nf90_close(ncid)     
-        if(mpi_id.eq.0) then
-         write(iulog,*) ' VAYsnoe ZKM:', no_zkm(1), ': ', no_zkm(nz)
-         write(iulog,*) ' VAYsnoe MLT:', no_mlat(1), ': ', no_mlat(ny)
-         write(iulog,*) ' VAYsnoe NO:', maxval(no_m), minval(no_m)
-        endif
       end subroutine solar_readno_snoewx
 !
        subroutine dealloc_solar(mpi_id)
@@ -176,10 +165,6 @@
        if( allocated(times))          deallocate( times)
        if( allocated(aeuv))           deallocate( aeuv)
        if( allocated(dfhours))        deallocate(dfhours)
-
-       if (mpi_id.eq.0) then
-       write(iulog, *)  'subroutine dealloc_solar: free memory '
-       endif
 
        end subroutine dealloc_solar
 !
@@ -266,12 +251,6 @@
 !       
         if (idea_solar_fix.eq.1) CALL solar_wam_get_f107kp    !( f107_s, f107a_s, ap_s, kp_s)
 !
-       if (mpi_id.eq.0) then
-       write(iulog,*) ' sol_adv indices/Weights: ', tim_ndx1, tim_ndx2, w_ndx1, w_ndx2
-       write(iulog,*) ' VAY-sol_adv dates:Jdat1', Jdat1(1), Jdat1(2), Jdat1(3)
-       write(iulog,*) ' VAY-sol_adv dates:Jdat1', Jdat2(1), Jdat2(2), Jdat2(3)  
-       write(iulog,*) 'solar_waccmx_adv f107_s,  kp_s',  wf107_s, wkp_s
-       endif
        end subroutine solar_waccmx_advance
 !
        subroutine solar_wamstep_advance(mpi_id, Mjdat_cur, hour_cur)
@@ -306,10 +285,6 @@
        if (idea_solar_fix.eq.0) CALL solar_wam_get_feuv      !( f107_s, f107a_s, ap_s, kp_s, euv_s)
        if (idea_solar_fix.eq.1) CALL solar_wam_get_f107kp    !( f107_s, f107a_s, ap_s, kp_s)
 !
-       if (mpi_id.eq.0) then
-       write(iulog,*) ' sol_adv indices/Weights: ', tim_ndx1, tim_ndx2, w_ndx1, w_ndx2
-       write(iulog,*) ' f107_s,  kp_s', wf107_s, wkp_s
-       endif
        end subroutine solar_wamstep_advance
 !
        SUBROUTINE start_jdates(mpi_id)
@@ -420,15 +395,12 @@
 !
       ncfile_fpath= trim(wxdan_file)
       if (isolar_file == 2012) ncfile_fpath= trim(wam2012_file)
-      if (mpi_id.eq.0) then     
-      write(iulog,*) idea_solar_fix, 'idea_solar_fix - flag (1-fixed) '
-      write(iulog,*)  f107_fix, f107a_fix, ' F107 '
-      write(iulog,*)  kp_fix, ap_fix,  ' Kp-Ap '
-      write(iulog,*) Euv_fix(1), Euv_fix(37), ' EUV (1:37) '
-
-      write(iulog,*)    '+++++++++++ ncfile_fpath '
-      write(iulog,133) ncfile_fpath
-      endif
+!      if (mpi_id.eq.0) then     
+!      write(iulog,*) idea_solar_fix, 'idea_solar_fix - flag (1-fixed) '
+!      write(iulog,*)  f107_fix, f107a_fix, ' F107 '
+!      write(iulog,*)  kp_fix, ap_fix,  ' Kp-Ap '
+!      write(iulog,*) Euv_fix(1), Euv_fix(37), ' EUV (1:37) '
+!      endif
 133   format(A122)
 !                                    time-invariant solar and geo- parameters
       if (idea_solar_fix == 2) then
@@ -437,28 +409,12 @@
        wkp_s    = kp_fix
        wap_s    = ap_fix
        weuv_s   = Euv_fix 
-       if (mpi_id.eq.0) then    
-           write(iulog,*) idea_solar_fix, ' Time-invariant  Solar-Geo Inputs'
-           write(iulog,*) wf107_s, ' F107-fix '
-           write(iulog,*) wKp_s, ' Kp-fix '
-           write(iulog,*) wAp_s, ' Ap-fix '
-       endif
       endif
       if (idea_solar_fix == 1) then
        weuv_s   = Euv_fix 
-       if (mpi_id.eq.0) then    
-           write(iulog,*) idea_solar_fix,' Time-variable F107/KP; fixed EUV-inputs'
-!           write(iulog,*) wf107_s, ' F107-fix '
-!           write(iulog,*) wKp_s, ' Kp-fix '
-!           write(iulog,*) wAp_s, ' Ap-fix '
-       endif
       endif
       if (idea_solar_fix == 0) then
        weuv_s   = Euv_fix 
-       if (mpi_id.eq.0) then    
-           write(iulog,*) idea_solar_fix,' Time-variable EUV-inputs with F107/KP'
-!
-       endif
       endif
 !
 ! full path to NO-eof file
@@ -534,10 +490,6 @@
         integer :: n
         integer :: masterproc
 
-        if(mpi_id.eq.0) then
-           write(iulog,*)file        
-           write(iulog,*) 'SOLAR_PARMS: opening file ', trim(file) 
-        endif
 !
        ierNC=NF90_OPEN(trim(File), nf90_nowrite, ncid)   
        if (iernc /=0) write(iulog,*) ncid, 'ncid ', iernc, ' iernc '
@@ -555,9 +507,6 @@
          iernc = nf90_inquire_dimension(ncid, dimidT(2), len=ntimes)
          iernc = nf90_inquire_dimension(ncid, dimidT(1), len=nwaves)
 
-         if(mpi_id.eq.0) then
-              write(iulog,*) ntimes, nwaves, ' nt-nw  idea_solar_input'
-         endif
          
  !   
        allocate( dates(ntimes),  times(ntimes),stat=astat )  
@@ -572,10 +521,6 @@
 
         iernc=nf90_inq_varid( ncid, 'date', vid )
         iernc= nf90_get_var( ncid, vid, dates)
-
-          if(mpi_id.eq.0) then
-            write(iulog,*) dates, ' dates ' 
-          endif
 
         do n = 1,ntimes
            dfhours(n) = 0          ! integer .......current for daily  12UT
@@ -615,18 +560,6 @@
         iernc=nf90_close(ncid)     
 !
 !
-          if(mpi_id.eq.0) then
-          write(iulog,*) '  read_wam_solar: ntimes  ', ntimes   
-          write(iulog,*)     maxval(af107),   minval(af107), ' F107 '
-          write(iulog,*)     maxval(af107a),   minval(af107), ' F107a ' 
-          write(iulog,*) maxval(AEUV), minval(AEUV), ' EUV ', nwaves
-
-          write(iulog,*)     maxval(aKp),   minval(aKp), ' Kp-daily ' 
-          write(iulog,*)     maxval(aAp),   minval(aAp), ' Aap '      
-          write(iulog,*)            ' mpi_bcast in solar_read_wam_init'
-          write(iulog,*)  ' VAY completed solar_read_wam_init'
-         endif
-
         RETURN    ! Here RETURN is a temporary FIX of mpif.h MPI_REAL8/mpi_integer for THEIA
                   ! ALL PEs read nc-file
 !
@@ -649,9 +582,6 @@
        call mpi_bcast(aEUV,nwaves*ntimes,MPI_REAL8,0,MPI_COMM_ALL,info)
 
 !       call mpi_barrier(mpi_comm_all,info)         
-       if(mpi_id.eq.0) then
-          write(iulog,*)  ' VAY completed solar_read_wam_init'
-       endif
        end  subroutine solar_read_wam_init
 !
 !
@@ -703,13 +633,8 @@
         integer  :: masterproc
         integer(2), allocatable  :: Apshort(:)
 
-        if(mpi_id.eq.0) then
-           write(iulog,*)file        
-           write(iulog,*) 'VAY SOLAR_MULTI-YEARS: opening file ', trim(file) 
-        endif
 !
        ierNC=NF90_OPEN(trim(File), nf90_nowrite, ncid)   
-       if (iernc /= 0) write(iulog,*) ncid, 'ncid ', iernc, ' iernc '
 
 !       call cam_pio_openfile ( ncid, locfn, PIO_NOWRITE)    
 !       ierr = pio_inq_dimid( ncid, 'time', dimid )
@@ -725,9 +650,6 @@
          iernc = nf90_inquire_dimension(ncid, dimidT(1), len=ntimes_wx)
 !         iernc = nf90_inquire_dimension(ncid, dimidT(1), len=nwaves)
          ntimes = ntimes_wx
-         if(mpi_id.eq.0) then
-              write(iulog,*) ntimes_wx, ' ntimes_wx  idea_solar_input_myy'
-         endif
          
  !   
        allocate( dates(ntimes_wx),  times(ntimes_wx),stat=astat )  
@@ -740,12 +662,6 @@
 
         iernc=nf90_inq_varid( ncid, 'date', vid )
         iernc= nf90_get_var( ncid, vid, dates)
-
-          if(mpi_id.eq.0) then
-            write(iulog,*) ' dates-last 365 days ' 
-            write(iulog,*) dates(ntimes-365:ntimes)
-            write(iulog,*) ' dates-last 365 days ' 
-          endif
 
         do n = 1,ntimes_wx
            dfhours(n) = 0                              ! integer .......current for daily  12UT
@@ -783,19 +699,7 @@
 !
 !
           Aap = float(Apshort)
-          if(mpi_id.eq.0) then
-          write(iulog,*) '  solar_read_myyread, ntimes_wx:  ', ntimes_wx   
-          write(iulog,*)     maxval(af107), minval(af107), ' F107 '
-          write(iulog,*)     maxval(af107a),minval(af107a), ' F107a ' 
-          write(iulog,*)     maxval(aKp),   minval(aKp), ' Kp-daily ' 
-          write(iulog,*)     maxval(aAp),   minval(aAp), ' Aap-daily '      
-          write(iulog,*)            ' mpi_bcast in solar_read_wam_init'
-          write(iulog,*)  ' VAY completed solar_read_WACCMX_init'
-         endif
         
-       if(mpi_id.eq.0) then
-          write(iulog,*)  ' VAY completed solar_read_myy1947_2016 ntimes', ntimes
-       endif
         RETURN    ! Here RETURN is a temporary FIX of mpif.h MPI_REAL8/mpi_integer for THEIA
                   ! ALL PEs read nc-file
 !
@@ -817,9 +721,6 @@
        call mpi_bcast(aap  ,ntimes,MPI_REAL8,0,MPI_COMM_ALL,info)
  
 !       call mpi_barrier(mpi_comm_all,info)         
-       if(mpi_id.eq.0) then
-          write(iulog,*)  ' VAY completed solar_read_myy1947_2016 '
-       endif
 !
 !
        END SUBROUTINE solar_read_myy1947_2016

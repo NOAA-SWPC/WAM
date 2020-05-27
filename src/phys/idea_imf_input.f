@@ -56,10 +56,6 @@
 
        deallocate(ydh_imf, times_imf, Bz_imf, By_imf, Swden, Swvel)
  
-       if (mpi_id.eq.0) then
-       write(iulog, *)  'subroutine dealloc_imf: free memory '
-       endif
-
        end subroutine dealloc_imf
 !       
        subroutine imf_wam_get_4fields  !( f107_s, f107a_s, ap_s, kp_s)
@@ -140,21 +136,6 @@
         wrk_date_yddd = 1000*Jdatc(1)+curddd_wam
         wrk_time = float(wrk_date_yddd) + hrc/24.                !wrk_time = flt_date( wrk_date, 0 )
 
-       if (mpi_id.eq.0) then      
-        write(iulog,*) 
-     & ' vay wrk_time:',wrk_time, hrc, ' hour ', wrk_date_yddd, ' yddd '
-
-        if( wrk_time < times_imf(1) .or. 
-     &      wrk_time > times_imf(ntimes_imf) ) then
-
-         write(iulog,*) 'imf_files: model time is out of-range Bz-By'
-         write(iulog,*)   times_imf(1) ,   times_imf(ntimes_imf) ,
-     &    ' times_imf(start -/- end '
-         write(iulog,*) wrk_time, wrk_date_yddd, 
-     &   ' wrk_time, wrk_ddd, wrk_ymd ', wrk_date_ymd
-! 
-        end if
-       ENDIF
 
 ! time is growing  FIND INDEX
         nk = 2
@@ -235,10 +216,6 @@
         integer :: n
         integer :: masterproc
 
-        if(mpi_id.eq.0) then
-           write(iulog,*)file        
-           write(iulog,*) 'IMF_PARMS: opening file ', trim(file) 
-        endif
 !--------------------------------------------------------------------------------------
 !dimensions:	time = 105410 ;
 !	double by(time) ;
@@ -265,9 +242,6 @@
          iernc = nf90_inquire_dimension(ncid, dimidT(1), len=ntimes_imf)
          
 
-         if(mpi_id.eq.0) then
-              write(iulog,*) ntimes_imf, ' nt-nw  idea_imf_input'
-         endif
          
  !   
        allocate( times_imf(ntimes_imf),stat=astat )  
@@ -278,11 +252,6 @@
 
         iernc=nf90_inq_varid( ncid, 'ydh', vid )
         iernc= nf90_get_var( ncid, vid, times_imf)
-
-          if(mpi_id.eq.0) then
-            write(iulog,*) times_imf(1), times_imf(ntimes_imf), 
-     &                    ' ydh-imf ' 
-          endif
 
 !        do n = 1,ntimes
 !           dfhours_imf(n) = 0.0          ! current for daily  12UT
@@ -321,18 +290,6 @@
 !
      
 !
-          if(mpi_id.eq.0) then
-          write(iulog,*) '  read_wam_IMF: ntimes  ', ntimes_imf   
-          write(iulog,*) maxval(bz_imf),   minval(bz_imf), ' BZ_imf '
-          write(iulog,*) maxval(bz_imf),   minval(bz_imf), ' BY_IMF ' 
-        
-
-          write(iulog,*) maxval(swden),   minval(swden), ' SW-density ' 
-          write(iulog,*) maxval(swvel),   minval(swvel), ' SW-velocity'      
-          write(iulog,*)            ' mpi_bcast in IMF_read_wam_init'
-          write(iulog,*)  ' completed IMF_read_wam_init'
-         endif
-
         RETURN    ! Here RETURN is a temporary FIX of mpif.h MPI_REAL8/mpi_integer for THEIA
                   ! ALL PEs read nc-file
 !
@@ -354,9 +311,6 @@
 
 
 !       call mpi_barrier(mpi_comm_all,info)         
-       if(mpi_id.eq.0) then
-          write(iulog,*)  ' completed IMF_read_wam_init'
-       endif
 !
 !
        end  subroutine IMF_read_wam_init

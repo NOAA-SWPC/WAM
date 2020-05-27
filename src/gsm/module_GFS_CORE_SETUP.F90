@@ -188,8 +188,8 @@
       wrt_last_fcst_pe = last_fcst_pe
       first_fcst_pe    = minval(petlist_fcst(1:num_pes_fcst) )
 
-      write(0,*)'gfs_setup,first_fcst_pe=',first_fcst_pe,'last_fcst_pe=', &
-        last_fcst_pe
+!      write(0,*)'gfs_setup,first_fcst_pe=',first_fcst_pe,'last_fcst_pe=', &
+!        last_fcst_pe
 
       if(quilting) then
 

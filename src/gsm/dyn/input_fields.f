@@ -101,7 +101,7 @@ c$$$  IF ( ME .EQ. 0 ) IPRINT = 1
         enddo
 
       else
-        print *,'read in sigio file,cread=',trim(cread)
+!        print *,'read in sigio file,cread=',trim(cread)
         CALL TREADEO(IDATE,trie_ls,trio_ls,
      &               grid_gr,
      X               LS_NODE,LS_NODES,MAX_LS_NODES,

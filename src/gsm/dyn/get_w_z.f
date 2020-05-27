@@ -455,8 +455,8 @@
 ! of a FHRES+dt
       IF(wam_ipe_cpl_rst_output .AND. kdt /= 0 .AND.
      &  MOD(NINT(deltim) * (kdt+1), NINT(FHRES) * 3600) == 0) THEN
-        PRINT*,'Write out the WAM-IPE rst file needed for IPE, kdt=',
-     &       kdt
+!        PRINT*,'Write out the WAM-IPE rst file needed for IPE, kdt=',
+!     &       kdt
         CALL grid_collect_ipe(wwg,zzg,uug,vvg,
      &                        ttg,rqg,n2g,global_lats_a,lonsperlat,
      &                        lats_nodes_a,kdt,deltim,restart_step)

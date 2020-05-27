@@ -74,10 +74,10 @@
 !
 ! idea change
       if( semi_implicit_temp_profile ) then
-        print *,' use layer mean temperature for semi-implicit '
+!        print *,' use layer mean temperature for semi-implicit '
 !
       else
-        print *,'use temp profile for semi-implicit'
+!        print *,'use temp profile for semi-implicit'
         if( thermodyn_id.eq.3 ) then
           do k=1,levs
             thref (K)=test1(K)*cp

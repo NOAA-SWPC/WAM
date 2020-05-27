@@ -1188,7 +1188,6 @@
 !
 ! F98 model profile
       call co2pro_pre(xmod,lmod,mu)
-      write(6,*) 'F98 CO2 model'
 !     call mymaxmin(xmod,ivict,ivict,1,' co2cin: xmod ')
 ! CRISTA based model profile
 !      call crico2_pre(xmod,lmod,mu)

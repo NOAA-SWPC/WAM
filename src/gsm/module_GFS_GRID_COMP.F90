@@ -1414,7 +1414,7 @@
 !-----------------------------------------------------------------------
 !
       IF(RC_RUN == ESMF_SUCCESS) THEN
-          WRITE(0, *) 'GFS ATM RUN STEP SUCCEEDED'
+!          WRITE(0, *) 'GFS ATM RUN STEP SUCCEEDED'
       ELSE
           WRITE(0, *) 'GFS ATM RUN STEP FAILED RC_RUN=', RC_RUN
       ENDIF
@@ -1527,10 +1527,10 @@
 !
       IF(TRIM(MODE) == '.true.') THEN
         gfs_int_state%PHYSICS_ON = ESMF_False
-        write(0,*)' Finalize without physics coupling. '
+!        write(0,*)' Finalize without physics coupling. '
        ELSE
         gfs_int_state%PHYSICS_ON = ESMF_True
-        write(0,*)' Finalize with physics coupling. '
+!        write(0,*)' Finalize with physics coupling. '
       ENDIF
 
 !-----------------------------------------------------------------------
@@ -1721,7 +1721,7 @@
 !-----------------------------------------------------------------------
 !
       IF(RC_FINAL == ESMF_SUCCESS) THEN
-        WRITE(0,*)'GFS FINALIZE STEP SUCCEEDED'
+!        WRITE(0,*)'GFS FINALIZE STEP SUCCEEDED'
       ELSE
         WRITE(0,*)'GFS FINALIZE STEP FAILED'
       ENDIF

@@ -79,9 +79,7 @@ craa********************************************************************
 ! hmhj ak5, bk5, ck5 in gen_coord_hybrid is the same order as model index
             BKLY(k)=0.5*(bk5(k)+bk5(k+1))				! hmhj
             CKLY(k)=0.5*(ck5(k)+ck5(k+1))*rkappa/thref(k)	        ! hmhj
-            if( me.eq.0 )						! hmhj
-     &         print*,'sl bkly ckly  in deldif=',k,sl(k),bkly(k),ckly(k)! hmhj
-          enddo								! hmhj
+          END DO
        else if (hybrid) then						! hmhj
           DO  k=1,LEVS
 ! hmhj   sl(k) go bottom to top but bk(k) go top to bottom

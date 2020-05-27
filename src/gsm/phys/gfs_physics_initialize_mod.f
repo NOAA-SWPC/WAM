@@ -739,8 +739,8 @@
 !       write(0,*)' gis_phy%lonsperlar2b=',gis_phy%lonsperlar
 !       write(0,*)' before fix_fields'
 
-      PRINT*, 'in phys initialize, lsidea, ipe_to_wam_coupling=', &
-            lsidea, ipe_to_wam_coupling
+!      PRINT*, 'in phys initialize, lsidea, ipe_to_wam_coupling=', &
+!            lsidea, ipe_to_wam_coupling
       IF(lsidea .AND. ipe_to_wam_coupling) THEN
         lowst_ipe_level = 80
 
@@ -934,7 +934,7 @@
 !
       if (allocated(si_loc)) deallocate (si_loc)
       phys_ini_time = phys_ini_time + (timef() - btime)
-      write(0,*)' phys_ini_time=',phys_ini_time*1.0e-3,' me=',me
+!      write(0,*)' phys_ini_time=',phys_ini_time*1.0e-3,' me=',me
 !
 !       write(0,*)' gis_phy%lonsperlar2=',gis_phy%lonsperlar
 !       write(0,*)' returning from gfs_physics_initialize'

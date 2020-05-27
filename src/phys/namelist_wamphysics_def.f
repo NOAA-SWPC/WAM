@@ -161,13 +161,5 @@
    
        if(wam_swin)   swin_drivers = 'swin_wam'
 
-       if (mpi_id == 0) then
-       print *, ' VAY idea_wamcontrol_init '
-       print *, ' VAY SPW_DRIVERS ', SPW_DRIVERS
-       print *, ' WAM_SWIN ', wam_swin
-       print *,' nluncon=',nlun_con,'nam_wam_control =',
-     &                 trim(nml_control)
-       write(6, nam_wam_control)    
-       endif
        end subroutine idea_wamcontrol_init
 
