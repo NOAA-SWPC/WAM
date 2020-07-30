@@ -9,6 +9,8 @@
       INTEGER                     :: f107_kp_read_in_start
       INTEGER                     :: f107_kp_read_in_size
       INTEGER                     :: kdt_interval
+      INTEGER                     :: f107_kp_realtime_interval
+      INTEGER                     :: max_kdt_interval
 !
       INTEGER                     :: f107_kp_data_size
 !
@@ -72,29 +74,52 @@
              swden_wy(i)
 !        write(6,*) i, f107_wy(i), kp_wy(i)
       END DO
-      CLOSE(79)
 !
 ! If run time longer than the f107 data, use the latest data to run
 ! continuously
 !
-      DO i = f107_kp_read_in_start + f107_kp_read_in_size + 1, f107_kp_size
-          f107_wy (i) = f107_wy (f107_kp_read_in_size)
-          kp_wy   (i) = kp_wy   (f107_kp_read_in_size)
-          nhp_wy  (i) = nhp_wy  (f107_kp_read_in_size)
-          shp_wy  (i) = shp_wy  (f107_kp_read_in_size)
-          shpi_wy (i) = shpi_wy (f107_kp_read_in_size)
-          f107d_wy(i) = f107d_wy(f107_kp_read_in_size)
-          nhpi_wy (i) = nhpi_wy (f107_kp_read_in_size)
-          kpa_wy  (i) = kpa_wy  (f107_kp_read_in_size)
-          swbt_wy (i) = swbt_wy (f107_kp_read_in_size)
-          swang_wy(i) = swang_wy(f107_kp_read_in_size)
-          swvel_wy(i) = swvel_wy(f107_kp_read_in_size)
-          swbz_wy (i) = swbz_wy (f107_kp_read_in_size)
-          swden_wy(i) = swden_wy(f107_kp_read_in_size)
-      END DO
+      if (f107_kp_realtime_interval < 0) then
+         DO i = f107_kp_read_in_start + f107_kp_read_in_size + 1, f107_kp_size
+            f107_wy (i) = f107_wy (f107_kp_read_in_size)
+            kp_wy   (i) = kp_wy   (f107_kp_read_in_size)
+            nhp_wy  (i) = nhp_wy  (f107_kp_read_in_size)
+            shp_wy  (i) = shp_wy  (f107_kp_read_in_size)
+            shpi_wy (i) = shpi_wy (f107_kp_read_in_size)
+            f107d_wy(i) = f107d_wy(f107_kp_read_in_size)
+            nhpi_wy (i) = nhpi_wy (f107_kp_read_in_size)
+            kpa_wy  (i) = kpa_wy  (f107_kp_read_in_size)
+            swbt_wy (i) = swbt_wy (f107_kp_read_in_size)
+            swang_wy(i) = swang_wy(f107_kp_read_in_size)
+            swvel_wy(i) = swvel_wy(f107_kp_read_in_size)
+            swbz_wy (i) = swbz_wy (f107_kp_read_in_size)
+            swden_wy(i) = swden_wy(f107_kp_read_in_size)
+         END DO
+         max_kdt_interval = f107_kp_size
+      else
+         max_kdt_interval = f107_kp_read_in_start + MIN(f107_kp_read_in_size, f107_kp_size)
+      end if
 
       END SUBROUTINE read_wam_f107_kp_txt
 
+      subroutine read_realtime_wam_f107_kp_txt
+
+      CHARACTER*20 :: realdate(f107_kp_size)
+      integer :: i, j
+      INTEGER, DIMENSION(f107_kp_size) :: f107_flag, kp_flag 
+
+      DO i = 1, f107_kp_realtime_interval
+!
+        j = i + max_kdt_interval
+        READ(79, *) realdate(j), f107_wy(j), kp_wy(j),             &
+             f107_flag(j), kp_flag(j), f107d_wy(j), kpa_wy(j),     &
+             nhp_wy(j), nhpi_wy(j), shp_wy(j), shpi_wy(j),         &
+             swbt_wy(j), swang_wy(j), swvel_wy(j), swbz_wy(j),     &
+             swden_wy(j)
+      END DO
+      
+      max_kdt_interval = max_kdt_interval + f107_kp_realtime_interval
+
+      end subroutine read_realtime_wam_f107_kp_txt      
 !==========================================================
 ! Below two service subs to disable "read_wam_f107_kp_txt"
 ! during model tune-ups

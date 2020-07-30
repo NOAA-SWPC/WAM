@@ -57,7 +57,8 @@
       use wam_ion,          only : idea_ion
       use wam_f107_kp_mod,  only : f107_wy, kp_wy, kdt_interval, interpolate_weight, kpa_wy, f107d_wy, nhp_wy, 
      &                             shpi_wy, shp_wy, nhpi_wy, 
-     &                             swbz_wy, swvel_wy, swbt_wy, swang_wy, swden_wy 
+     &                             swbz_wy, swvel_wy, swbt_wy, swang_wy, swden_wy,
+     &                             read_realtime_wam_f107_kp_txt, max_kdt_interval
 
 !     Changed by Zhuxiao.Li(05/2017) for back to the path to read in F10.7 and Kp
 !     from solar_in namelist instead of from wam_f107_kp_mod.f
@@ -213,6 +214,7 @@
 ! option 1:  SPW_DRIVERS ='swpc_fst'
 !
        if (trim(SPW_DRIVERS)=='swpc_fst') then
+          if (kdt_interval .gt. max_kdt_interval) call read_realtime_wam_f107_kp_txt
           f107_curdt  = f107_wy (kdt_interval) * interpolate_weight  + f107_wy (kdt_interval+1) * (1-interpolate_weight)
           kp_curdt    = kp_wy   (kdt_interval) * interpolate_weight  + kp_wy   (kdt_interval+1) * (1-interpolate_weight)
           f107d_curdt = f107d_wy(kdt_interval) * interpolate_weight  + f107d_wy(kdt_interval+1) * (1-interpolate_weight)
