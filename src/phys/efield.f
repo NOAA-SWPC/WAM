@@ -243,7 +243,7 @@
 
       end subroutine efield_init
 
-      subroutine get_efield
+      subroutine get_efield(swbt, swang, swvel, swbz, swden)
 !-----------------------------------------------------------------------
 ! Purpose: calculates the global electric potential field on the
 !          geomagnetic grid (MLT in deg) and derives the electric field 
@@ -252,7 +252,7 @@
 !
 ! Author: A. Maute Dec 2003  am 12/17/03    
 !-----------------------------------------------------------------------
-
+      real, intent(in) :: swbt, swang, swvel, swbz, swden
 !     use time_manager,   only : get_curr_calday, get_curr_date
 !     use mo_solar_parms, only : get_solar_parms
 !     use mag_parms,      only : get_mag_parms
@@ -301,7 +301,7 @@
 !-----------------------------------------------------------------------
 ! calculate global electric potential    
 !-----------------------------------------------------------------------
-      call GlobalElPotential
+      call GlobalElPotential(swbt, swang, swvel, swbz, swden)
 !     print*,'pot_efield',potent(149,66),potent(149,64)
 
 !-----------------------------------------------------------------------
@@ -312,7 +312,7 @@
 
       end subroutine get_efield
 
-      subroutine GlobalElPotential
+      subroutine GlobalElPotential(swbt, swang, swvel, swbz, swden)
 !-----------------------------------------------------------------------
 ! Purpose: calculates the global electric potential field on the
 !          geomagnetic grid (MLT in deg) 
@@ -327,7 +327,7 @@
 !
 ! Author: A. Maute Dec 2003  am 12/17/03 
 !-----------------------------------------------------------------------
-
+      real, intent(in) :: swbt, swang, swvel, swbz, swden
 !-----------------------------------------------------------------------
 ! local variables
 !-----------------------------------------------------------------------
@@ -363,7 +363,7 @@
 ! hight latitude potential from Weimer model
 ! at the poles Weimer potential is not longitudinal dependent
 !-----------------------------------------------------------------------
-      call prep_weimer    ! calculate IMF angle & magnitude, tilt
+      call prep_weimer(swbt, swang, swvel, swbz, swden) ! calculate IMF angle & magnitude, tilt
 
 !$omp parallel do private(ilat, ilon, mlat_90, pot)
       do ilat = 0,nmlat_wei  ! Calculate only for one magn. hemisphere
@@ -1005,7 +1005,8 @@
       
       end subroutine efield_mid                                              
 
-      subroutine prep_weimer
+      subroutine prep_weimer(swbt, swang, swvel, swbz, swden)
+
 !-----------------------------------------------------------------
 ! Purpose:  for Weimer model calculate IMF angle, IMF magnitude
 !  tilt of earth
@@ -1021,38 +1022,42 @@
 !-----------------------------------------------------------------
 
       use idea_wam_control, only : SPW_DRIVERS, SWIN_DRIVERS
-      use wam_f107_kp_mod,  only : kdt_interval,interpolate_weight,  
-     &                             swbz_wy, swvel_wy, swbt_wy, swang_wy, swden_wy
 
-      real    :: swbz_curdt, swvel_curdt, swbt_curdt, swang_curdt, swden_curdt
+      real, intent(in) :: swbt, swang, swvel, swbz, swden
 
 !-----------------------------------------------------------------
 !  local variables
 !-----------------------------------------------------------------
-      real ::  
+      real ::
      &  angle,  ! IMF angle
      &  bt,    ! IMF magnitude
      &  tilt,       ! tilt of earth
      &  v_sw,       ! sw velocity
-     &  swden         ! sw density
+     &  den         ! sw density
 !-----------------------------------------------------------------
 ! function declarations
 !-----------------------------------------------------------------
       real, external :: get_tilt	 ! in wei96.f
 
 !------by Zhuxiao-----
-       swden = 5.
+       if (trim(SWIN_DRIVERS)/='swin_wam') then
+         den = 5.
 
-      if( by == 0. .and. bz == 0.) then
-         angle = 0.
+         if( by == 0. .and. bz == 0.) then
+           angle = 0.
+         else
+           angle = atan2( by,bz )
+         end if
+
+         angle = angle*rtd
+         call adjust( angle )
+         bt = sqrt( by*by + bz*bz )
       else
-         angle = atan2( by,bz )
+         angle = swang
+         bt    = swbt
+         den   = swden
+         v_sw  = swvel
       end if
-      
-      angle = angle*rtd
-      call adjust( angle )
-      bt = sqrt( by*by + bz*bz )
-
       if(debug) then
        write(iulog,"(/,'efield prep_weimer:')")
        write(iulog,"(/,'by code:')")
@@ -1073,33 +1078,7 @@
 !    &iday,imo,iday_m,ut
       tilt = get_tilt( iyear, imo, iday_m, ut )
 
-      if (trim(SPW_DRIVERS)=='swpc_fst' .and. trim(SWIN_DRIVERS)=='swin_wam' ) then
-          swbt_curdt  = swbt_wy (kdt_interval) * interpolate_weight  + swbt_wy (kdt_interval+1) * (1-interpolate_weight)
-          swang_curdt = swang_wy(kdt_interval) * interpolate_weight  + swang_wy(kdt_interval+1) * (1-interpolate_weight)
-          swvel_curdt = swvel_wy(kdt_interval) * interpolate_weight  + swvel_wy(kdt_interval+1) * (1-interpolate_weight)
-          swbz_curdt  = swbz_wy (kdt_interval) * interpolate_weight  + swbz_wy (kdt_interval+1) * (1-interpolate_weight)
-          swden_curdt = swden_wy(kdt_interval) * interpolate_weight  + swden_wy(kdt_interval+1) * (1-interpolate_weight)
-
-        bt    = swbt_curdt
-        angle = swang_curdt
-        v_sw  = swvel_curdt
-        bz    = swbz_curdt
-        swden   = swden_curdt
-
-      end if
-
-      if(debug) then
-       write(iulog,"(/,'efield prep_weimer:')")
-       write(iulog,"(/,'by reading in:')")
-       write(iulog,*)  '  Bz   =',bz
-       write(iulog,*)  '  By   =',by
-       write(iulog,*)  '  Bt   =',bt
-       write(iulog,*)  '  angle=',angle
-       write(iulog,*)  '  VSW  =',v_sw
-       write(iulog,*)  '  tilt =',tilt
-      end if
-
-      call SetModel_new(angle,bt,tilt,v_sw,swden)
+      call SetModel_new(angle,bt,tilt,v_sw,den)
 
       if(debug) then
        write(iulog,"(/,'efield prep_weimer:')")

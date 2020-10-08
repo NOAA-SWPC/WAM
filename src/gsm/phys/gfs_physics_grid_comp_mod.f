@@ -70,7 +70,7 @@
       use GFS_Phy_States_Mod,             ONLY: gfs_physics_import2internal, &  
                                                 gfs_physics_internal2export  
       use gfs_phy_tracer_config,          ONLY: gfs_phy_tracer
-      use wam_f107_kp_mod,                ONLY: f107_kp_interval, kdt_interval, interpolate_weight
+      use wam_ifp_mod,                    ONLY: farr, params, read_ifp
 !
       implicit none
 
@@ -326,6 +326,7 @@
       int_state%kfhour = nint(int_state%phour)
       int_state%restart_step = .false.
       kdt_start              = advancecount4
+      params%kdt_start = kdt_start
       if (fhini /= 0 .and. int_state%restart_run) int_state%restart_step = .true.
 
 ! initialize the clock with the start time based on the information
@@ -571,6 +572,8 @@
       type(gfs_physics_internal_state), pointer   :: int_state   
       integer                                     :: rc1, rcfinal
       real(8) :: zhour1
+      real(4) :: wgt
+      integer :: kint
 !
 !jw
       type(esmf_state)                   :: imp_wrt_state
@@ -641,11 +644,48 @@
       call gfs_physics_err_msg(rc1,'esmf clockget',rc)
 
       donetime      = currtime - starttime
-!     int_state%kdt = nint(donetime/timeStep)
       int_state%kdt = nint(donetime/timeStep) + 1
-      interpolate_weight = 1 - real(mod((int_state%kdt-1)*timestep_sec,f107_kp_interval))/f107_kp_interval
-      kdt_interval = ((int_state%kdt - 1) * timestep_sec / f107_kp_interval) + 1
 
+      if (params % ifp_realtime_interval .gt. 0 .and. &
+          mod(int_state%kdt * timestep_sec, params % ifp_realtime_interval) .eq. 0 ) then
+          call read_ifp
+      end if
+
+      kint = ((int_state%kdt - 1 + params % skip - params % kdt_start) * timestep_sec / params % ifp_interval) + 1
+
+      if ( kint + 1 .le. size(farr % f107)) then
+        wgt = 1 - real(mod((int_state%kdt-1)*timestep_sec, params % ifp_interval))/params % ifp_interval
+
+        int_state % forcing % f107  = farr % f107 (kint) * wgt + farr % f107 (kint+1) * (1 - wgt)
+        int_state % forcing % f107d = farr % f107d(kint) * wgt + farr % f107d(kint+1) * (1 - wgt)
+        int_state % forcing % kp    = farr % kp   (kint) * wgt + farr % kp   (kint+1) * (1 - wgt)
+        int_state % forcing % kpa   = farr % kpa  (kint) * wgt + farr % kpa  (kint+1) * (1 - wgt)
+        int_state % forcing % nhp   = farr % nhp  (kint) * wgt + farr % nhp  (kint+1) * (1 - wgt)
+        int_state % forcing % nhpi  = farr % nhpi (kint) * wgt + farr % nhpi (kint+1) * (1 - wgt)
+        int_state % forcing % shp   = farr % shp  (kint) * wgt + farr % shp  (kint+1) * (1 - wgt)
+        int_state % forcing % shpi  = farr % shpi (kint) * wgt + farr % shpi (kint+1) * (1 - wgt)
+        int_state % forcing % swang = farr % swang(kint) * wgt + farr % swang(kint+1) * (1 - wgt)
+        int_state % forcing % swden = farr % swden(kint) * wgt + farr % swden(kint+1) * (1 - wgt)
+        int_state % forcing % swvel = farr % swvel(kint) * wgt + farr % swvel(kint+1) * (1 - wgt)
+        int_state % forcing % swbz  = farr % swbz (kint) * wgt + farr % swbz (kint+1) * (1 - wgt)
+        int_state % forcing % swbt  = farr % swbt (kint) * wgt + farr % swbt (kint+1) * (1 - wgt)
+      else
+        kint = size(farr % f107)
+
+        int_state % forcing % f107  = farr % f107 (kint)
+        int_state % forcing % f107d = farr % f107d(kint)
+        int_state % forcing % kp    = farr % kp   (kint)
+        int_state % forcing % kpa   = farr % kpa  (kint)
+        int_state % forcing % nhp   = farr % nhp  (kint)
+        int_state % forcing % nhpi  = farr % nhpi (kint)
+        int_state % forcing % shp   = farr % shp  (kint)
+        int_state % forcing % shpi  = farr % shpi (kint)
+        int_state % forcing % swang = farr % swang(kint)
+        int_state % forcing % swden = farr % swden(kint)
+        int_state % forcing % swvel = farr % swvel(kint)
+        int_state % forcing % swbz  = farr % swbz (kint)
+        int_state % forcing % swbt  = farr % swbt (kint)
+      end if
 !      PRINT*, 'In phys grid comp, kdt, kdt_3h=', int_state%kdt, kdt_3h
 
 !      write(0,*)' in physics kdt=',int_state%kdt,' kdt_start=',kdt_start &

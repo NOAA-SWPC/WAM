@@ -43,7 +43,13 @@ cross_compiling=yes
 # Silence resulting warning
 save_ac_tool_warned=${ac_tool_warned}
 ac_tool_warned=yes
-AC_PROG_FC([${FC} ${ESMF_FC} ${NETCDF4_FC} mpiifort mpifort mpif90 mpixlf90_r mpxlf90_r])
+AC_PROG_FC([${FC} ${ESMF_FC} ${NETCDF4_FC} mpiifort mpifort mpif90 mpixlf90_r mpxlf90_r ${COMIO_FC}])
+# - COMIO
+AX_LIB_COMIO
+AS_IF([test "x$with_comio" = x],
+  [AC_MSG_ERROR([Unable to find required COMIO library])],
+  [ext_libs="${ext_libs} COMIO"])
+
 # Restore original cross compilation settings
 cross_compiling=${save_cross_compiling}
 ac_tool_warned=${save_ac_tool_warned}
@@ -185,7 +191,7 @@ AS_IF([test "x$ac_cv_c_bigendian" = xno], [dnl look for compiler flag
 
 # Adds ESMF include paths
 fc_inc=
-for incpath in ${NETCDF4_FFLAGS} ${ESMF_FCFLAGS} ${NEMSIO_FCFLAGS}
+for incpath in ${NETCDF4_FFLAGS} ${ESMF_FCFLAGS} ${NEMSIO_FCFLAGS} ${COMIO_FFLAGS}
 do
   incpath=`echo "${incpath}" | $SED -e's/^-@<:@A-Z,a-z@:>@*\//\//g'`
   fc_inc="${fc_inc}${FC_MODINC}${incpath} "
@@ -217,8 +223,8 @@ done
 AC_LANG_POP
 
 # Set linker flags
-LIBS="${LIBS} ${NETCDF4_FLIBS} ${NEMSIO_FLIBS}"
-LDFLAGS="${LDFLAGS} ${NETCDF4_LDFLAGS} ${NEMSIO_LDFLAGS}"
+LIBS="${LIBS} ${NETCDF4_FLIBS} ${NEMSIO_FLIBS} ${COMIO_FLIBS}"
+LDFLAGS="${LDFLAGS} ${NETCDF4_LDFLAGS} ${NEMSIO_LDFLAGS} ${COMIO_LDFLAGS}"
 
 WAM_DEP_LINK_OBJS="${BLAS_LIBS} ${libdir}/libwam.a"
 WAM_DEP_SHRD_PATH="`echo ${LDFLAGS} | $SED -e's/-L//g'`"
@@ -294,6 +300,11 @@ AS_ECHO("")
 AS_ECHO("Libraries required:")
 AS_ECHO("* BLAS")
 AS_ECHO("  LIBS   : ${BLAS_LIBS}")
+AS_ECHO("* COMIO")
+AS_ECHO("  Version: ${COMIO_VERSION}")
+AS_ECHO("  FC     : ${COMIO_FC}")
+AS_ECHO("  FCFLAGS: ${COMIO_FFLAGS}")
+AS_ECHO("  FLIBS  : ${COMIO_FLIBS}")
 AS_ECHO("* NEMSIO")
 AS_ECHO("  Version: ${NEMSIO_VERSION}")
 AS_ECHO("  FCFLAGS: ${NEMSIO_FCFLAGS}")

@@ -86,7 +86,8 @@ am__aclocal_m4_deps = $(top_srcdir)/m4/ax_blas.m4 \
 	$(top_srcdir)/m4/ax_fortran_utils.m4 \
 	$(top_srcdir)/m4/ax_lib_esmf.m4 \
 	$(top_srcdir)/m4/ax_lib_nemsio.m4 \
-	$(top_srcdir)/m4/ax_lib_netcdf4.m4 $(top_srcdir)/configure.ac
+	$(top_srcdir)/m4/ax_lib_netcdf4.m4 \
+	$(top_srcdir)/m4/ax_lib_comio.m4 $(top_srcdir)/configure.ac
 am__configure_deps = $(am__aclocal_m4_deps) $(CONFIGURE_DEPENDENCIES) \
 	$(ACLOCAL_M4)
 mkinstalldirs = $(install_sh) -d
@@ -119,6 +120,8 @@ am__v_at_ = $(am__v_at_@AM_DEFAULT_V@)
 am__v_at_0 = @
 am__v_at_1 = 
 DEFAULT_INCLUDES = -I.@am__isrc@
+depcomp =
+am__depfiles_maybe =
 AM_V_lt = $(am__v_lt_@AM_V@)
 am__v_lt_ = $(am__v_lt_@AM_DEFAULT_V@)
 am__v_lt_0 = --silent
@@ -217,6 +220,12 @@ BLAS_LIBS = @BLAS_LIBS@
 CC = @CC@
 CCDEPMODE = @CCDEPMODE@
 CFLAGS = @CFLAGS@
+COMIO_CONFIG = @COMIO_CONFIG@
+COMIO_FC = @COMIO_FC@
+COMIO_FFLAGS = @COMIO_FFLAGS@
+COMIO_FLIBS = @COMIO_FLIBS@
+COMIO_LDFLAGS = @COMIO_LDFLAGS@
+COMIO_VERSION = @COMIO_VERSION@
 CPP = @CPP@
 CPPFLAGS = @CPPFLAGS@
 CYGPATH_W = @CYGPATH_W@
@@ -370,9 +379,9 @@ $(srcdir)/Makefile.in: @MAINTAINER_MODE_TRUE@ $(srcdir)/Makefile.am  $(am__confi
 	      exit 1;; \
 	  esac; \
 	done; \
-	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu src/gsm/Makefile'; \
+	echo ' cd $(top_srcdir) && $(AUTOMAKE) --gnu --ignore-deps src/gsm/Makefile'; \
 	$(am__cd) $(top_srcdir) && \
-	  $(AUTOMAKE) --gnu src/gsm/Makefile
+	  $(AUTOMAKE) --gnu --ignore-deps src/gsm/Makefile
 .PRECIOUS: Makefile
 Makefile: $(srcdir)/Makefile.in $(top_builddir)/config.status
 	@case '$?' in \

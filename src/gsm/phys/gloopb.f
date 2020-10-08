@@ -8,7 +8,7 @@
      &                  ozplin,       jindx1,        jindx2,  ddy,
      &                  phy_f3d,      phy_f2d,       phy_fctd, nctp,
      &                  xlat,         nblck,   kdt,  restart_step,
-     &                  mdl_parm,     iniauinterval)
+     &                  mdl_parm,     iniauinterval, forcing)
 !!
 !! Code Revision:
 !! Sep    2009       Shrinivas Moorthi added nst_fld
@@ -103,12 +103,6 @@
       use mpi_def,                only: mpi_r_io_r, mpi_comm_all
 !
 !================================================================= WAM-related 201702
-      use wam_f107_kp_mod,        ONLY: read_wam_f107_kp_txt, 
-     &                                  f107_wy, kp_wy, f107_kp_size, 
-     &                                  kpa_wy, f107d_wy, nhp_wy, 
-     &                                  nhpi_wy, shp_wy, shpi_wy,
-     &                                  swbt_wy, swang_wy, swvel_wy, 
-     &                                  swbz_wy, swden_wy
       use mersenne_twister
       use idea_composition, only: prlog,pr_idea,amgm,amgms,nlev_co2,k43,
      &                            nlevc_h2o,k71,gg,prsilvl
@@ -118,6 +112,7 @@
       USE module_IPE_to_WAM,       only : lowst_ipe_level, 
      &                                    ZMT, MMT, JHR, SHR, O2DR,
      &                                    ipe_to_wam_coupling
+      use wam_ifp_class
 !
       use mersenne_twister
 !================================================================= WAM-related 201702
@@ -130,6 +125,7 @@
       TYPE(Nst_Var_Data)        :: nst_fld
       TYPE(G3D_Var_Data)        :: g3d_fld
       TYPE(AOI_Var_Data)        :: aoi_fld
+      TYPE(forcing_t)           :: forcing
 
 !
       integer nblck, kdt, nbdsw, nbdlw, nctp
@@ -411,24 +407,6 @@
 !***************************************idea below*****************************************
         if ( lsidea ) then
 
-         if (trim(SPW_DRIVERS)=='swpc_fst') then
-! read the f10.7 and kp multi-time input data.
-!---------------------------------------------
-          IF(.NOT.ALLOCATED(f107_wy )) ALLOCATE(f107_wy (f107_kp_size))
-          IF(.NOT.ALLOCATED(kp_wy   )) ALLOCATE(kp_wy   (f107_kp_size))
-          IF(.NOT.ALLOCATED(f107d_wy)) ALLOCATE(f107d_wy(f107_kp_size))
-          IF(.NOT.ALLOCATED(kpa_wy  )) ALLOCATE(kpa_wy  (f107_kp_size))
-          IF(.NOT.ALLOCATED(nhp_wy  )) ALLOCATE(nhp_wy  (f107_kp_size))
-          IF(.NOT.ALLOCATED(nhpi_wy )) ALLOCATE(nhpi_wy (f107_kp_size))
-          IF(.NOT.ALLOCATED(shp_wy  )) ALLOCATE(shp_wy  (f107_kp_size))
-          IF(.NOT.ALLOCATED(shpi_wy )) ALLOCATE(shpi_wy (f107_kp_size))
-          IF(.NOT.ALLOCATED(swbt_wy )) ALLOCATE(swbt_wy (f107_kp_size))
-          IF(.NOT.ALLOCATED(swang_wy)) ALLOCATE(swang_wy(f107_kp_size))
-          IF(.NOT.ALLOCATED(swvel_wy)) ALLOCATE(swvel_wy(f107_kp_size))
-          IF(.NOT.ALLOCATED(swden_wy)) ALLOCATE(swden_wy(f107_kp_size))
-          IF(.NOT.ALLOCATED(swbz_wy )) ALLOCATE(swbz_wy (f107_kp_size))
-          call read_wam_f107_kp_txt
-         end if
 !---------------------------------------------
 !
 !find PE with lat 1
@@ -877,7 +855,14 @@
      &                     swh(1,1,iblk,lan),hlw(1,1,iblk,lan),hlwd,
      &                     thermodyn_id,sfcpress_id,gen_coord_hybrid,
      &                     me,mpi_r_io_r,MPI_COMM_ALL, fhour, kdt,
-     &                     gzmt, gmmt, gjhr, gshr, go2dr)
+     &                     gzmt, gmmt, gjhr, gshr, go2dr,
+     &                     forcing % f107,   forcing % f107d,
+     &                     forcing % kp,     forcing % kpa,
+     &                     forcing % nhp,    forcing % nhpi,
+     &                     forcing % shp,    forcing % shpi,
+     &                     forcing % swbt,   forcing % swang,
+     &                     forcing % swvel,  forcing % swbz,
+     &                     forcing % swden)
 !
 !
 !
