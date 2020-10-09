@@ -191,7 +191,7 @@ AS_IF([test "x$ac_cv_c_bigendian" = xno], [dnl look for compiler flag
 
 # Adds ESMF include paths
 fc_inc=
-for incpath in ${NETCDF4_FFLAGS} ${ESMF_FCFLAGS} ${NEMSIO_FCFLAGS} ${COMIO_FFLAGS}
+for incpath in ${COMIO_FFLAGS} ${ESMF_FCFLAGS} ${NEMSIO_FCFLAGS} ${NETCDF4_FFLAGS}
 do
   incpath=`echo "${incpath}" | $SED -e's/^-@<:@A-Z,a-z@:>@*\//\//g'`
   fc_inc="${fc_inc}${FC_MODINC}${incpath} "
@@ -223,8 +223,8 @@ done
 AC_LANG_POP
 
 # Set linker flags
-LIBS="${LIBS} ${NETCDF4_FLIBS} ${NEMSIO_FLIBS} ${COMIO_FLIBS}"
-LDFLAGS="${LDFLAGS} ${NETCDF4_LDFLAGS} ${NEMSIO_LDFLAGS} ${COMIO_LDFLAGS}"
+LIBS="${LIBS} ${COMIO_FLIBS} ${NEMSIO_FLIBS} ${NETCDF4_FLIBS}"
+LDFLAGS="${LDFLAGS} ${COMIO_LDFLAGS} ${NEMSIO_LDFLAGS} ${NETCDF4_LDFLAGS}"
 
 WAM_DEP_LINK_OBJS="${BLAS_LIBS} ${libdir}/libwam.a"
 WAM_DEP_SHRD_PATH="`echo ${LDFLAGS} | $SED -e's/-L//g'`"
