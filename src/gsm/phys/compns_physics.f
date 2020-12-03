@@ -120,6 +120,7 @@
       use namelist_wamphysics_def
 !cmy mpi_def holds liope
       use mpi_def, only : liope
+      use wam_ifp_mod, only: params
 
       implicit none
 
@@ -135,7 +136,7 @@
       integer ntoz,ntcw,ncld,lsoil,nmtvr,num_p3d,num_p2d,member_num
      &,       npdf3d, ncnvcld3d, nshoc_3d, nshoc_2d, ntke 
      &,       ntot3d, ntot2d
-      integer thermodyn_id, sfcpress_id
+      integer thermodyn_id, sfcpress_id, ifp_realtime_interval
       real    tfiltc
       logical lgoc3d
 
@@ -150,7 +151,7 @@
      & ntoz,ntcw,ncld,ntke,lsoil,nmtvr,zhao_mic,nsout,lsm,tfiltc,
      & isol, ico2, ialb, iems, iaer, iovr_sw, iovr_lw,ictm,
      & isubc_lw, isubc_sw, fdaer, lsidea, weimer_model,
-     & ipe_to_wam_coupling,
+     & ipe_to_wam_coupling, ifp_realtime_interval,
      & ncw, crtrh,old_monin,flgmin,cnvgwd,cgwf,prslrd0,ral_ts,fixtrc,
 !    & ncw, crtrh,old_monin,flgmin,gfsio_in,gfsio_out,cnvgwd,
      & ccwf,shal_cnv,imfshalcnv,imfdeepcnv,
@@ -240,6 +241,7 @@
       lsidea           = .false.
       weimer_model     = 'epot'
       ipe_to_wam_coupling = .false.
+      ifp_realtime_interval = -1
 
 ! Add: a2oi_out, cplflx & ngrid_a2oi
       a2oi_out         = .false.     ! default not writing out Atm fields for Ocn/Ice
@@ -366,6 +368,7 @@
       if (lsidea) then
 !
       call wam_control_default
+      params % ifp_realtime_interval = ifp_realtime_interval
 !
 !       read_in SW-drivers WAM switches from "nam_wam_control"
 !

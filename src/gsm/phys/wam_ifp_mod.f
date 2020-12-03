@@ -49,6 +49,21 @@
       call io % read("swvel", farr % swvel)
       call io % read("swbz",  farr % swbz)
       call io % read("swbt",  farr % swbt)
+      if ( me .eq. 0 ) then
+          write(6,*) farr % f107(1)
+          write(6,*) farr % f107d(1)
+          write(6,*) farr % kp(1)
+          write(6,*) farr % kpa(1)
+          write(6,*) farr % nhp(1)
+          write(6,*) farr % nhpi(1)
+          write(6,*) farr % shp(1)
+          write(6,*) farr % shpi(1)
+          write(6,*) farr % swden(1)
+          write(6,*) farr % swang(1)
+          write(6,*) farr % swvel(1)
+          write(6,*) farr % swbz(1)
+          write(6,*) farr % swbt(1)
+      end if
       call io % close()
 
       call manage_read_lock(.false.)

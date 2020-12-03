@@ -652,7 +652,7 @@
       end if
 
       kint = ((int_state%kdt - 1 + params % skip - params % kdt_start) * timestep_sec / params % ifp_interval) + 1
-
+      write(6,*)'wic', int_state%kdt, timestep_sec, params % skip, params % kdt_start, kint
       if ( kint + 1 .le. size(farr % f107)) then
         wgt = 1 - real(mod((int_state%kdt-1)*timestep_sec, params % ifp_interval))/params % ifp_interval
 
