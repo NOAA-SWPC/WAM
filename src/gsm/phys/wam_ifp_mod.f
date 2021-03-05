@@ -24,10 +24,9 @@
       integer, parameter      :: fmt =  COMIO_FMT_PNETCDF
       integer, pointer :: dims(:)
 
-      call call COMIO_Create(io, fmt, &
+      call COMIO_Create(io, fmt, &
                         comm=MPI_COMM_ALL, &
-                        info=MPI_INFO_NULL, &
-                        rc=localrc)
+                        info=MPI_INFO_NULL)
 
       call dealloc()
       call check_write_lock()
