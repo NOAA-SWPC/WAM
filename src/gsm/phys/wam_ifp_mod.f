@@ -20,11 +20,13 @@
       subroutine read_ifp
 
       character(len=19), parameter :: filename = "input_parameters.nc"
-      class(COMIO_T), pointer :: io  => null()
+      class(COMIO_T), allocatable :: io
       integer, parameter      :: fmt =  COMIO_FMT_PNETCDF
       integer, pointer :: dims(:)
 
-      io => COMIO_T(fmt=fmt, comm=MPI_COMM_ALL, info=MPI_INFO_NULL)
+      call COMIO_Create(io, fmt, &
+                        comm=MPI_COMM_ALL, &
+                        info=MPI_INFO_NULL)
 
       call dealloc()
       call check_write_lock()
@@ -49,21 +51,6 @@
       call io % read("swvel", farr % swvel)
       call io % read("swbz",  farr % swbz)
       call io % read("swbt",  farr % swbt)
-      if ( me .eq. 0 ) then
-          write(6,*) farr % f107(1)
-          write(6,*) farr % f107d(1)
-          write(6,*) farr % kp(1)
-          write(6,*) farr % kpa(1)
-          write(6,*) farr % nhp(1)
-          write(6,*) farr % nhpi(1)
-          write(6,*) farr % shp(1)
-          write(6,*) farr % shpi(1)
-          write(6,*) farr % swden(1)
-          write(6,*) farr % swang(1)
-          write(6,*) farr % swvel(1)
-          write(6,*) farr % swbz(1)
-          write(6,*) farr % swbt(1)
-      end if
       call io % close()
 
       call manage_read_lock(.false.)
