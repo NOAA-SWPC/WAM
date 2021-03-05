@@ -168,7 +168,7 @@
 !                gis_phy%NBLCK,   gis_phy%ZHOUR,   gis_phy%ZHOUR_DFI,     &
                  gis_phy%N3,      gis_phy%N4,                             &
                  gis_phy%LSOUT,   gis_phy%COLAT1,  gis_phy%CFHOUR1,       &
-                 gis_phy%restart_step, gis_phy%mdl_parm)
+                 gis_phy%restart_step, gis_phy%mdl_parm, gis_phy%forcing)
 
 !                        
 ! =======================================================================

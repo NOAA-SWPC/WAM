@@ -141,6 +141,7 @@
       use module_radlw_parameters, only: nbdlw
       use gfs_physics_aoi_var_mod
       use module_CPLFIELDS, only: NImportFields
+      use wam_ifp_mod, only: read_ifp
 !#ifndef IBM
 !     USE omp_lib
 !#endif
@@ -741,6 +742,10 @@
 
 !      PRINT*, 'in phys initialize, lsidea, ipe_to_wam_coupling=', &
 !            lsidea, ipe_to_wam_coupling
+      if (lsidea) then
+        call read_ifp
+      end if
+
       IF(lsidea .AND. ipe_to_wam_coupling) THEN
         lowst_ipe_level = 80
 
