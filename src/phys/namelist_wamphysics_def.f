@@ -37,7 +37,7 @@
       logical wam_solar_in
       logical wam_ion_in
 
-      real JH0, JH_tanh, JH_semiann, JH_ann
+      real JH0, JH_tanh, JH_semiann, JH_ann, JH_st0, JH_st1
       real skeddy0, skeddy_semiann, skeddy_ann
       real tkeddy0, tkeddy_semiann, tkeddy_ann
 !
@@ -84,6 +84,8 @@
       JH_tanh = 0.5
       JH_semiann = 0.5
       JH_ann  = 0.
+      JH_st0  = 25000.
+      JH_st1  =  5000.
       skeddy0 = 140.
       skeddy_semiann = 60.
       skeddy_ann     = 0.
@@ -140,7 +142,7 @@
      & wam_saver, wam_geostorm,
      & wam_gwphys, wam_solar_in, wam_ion_in, wam_das_in, wam_smet_in,
      & wam_netcdf_inout, wam_tides_diag, wam_pws_diag, wam_gws_diag,
-     & JH0, JH_tanh, JH_semiann, JH_ann,
+     & JH0, JH_tanh, JH_semiann, JH_ann, JH_st0, JH_st1,
      & skeddy0, skeddy_semiann, skeddy_ann,
      & tkeddy0, tkeddy_semiann, tkeddy_ann
      
