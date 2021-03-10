@@ -142,7 +142,8 @@
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
       use namelist_wamphysics_def, only : JH0, JH_semiann,
-     &                                    JH_ann, JH_tanh
+     &                                    JH_ann, JH_tanh,
+     &                                    JH_st0, JH_st1
       
       implicit none
       REAL  , INTENT(IN)   :: f107, f107d, kp  ! solar-geo inputs from different WAM applications
@@ -244,10 +245,10 @@
 
 ! VBz adjustment
 
-          if (abs(VBz).le.5000.) then
+          if (abs(VBz).le.JH_st1) then
              st_fac = 1.
           else
-             st_fac = (25000.+5000.)/(25000.+ abs(VBz))
+             st_fac = (JH_st0+JH_st1)/(JH_st0+ abs(VBz))
           endif
 
       do k=1,levs
