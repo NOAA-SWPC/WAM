@@ -432,7 +432,8 @@
 ! Calculate major species changes by eddy mixing O, O2, and
 !     (indirectly) N2
 ! October 2017 Rashid Akmaev
-
+! Mar     2021 VAY review of keddy(:) specification constant for  ALL layers
+!
       use namelist_wamphysics_def, only : skeddy0, skeddy_semiann,    
      &                                    skeddy_ann
       implicit none
@@ -462,7 +463,8 @@
       real, parameter:: pi = 3.141592653
 ! semiannual amp
 !      real, parameter:: dkeddy = 2.
-      real, parameter:: dkeddy = 0.
+      real, parameter:: dkeddy = 0.   ! ???? it activates diffusion for ALL layers from the surface
+                                      ! it may destroy mass balance due to "O"-diffusion down 
       real, parameter:: xmax = 15.
       real keddy(levs+1),x
 
@@ -470,14 +472,20 @@
       if(dkeddy <= 1e-10) then
 !         keddy(:) = skeddy0 
 ! Add semiannual variation
+! VAY-2021 with dkeddy = 0.   keddy(1:levs+1) =CONSTANT ???
+!
           keddy(:) = skeddy0 + 
      &               skeddy_semiann*(cos(4.*pi*(dayno+9.)/365.))
       else
-         do k=1,levs+1
+!vay-2020=> k=1,levs      
+         do k=1,levs
 ! height in scale heights
-            x = alog(1e5/prsi(1,k))
+! vay-2020 prsi(levs+1)=0.
+!
+            x = alog(1.e5/prsi(1,k))
             keddy(k)= skeddy0*exp(-((x-xmax)/dkeddy)**2)
          enddo
+	 keddy(levs+1) = keddy(levs)
       endif
 !-----------------------------------------------------------------------
 ! Boundary conditions
