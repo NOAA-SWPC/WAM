@@ -791,7 +791,7 @@
       if( ndslfv ) then
         if(lsidea ) then
           call idea_deldifs_init                                        &
-                (SL,gis_dyn%LS_NODE,hybrid,gen_coord_hybrid)
+          (SL,gis_dyn%LS_NODE,hybrid,gen_coord_hybrid, gis_dyn%deltim)
         else
           call deldifs_noq                                              &
                   (gis_dyn%epse,gis_dyn%epse,gis_dyn%epse,              &
@@ -804,7 +804,7 @@
       else
         if(lsidea ) then
           CALL idea_deldifs_init                                        &
-                (SL,gis_dyn%LS_NODE,hybrid,gen_coord_hybrid)
+           (SL,gis_dyn%LS_NODE,hybrid,gen_coord_hybrid,gis_dyn%deltim)
         else
           call deldifs(gis_dyn%epse,gis_dyn%epse,gis_dyn%epse,		&
                    gis_dyn%epse,gis_dyn%epse,gis_dyn%epse,      	&

@@ -1,16 +1,19 @@
-craa********************************************************************
-c Starting May 27, 2008: modified by RAA to impose horizontal physical
-C     dissipation on top of numerical diffusion in all layers.
-c Jan 4, 2007: modified by Rashid Akmaev based on DELDIFS_hyb to do
-c horizontal viscosity, thermal conduction, and diffusion of major 
-c species (O and O2) with global mean coefficients.
+!craa********************************************************************
+!c Starting May 27, 2008: modified by RAA to impose horizontal physical
+!C     dissipation on top of numerical diffusion in all layers.
+!c Jan 4, 2007: modified by Rashid Akmaev based on DELDIFS_hyb to do
+!c horizontal viscosity, thermal conduction, and diffusion of major 
+!c species (O and O2) with global mean coefficients.
 craa********************************************************************
       SUBROUTINE idea_deldifs_init(SL,
-     X                   LS_NODE,hybrid,gen_coord_hybrid)
+     X                   LS_NODE,hybrid,gen_coord_hybrid, deltim)
 !
 ! Jan 10 2013   J. Wang, this file is separated from idea_deldif.f
 !                        for initialization only
 ! Aug 22 2013   J. Wang, add namelist variables, and use 8th order diffusion
+!
+! Sep    2015   VAY   first corrections for WAM-HR T254 and higher
+! Feb/Mar2021   VAY   optimized corrections for WAM-HR T254 with correct dyn-phys split 
 !
       use gfs_dyn_resol_def
       use namelist_dynamics_def , only : hdif_fac, hdif_fac2, slrd0
@@ -26,6 +29,7 @@ craa********************************************************************
 !
       REAL(KIND=KIND_EVOD),intent(in) :: SL(LEVS)
 !
+      real ,intent(in)    :: deltim
       INTEGER,intent(in)  :: LS_NODE(LS_DIM,3)
 !
 !CMR  LS_NODE(1,1) ... LS_NODE(LS_MAX_NODE,1) : VALUES OF L
@@ -34,8 +38,9 @@ craa********************************************************************
 !
       INTEGER              I,IS,IT,JDEL,JDELH,K,KD,KU
 !raa********************************************************************
-! idea change1
+! 
 ! IDEA-related changes
+!
       INTEGER              L,LOCL,N,N0,ND,NP,NPD
       INTEGER              N00
 !
@@ -93,9 +98,18 @@ craa********************************************************************
        JDEL = 8            ! ORDER OF DIFFUSION (EVEN POWER TO RAISE DEL)
        NP   = JCAP
        FSHK = 1.0*hdif_fac ! EXTRA HEIGHT-DEPENDENT DIFFUSION FACTOR PER SCALE HEIGHT
-       RTNP = 1/1800.      ! RECIPROCAL OF TIME SCALE OF DIFFUSION AT REFERENCE WAVENUMBER NP
-                           ! set to 30min for WAM
-!       RTNP = 10.*3.E15/(RERTH**4)*FLOAT(80*81)**2
+!       
+!VAY-2020: T62 empirical setting    RTNP = 1/1800. set to 30min for WAM under deltim = 180 sec 
+!                                   with "wrong" dyn-phys split
+!       RTNP = 1/1800.      ! RECIPROCAL OF TIME SCALE OF DIFFUSION AT REFERENCE WAVENUMBER NP
+                           
+! VAY-2020: T254 and higher
+		 
+	RTNP = 0.1/deltim   ! ~1/3 of previous T62 and get stable EK-spectra (-3 slope for T62)
+	
+	RTNP = RTNP*(FLOAT(JCAP)/62.)**(JDEL/2) ! scaling for HR relative to T62 like in GFS-V15
+			   
+!       RTNP = 10.*3.E15/(RERTH**4)*FLOAT(80*81)**2   EMC- choices for GFS-HR
 !       IF(JCAP.GT.170) THEN
 !        RECIPROCAL OF TIME SCALE OF DIFFUSION AT REFERENCE WAVENUMBER NP
 !         RTNP = hdif_fac2*(JCAP/170.)**4*1.1/3600
@@ -118,6 +132,9 @@ craa********************************************************************
 !       RTRD1=1./(10.*86400.) ! RECIPROCAL OF TIME SCALE PER SCALE HEIGHT
 !                    !  ABOVE BEGINNING SIGMA LEVEL FOR RAYLEIGH DAMPING
 ! no Rayleigh damping for WAM    RTRD1=0.
+!
+! VAY-2021: with RTRD1=0. RTRD(K) = 0.
+!
         RTRD1=0.
 
         IF (ME.EQ.0) THEN
@@ -128,7 +145,7 @@ craa********************************************************************
      &  '   ORDER OF DIFFUSION ',I2)
 
          print *, '***IDEA*** Using physical diffusion in all layers'
-         print *,JCAP,N0,FSHK,rtrd1
+         print *,JCAP,N0,FSHK,rtrd1 , 'WAM-HR 2021 '
 
         ENDIF
 !
@@ -148,7 +165,7 @@ craa********************************************************************
           ELSE
             RTRD(K)=0
           ENDIF
-          RTHK(K)=(SL(K))**LOG(1/FSHK)
+          RTHK(K)=(SL(K))**LOG(1.0/FSHK)   ! VAY-2021 also 0, FSHK=1 
         ENDDO
 !
         JDELH=JDEL/2
@@ -207,8 +224,8 @@ craa********************************************************************
                L=LS_NODE(LOCL,1)
           JBASOD=LS_NODE(LOCL,3)
           if (mod(L,2).ne.mod(jcap+1,2)) then
-            DNO(INDLSOD(JCAP+1,L))=CONS0 ! SET THE ODD (N-L) TERMS OF THE TOP ROW TO ZERO
-            DNOidea(INDLSOD(JCAP+1,L))=CONS0 ! SET THE ODD (N-L) TERMS OF THE TOP ROW TO ZERO
+            DNO(INDLSOD(JCAP+1,L))=CONS0      ! SET THE ODD (N-L) TERMS OF THE TOP ROW TO ZERO
+            DNOidea(INDLSOD(JCAP+1,L))=CONS0  ! SET THE ODD (N-L) TERMS OF THE TOP ROW TO ZERO
           ENDIF
         ENDDO
 !

@@ -2,13 +2,24 @@
 
 ! calculate global avg viscosity, conductivity, and diffusion coeffs
 ! Apr 06 2012    Henry Juang, initial implement
+! Dec    2020    VAY, correction of global coefficients and moluular mass if 
+!                WAM-IC is not balanced (unrealistic H2O)
+!                we apply calculations only for "major" species O+O2+N2=1
+!                to avoid "bad" values of O3 and H2O above 80 km
+! to do for testing  "Cp*T" vs "T" Eul-code perfoemance
+! gfs_dyn_tracer_const.f  define # of tracers ri(0:max_num_tracer=50???) & cpi(0:max_num_tracer)
+!                       it would be better to put WAM-values w/o reading them from "exglobal"
 !
-
+!  computation of am(levs) is here  for initialisation of global AMOL and "mur,lam,d12"
+!                 it can be "bad" for the WAM spin-up with different SOLAR activity 
+!
+!  am(levs): idea_composition, only: am=>amgm define inn-t radiation ans spectral disispation
+!
       use gfs_dyn_physcons,  amo2 => con_amo2,
      &               avgd => con_avgd, p0 => con_p0,
      &               amh2o =>con_amw, amo3 =>con_amo3
-!hmhj gfs_dyn_coordinate_def
-      use gfs_dyn_tracer_const
+!hmhj gfs_dyn_coordinate_def                            ! cpi-definition
+      use gfs_dyn_tracer_const                          ! cpi-definition
       use idea_composition, only: am=>amgm
       implicit none
 
@@ -25,23 +36,62 @@
 ! local params
 
       real amo,amn2,muo,muo2,mun2,lao,lao2,lan2
-      parameter (amo=15.9994, amn2=28.013) !g/mol
+      parameter (amo=15.9994, amn2=28.013)               !g/mol
       parameter (muo=3.9e-7, muo2=4.03e-7, mun2=3.43e-7) !kg/m/s
-      parameter (lao=75.9e-5, lao2=56.e-5, lan2=56.e-5) !kg/m/s         
-      real, parameter:: bz=1.3806505e-23 ! Boltzmann constant 
-      real, parameter:: s12=0.774,a12=9.69e18 ! O-O2 diffusion params
-
+      parameter (lao=75.9e-5, lao2=56.e-5, lan2=56.e-5)  !kg/m/s         
+      real, parameter:: bz=1.3806505e-23                 ! Boltzmann constant 
+      real, parameter:: s12=0.774,a12=9.69e18            ! O-O2 diffusion params
+!vay-2021      
+      real, parameter:: dked_min =0.1                  ! minval for eddy-horizontal additional stab-n for HR-runs
+      real, parameter:: amu_dry= 28.9647               !g/mol    
 ! local variables
 
       real hold1,la,rho,o_n,o2_n,cp,t69,mu,n,n2_n,q_n2,tem,rn
+      real rrn, rbz, amol, nair, nsum
       integer k
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - 
 !      print *,'in idea_getcoef,cp=',cpi(1:5)
+
+        rrn=1.e-3/(avgd)
+	rbz = 1./bz
+        do k=1,levs
+         q_n2=1.- q(k,4)-q(k,5)	
+	 cp= cpi(4)*q(k,4)+cpi(5)*q(k,5)+ cpi(0)*q_n2	
+	 tem= q(k,0)/cp
+	 amol=1./(q(k,4)/amo+q(k,5)/amo2+q_n2/amn2)        ! g/mol
+         nair=rbz*plyr(k)/tem                              ! kg/m3
+         rn=avgd*bz
+         rho=amol*nair *rrn                                ! kg/m3
+         o_n=q(k,4)*amol/amo                               ! 1/m3    
+         o2_n=q(k,5)*amol/amo2         
+         n2_n=q_n2*amol/amn2   
+	 nsum =1./(o_n + o2_n + n2_n)      
+!
+! kinematic diffusion
+!
+         d12(k)=a12* tem**(s12)/nair  + dked_min                     !d12 
+!
+! kinematic viscosity and heat conductivity see idea_dissipation.f
+!
+         mu=(o_n*muo+o2_n*muo2+n2_n*mun2)*nsum
+         la=(o_n*lao+o2_n*lao2+n2_n*lan2)*nsum
+	 
+         t69=tem**(0.69)/rho
+
+         mur(k)=mu*t69    + dked_min
+         lam(k)=la*t69/cp + dked_min
+	 amol = min( amol, amu_dry)                  ! to avoid amol > amu_dry 
+	 am(k)= max( amol, amo)  	 
+	enddo 
+
+        return
+!============================ OLD code ==============      
       do k=1,levs
+!         am(k) = 28.9647                   !g/mol
 
 ! get global mean pressure
 
-!hmhj    plyr=(ak5(k)+ak5(k+1)+p0*1.e-3*(bk5(k)+bk5(k+1)))*500.
+!VAF-2021 check that plyr in Pa    plyr=(ak5(k)+ak5(k+1)+p0*.5*(bk5(k)+bk5(k+1)))
 
 ! get n2 kg/kg
 
@@ -106,6 +156,9 @@
 !
 !------------------------------------------------------
        else  ! assume ntrac=3
+!       
+! ABZAATCH of Jun Wang N2 +H2O !!!!  VAY-2021 
+!       
          am(k)=1./(q_n2/amn2+q(k,1)/amh2o+q(k,2)/amo3)
          o_n=0.0
          o2_n=0.0
