@@ -29,8 +29,6 @@
                         info=MPI_INFO_NULL)
 
       call dealloc()
-      call check_write_lock()
-      call manage_read_lock(.true.)
 
       call io % open(filename, "r")
       call io % description("skip", params % skip)
@@ -53,39 +51,7 @@
       call io % read("swbt",  farr % swbt)
       call io % close()
 
-      call manage_read_lock(.false.)
-
       end subroutine read_ifp
-
-      subroutine check_write_lock
-      character(len=22), parameter :: filename = "input_parameters.wlock"
-      logical :: not_ready
-      integer :: iostat
-
-      not_ready = .true.
-      do while (not_ready)
-        inquire(file=filename, exist=not_ready, iostat=iostat)
-        if (not_ready) call sleep(1)
-      end do
-
-      end subroutine check_write_lock
-
-      subroutine manage_read_lock(create)
-      logical, intent(in) :: create
-
-      character(len=26), parameter :: filename = "input_parameters.rlock.wam"
-      character(len=29) :: lockfile
-      integer, parameter :: unit = 79
-
-      write (lockfile, "(A22,I0.3)") filename,me
-      open(unit, file=lockfile, status="replace", action="write")
-      if (create) then
-        close(unit)
-      else
-        close(unit, status="delete")
-      end if
-
-      end subroutine manage_read_lock
 
       subroutine alloc(dim)
         integer, intent(in) :: dim
