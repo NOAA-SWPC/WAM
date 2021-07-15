@@ -172,6 +172,7 @@ AC_DEFUN([AX_FC_BIGENDIAN],[
 	ax_fc_bigendian_FCFLAGS_save="$FCFLAGS"
 	for ac_flag in "-convert big_endian" -fconvert=big-endian -qufmt=be -byteswapio
 	do
+        FCFLAGS="$ac_flag $ax_fc_bigendian_FCFLAGS_save"
 	    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([],[])],[dnl
 		ax_cv_fc_bigendian=$ac_flag; break
             ])
