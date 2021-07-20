@@ -162,10 +162,9 @@ AC_SUBST([AR])dnl
 # configured tree to be moved without reconfiguration.
 
 AC_DEFUN([AM_AUX_DIR_EXPAND],
-[dnl Rely on autoconf to set up CDPATH properly.
-AC_PREREQ([2.50])dnl
-# expand $ac_aux_dir to an absolute path
-am_aux_dir=`cd $ac_aux_dir && pwd`
+[AC_REQUIRE([AC_CONFIG_AUX_DIR_DEFAULT])dnl
+# Expand $ac_aux_dir to an absolute path.
+am_aux_dir=`cd "$ac_aux_dir" && pwd`
 ])
 
 # AM_CONDITIONAL                                            -*- Autoconf -*-
@@ -1133,9 +1132,10 @@ AC_SUBST([am__untar])
 ]) # _AM_PROG_TAR
 
 m4_include([m4/ax_blas.m4])
+m4_include([m4/ax_check_compile_flags.m4])
 m4_include([m4/ax_compiler_vendor.m4])
 m4_include([m4/ax_fortran_utils.m4])
+m4_include([m4/ax_lib_comio.m4])
 m4_include([m4/ax_lib_esmf.m4])
 m4_include([m4/ax_lib_nemsio.m4])
 m4_include([m4/ax_lib_netcdf4.m4])
-m4_include([m4/ax_lib_comio.m4])

@@ -170,14 +170,19 @@ AC_DEFUN([AX_FC_BIGENDIAN],[
         ax_cv_fc_bigendian,[
 	ax_cv_fc_bigendian=unknown
 	ax_fc_bigendian_FCFLAGS_save="$FCFLAGS"
+	m4_pushdef([AS_MESSAGE_LOG_FD], [/dev/null])dnl
+	m4_pushdef([AS_MESSAGE_FD], [/dev/null])dnl
+        AC_LANG_WERROR
 	for ac_flag in "-convert big_endian" -fconvert=big-endian -qufmt=be -byteswapio
 	do
-	    AC_COMPILE_IFELSE([AC_LANG_PROGRAM([],[])],[dnl
+            AX_CHECK_COMPILE_FLAG($ac_flag, [dnl
 		ax_cv_fc_bigendian=$ac_flag; break
             ])
         done
         rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
         FCFLAGS=$ax_fc_bigendian_FCFLAGS_save
+	m4_popdef([AS_MESSAGE_LOG_FD])dnl
+	m4_popdef([AS_MESSAGE_FD])dnl
     ])
     AS_VAR_IF([ax_cv_fc_bigendian],[unknown],[dnl
         ax_cv_fc_bigendian=""

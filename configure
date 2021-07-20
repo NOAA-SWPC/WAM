@@ -621,6 +621,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
+ac_fc_werror_flag=
 ac_subst_vars='am__EXEEXT_FALSE
 am__EXEEXT_TRUE
 LTLIBOBJS
@@ -2507,8 +2508,8 @@ test "$program_suffix" != NONE &&
 ac_script='s/[\\$]/&&/g;s/;s,x,x,$//'
 program_transform_name=`$as_echo "$program_transform_name" | sed "$ac_script"`
 
-# expand $ac_aux_dir to an absolute path
-am_aux_dir=`cd $ac_aux_dir && pwd`
+# Expand $ac_aux_dir to an absolute path.
+am_aux_dir=`cd "$ac_aux_dir" && pwd`
 
 if test x"${MISSING+set}" != xset; then
   case $am_aux_dir in
@@ -8073,18 +8074,42 @@ else
 
 	ax_cv_fc_bigendian=unknown
 	ax_fc_bigendian_FCFLAGS_save="$FCFLAGS"
+
+ac_fc_werror_flag=yes
 	for ac_flag in "-convert big_endian" -fconvert=big-endian -qufmt=be -byteswapio
 	do
-	    cat > conftest.$ac_ext <<_ACEOF
+            as_CACHEVAR=`$as_echo "ax_cv_check_fcflags__$ac_flag" | $as_tr_sh`
+{ $as_echo "$as_me:${as_lineno-$LINENO}: checking whether Fortran compiler accepts $ac_flag" >&/dev/null
+$as_echo_n "checking whether Fortran compiler accepts $ac_flag... " >&/dev/null; }
+if eval \${$as_CACHEVAR+:} false; then :
+  $as_echo_n "(cached) " >&/dev/null
+else
+
+  ax_check_save_flags=$FCFLAGS
+  FCFLAGS="$FCFLAGS  $ac_flag"
+  cat > conftest.$ac_ext <<_ACEOF
       program main
 
       end
 _ACEOF
 if ac_fn_fc_try_compile "$LINENO"; then :
-  		ax_cv_fc_bigendian=$ac_flag; break
-
+  eval "$as_CACHEVAR=yes"
+else
+  eval "$as_CACHEVAR=no"
 fi
 rm -f core conftest.err conftest.$ac_objext conftest.$ac_ext
+  FCFLAGS=$ax_check_save_flags
+fi
+eval ac_res=\$$as_CACHEVAR
+	       { $as_echo "$as_me:${as_lineno-$LINENO}: result: $ac_res" >&/dev/null
+$as_echo "$ac_res" >&/dev/null; }
+if eval test \"x\$"$as_CACHEVAR"\" = x"yes"; then :
+  		ax_cv_fc_bigendian=$ac_flag; break
+
+else
+  :
+fi
+
         done
         rm -f conftest.err conftest.$ac_objext conftest.$ac_ext
         FCFLAGS=$ax_fc_bigendian_FCFLAGS_save
