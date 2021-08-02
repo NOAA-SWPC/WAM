@@ -279,10 +279,10 @@
      &                                           'v ', 't ', 'qr', 'o3',&
      &                                           'cw', 'o ', 'o2', 'n2',&
      &                                           'dn', 'gm'/)
-      character(7),dimension(fields),parameter::units=(/'m/s','m','m/s',&
-     &                                        'm/s','K','kg/kg','kg/kg',&
-     &                                     'kg/kg','m^-3','m^-3','m^-3',&
-     &                                         'kg*m^-3','kg/mol'/)
+      character(7),dimension(fields),parameter::units=(/'m/s    ',      &
+     & 'm      ', 'm/s    ', 'm/s    ', 'K      ', 'kg/kg  ', 'kg/kg  ',&
+     & 'kg/kg  ', 'm^-3   ', 'm^-3   ', 'm^-3   ', 'kg*m^-3', 'kg/mol ' &
+     & /)
       real, dimension(latg) :: lats
       real, dimension(lonf) :: lons
       integer, dimension(levs) :: levels

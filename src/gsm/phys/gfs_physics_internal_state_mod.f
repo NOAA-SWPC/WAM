@@ -50,6 +50,7 @@
 !     use gfs_phy_tracer_config,    ONLY: gfs_phy_tracer_type
       use gfs_physics_nst_var_mod
       use gfs_physics_aoi_var_mod
+      use wam_ifp_class
 
 ! NUOPC Physics driver types
       use nuopc_physics, only: model_parameters
@@ -75,6 +76,7 @@
 
       TYPE(Nst_Var_Data)        :: nst_fld
       TYPE(aoi_Var_Data)        :: aoi_fld
+      type(forcing_t)           :: forcing
 
       logical                   :: grid_aldata, lgocart,      nst_fcst  &
      &,                            start_step,  restart_step, climate   &

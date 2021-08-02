@@ -12,7 +12,7 @@
      &                               NBLCK,       zhour_dfi,n3, n4,
 !    &                               NBLCK,ZHOUR, zhour_dfi,n3, n4,
      &                               LSOUT,COLAT1,CFHOUR1,restart_step,
-     &                               mdl_parm)
+     &                               mdl_parm, forcing)
 !!
 
 !!
@@ -81,6 +81,7 @@
      &,                                    importFieldsList 
      &,                                    importFieldsValid
       use nuopc_physics,            only: model_parameters
+      use wam_ifp_class
       IMPLICIT NONE
 !!     
       TYPE(Sfc_Var_Data)        :: sfc_fld
@@ -90,6 +91,7 @@
       TYPE(G3D_Var_Data)        :: g3d_fld 
       TYPE(G2D_Var_Data)        :: g2d_fld
       type(aoi_var_data)        :: aoi_fld
+      type(forcing_t)           :: forcing
       logical                   :: iniauinterval
 !     type(gfs_phy_tracer_type) :: gfs_phy_tracer
 !*    REAL(KIND=KIND_GRID)      GRID_GR(lonr*lats_node_r_max,lotgr)
@@ -574,7 +576,7 @@
      &                ozplin,       jindx1,        jindx2, ddy,
      &                phy_f3d,      phy_f2d,       phy_fctd, nctp,
      &                xlat,         nblck,  kdt,   restart_step,
-     &                mdl_parm,     iniauinterval)
+     &                mdl_parm,     iniauinterval, forcing)
 !
 !!
       endif ! if (comp_task) then

@@ -102,11 +102,7 @@
       use wam_date_calendar, only : curday_wam, curmonth_wam, curddd_wam 
       use wam_date_calendar, only : curyear_wam, curutsec_wam 
 !
-      use wam_f107_kp_mod,    ONLY: read_wam_f107_kp_txt, 
-     &                              f107_wy, kp_wy, f107_kp_size,
-     &                              fix_spweather_data, kpa_wy, nhp_wy, nhpi_wy, f107d_wy,
-     &                              shp_wy, shpi_wy,
-     &                              swbt_wy, swvel_wy, swang_wy, swbz_wy, swden_wy
+
 !
       implicit none
 !
@@ -405,25 +401,6 @@
 !
 !     data_swpc make a final decision keep it in "gloopb.f" or in "solar_init.f"
 !
-        if (trim(SPW_DRIVERS)=='swpc_fst') then 
-
-          IF(.NOT. ALLOCATED(f107_wy))  ALLOCATE(f107_wy (f107_kp_size))
-          IF(.NOT. ALLOCATED(kp_wy))    ALLOCATE(kp_wy   (f107_kp_size))
-          IF(.NOT. ALLOCATED(f107d_wy)) ALLOCATE(f107d_wy(f107_kp_size))
-          IF(.NOT. ALLOCATED(kpa_wy))   ALLOCATE(kpa_wy  (f107_kp_size))
-          IF(.NOT. ALLOCATED(nhp_wy))   ALLOCATE(nhp_wy  (f107_kp_size))
-          IF(.NOT. ALLOCATED(nhpi_wy))  ALLOCATE(nhpi_wy (f107_kp_size))
-          IF(.NOT. ALLOCATED(shp_wy))   ALLOCATE(shp_wy  (f107_kp_size))
-          IF(.NOT. ALLOCATED(shpi_wy))  ALLOCATE(shpi_wy (f107_kp_size))
-          IF(.NOT. ALLOCATED(swbt_wy))  ALLOCATE(swbt_wy (f107_kp_size))
-          IF(.NOT. ALLOCATED(swang_wy)) ALLOCATE(swang_wy(f107_kp_size))
-          IF(.NOT. ALLOCATED(swvel_wy)) ALLOCATE(swvel_wy(f107_kp_size))
-          IF(.NOT. ALLOCATED(swbz_wy))  ALLOCATE(swbz_wy (f107_kp_size))
-          IF(.NOT. ALLOCATED(swden_wy)) ALLOCATE(swden_wy(f107_kp_size))
-          call read_wam_f107_kp_txt
-          if (mpi_id ==0 ) write(6,*) 
-     & ' SPW_DRIVERS => swpc_fst, 3-day forecasts:', trim(SPW_DRIVERS)
-        endif
 !
 !  data only for 2012
 !

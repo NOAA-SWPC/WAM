@@ -135,20 +135,21 @@
      &  adu,adv,adt,dudt,dvdt,dtdt,rho,rlat,rlon,ix,im,levs,              
      &  dayno,utsec,sda,maglon,maglat,btot,dipang,essa,
      &  f107, f107d, kp, nhp, nhpi, shp, shpi, SPW_DRIVERS,
-     &  swbz, swvel)
+     &  swbt, swang, swvel, swbz, swden)
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 ! driver      dtdt(i,k)=jh(i,k)/cp(i,k), dudt dvdt
 !              ion darge and Joule heating
 !~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
 
       use namelist_wamphysics_def, only : JH0, JH_semiann,
-     &                                    JH_ann, JH_tanh
+     &                                    JH_ann, JH_tanh,
+     &                                    JH_st0, JH_st1
       
       implicit none
       REAL  , INTENT(IN)   :: f107, f107d, kp  ! solar-geo inputs from different WAM applications
                                                ! CLIMATE-SWPC-RDATA, controlled in idea_phys
       REAL  , INTENT(IN)   :: nhp, nhpi, shp, shpi ! solar-geo inputs from wam_f107_kp.txt
-      REAL  , INTENT(IN)   :: swbz, swvel ! solar-geo inputs from wam_f107_kp.txt
+      REAL  , INTENT(IN)   :: swbz, swvel, swbt, swang, swden ! solar-geo inputs from wam_f107_kp.txt
 
       Character,INTENT(IN) :: SPW_DRIVERS      ! SPACE weather/climate driver
 !
@@ -222,7 +223,7 @@
 !     &   dayno,utsec,F107,KP,sda,sza,rlat,zg,grav,      
      &   dayno,utsec,F107,f107d,KP,NHP,NHPI,spw_drivers,sda,sza,rlat,zg,
      &   grav,o_n, o2_n, n2_n,adu,adv,adt,rho,rlt,rlon,ix,im,levs,k91,       
-     &   btot,dipang,maglon,maglat,essa,                                
+     &   btot,dipang,maglon,maglat,essa,swbt,swang,swvel,swbz,swden,
      &   dudt,dvdt,jh) 
 
 !       print *, 'F107=  ', F107, 'F107d=  ', f107d
@@ -244,10 +245,10 @@
 
 ! VBz adjustment
 
-          if (abs(VBz).le.5000.) then
+          if (abs(VBz).le.JH_st1) then
              st_fac = 1.
           else
-             st_fac = (25000.+5000.)/(25000.+ abs(VBz))
+             st_fac = (JH_st0+JH_st1)/(JH_st0+ abs(VBz))
           endif
 
       do k=1,levs
@@ -262,9 +263,9 @@
       SUBROUTINE GetIonParams(pres, 
 !     &   dayno,utsec,f107,kp,sda,sza,rlat,ht,grav, 
      &   dayno,utsec,f107,f107d,kp,hp,hpi,spw_drivers,sda,sza,rlat,ht,grav, 
-     &   o_n, o2_n, n2_n,adu,adv,adt,rho,rlt,rlon,ix,im,levs,lev1,      
-     &   btot,dipang,maglon,maglat,essa,                                
-     &   dudt,dvdt,jh) 
+     &   o_n, o2_n, n2_n,adu,adv,adt,rho,rlt,rlon,ix,im,levs,lev1,
+     &   btot,dipang,maglon,maglat,essa,swbt,swang,swvel,swbz,swden,
+     &   dudt,dvdt,jh)
 !      use physcons,  pi => con_pi
 !    
        use IDEA_ION_INPUT, only : EMAPS1, CMAPS1, DJSPECTRA1
@@ -307,6 +308,7 @@
       REAL, INTENT(in) :: btot(im)    !mapgnetic field strength
       REAL, INTENT(in) :: dipang(im)  !Dip angle (degree)
       REAL, INTENT(in) :: essa(im)    !magnetic local time
+      real, intent(in) :: swbt, swang, swvel, swbz, swden
 
 
       REAL, INTENT(OUT) :: dvdt(ix,levs) !(m/s2)
@@ -357,7 +359,7 @@
 ! VAY-2016: (im, ix) => (im)
 !
       call idea_geteb(im, dayno,utsec,f107,f107d,kp,maglat,maglon,          
-     &     essa,ee1,ee2)
+     &     essa,swbt,swang,swvel,swbz,swden,ee1,ee2)
 !     ee1=0.
 !     ee2=0.
 ! ===================================================================
@@ -583,7 +585,7 @@
 ! idea
 !
       subroutine idea_geteb(im, dayno,utsec,f107,f107a,kp,maglat,maglon,    
-     &   essa,ee1,ee2)
+     &   essa,swbt,swang,swvel,swbz,swden,ee1,ee2)
       use efield_wam      !  iday,iyear,iday_m,imo,f107d,by,bz,ut,v_sw     
 !
 ! vay-2016: another interpolation for the Electric fields
@@ -604,6 +606,7 @@
       real, intent(in)    :: maglat(im)  ! magnetic latitude (rad)
       real, intent(in)    :: maglon(im)  ! magnetic longitude (rad)
       real, intent(in)    :: essa(im)    ! degree
+      real, intent(in)    :: swbt, swang, swvel, swbz, swden
       real, intent(out)   :: ee1(im)     ! electric field x direction mV/m
       real, intent(out)   :: ee2(im)     ! electric field y direction mV/m
 !
@@ -661,7 +664,7 @@
 !       print *,'check IMF Bz=',bz,'Kp=',kp,'f107=',f107d
 !================================================   call from "module efield"
 
-        CALL  get_efield
+        CALL  get_efield(swbt, swang, swvel, swbz, swden)
 
 !       print*,'www'
 !       print'(8f10.4)',potent(0:180,68)
