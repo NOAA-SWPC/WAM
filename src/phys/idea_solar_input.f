@@ -114,16 +114,16 @@
 !	... read the snoe dimensions
 !----------------------------------------------------------------------
       iernc=nf90_inq_varid( ncid, 'EOF', vid )
-         ierNC=nf90_inquire_variable(ncid, vid, dimids=dimidT) 
-         iernc = nf90_inquire_dimension(ncid, dimidT(3), len=neofs)
-         iernc = nf90_inquire_dimension(ncid, dimidT(2), len=nz)
-         iernc = nf90_inquire_dimension(ncid, dimidT(1), len=ny)
-         if(mpi_id.eq.0) then
-          if (nz .ne. no_nz16 .or. ny.ne.no_ny33 .or. neofs.ne.no_neofs) then
-          write(iulog,*)'snoe_rdeof: failed to read expected neofs=nz=ny'
+       ierNC=nf90_inquire_variable(ncid, vid, dimids=dimidT) 
+       iernc = nf90_inquire_dimension(ncid, dimidT(3), len=neofs)
+       iernc = nf90_inquire_dimension(ncid, dimidT(2), len=nz)
+       iernc = nf90_inquire_dimension(ncid, dimidT(1), len=ny)
+       if(mpi_id.eq.0) then
+        if (nz .ne. no_nz16 .or. ny.ne.no_ny33 .or. neofs.ne.no_neofs) then
+         write(iulog,*)'snoe_rdeof: failed to read expected neofs=nz=ny'
            call mpi_quit(23901)
-          endif
-         endif
+        endif
+       endif
          
 !----------------------------------------------------------------------
 !	... allocate snoe variables
@@ -189,7 +189,8 @@
        if (mpi_id.eq.0) then        
         if( wrk_time < times(1) .or. wrk_time > times(ntimes) ) then
          write(iulog,*) 'solar_files: model time is out of-range F107'
-          write(iulog,*)   times(1) ,   times(ntimes) ,' times(start -/- end '
+          write(iulog,*)   times(1) ,   times(ntimes) ,
+     &                    ' times(start -/- end '
           write(iulog,*) wrk_time, wrk_date, ' wrk_time, wrk_date '
 !         call endrun
         end if
@@ -246,7 +247,8 @@
 !       
 !      "weights_time_interp" works with Julian Days 
 !
-        CALL weights_time_interp(ndi, Jdat1, hr1, Jdat2, hr2, Jdatc, hrc, w_ndx1, w_ndx2)
+        CALL weights_time_interp(ndi, Jdat1, hr1, Jdat2, hr2, Jdatc, 
+     &                           hrc, w_ndx1, w_ndx2)
 !
 !       
         if (idea_solar_fix.eq.1) CALL solar_wam_get_f107kp    !( f107_s, f107a_s, ap_s, kp_s)
@@ -278,7 +280,8 @@
 !
 !        "weights_time_interp" works with Julian Days 
 !
-        CALL weights_time_interp(ndi, Jdat1, hr1, Jdat2, hr2, Jdatc, hrc, w_ndx1, w_ndx2)
+        CALL weights_time_interp(ndi, Jdat1, hr1, Jdat2, hr2, Jdatc, 
+     &                           hrc, w_ndx1, w_ndx2)
 !
 !vay 08/2015  idea_solar_fix -FLAG for time interpolation
 !       
@@ -307,7 +310,8 @@
        if (mpi_id.eq.0) then        
         if( wrk_time < times(1) .or. wrk_time > times(ntimes) ) then
          write(iulog,*) 'solar_files: model time is out of-range F107'
-          write(iulog,*)   times(1) ,   times(ntimes) ,' times(start -/- end '
+          write(iulog,*)   times(1) ,   times(ntimes) ,
+     &                   ' times(start -/- end '
           write(iulog,*) wrk_time, wrk_date, ' wrk_time, wrk_date '
 !         call endrun
         end if
@@ -324,7 +328,8 @@
 !tim_ndx1
        tim_ndx1 = nk-1
        tim_ndx2 = nk
-       w_ndx2=(wrk_time-times(tim_ndx1))/(times(tim_ndx2)-times(tim_ndx1))
+       w_ndx2=(wrk_time-times(tim_ndx1))/
+     &        (times(tim_ndx2)-times(tim_ndx1))
        w_ndx1 = 1. -w_ndx2 
 !
 ! we need updates of hr1 & hr2
@@ -342,12 +347,13 @@
 !
        end subroutine start_Jdates
 !
-       subroutine solar_read_namelist(nml_solar, nlun_solar, ncfile_fpath, file_no, mpi_id)
+       subroutine solar_read_namelist(nml_solar, nlun_solar, 
+     &                                ncfile_fpath, file_no, mpi_id)
 !
 ! read name-list
 !
       integer :: mpi_id
-      character(len=*),intent(in)   :: NmL_solar
+      character(len=*),intent(in)   :: nml_solar
       integer, intent(in)           :: nlun_solar
       character(len=*), intent(out) :: ncfile_fpath, file_no
 
@@ -367,11 +373,9 @@
       character(ch100) :: wxdan_file     !
       character(ch100) :: wam2012_file   !
 !
-!
-!
-      namelist /solar_parms_nl/ idea_solar_fix, solar_file, Dir_swpc, Dir_uid, 
-     &        noeof_file, wxdan_file, wam2012_file, isolar_file,
-     &        f107_fix, f107a_fix, kp_fix, ap_fix, Euv_fix
+      namelist /solar_parms_nl/ idea_solar_fix, solar_file, Dir_swpc, 
+     &   Dir_uid, noeof_file, wxdan_file, wam2012_file, isolar_file,
+     &   f107_fix, f107a_fix, kp_fix, ap_fix, Euv_fix
 !=========================================================================
 ! solar_in should be copied to $RUNDIR along with other namelists
 !
@@ -440,7 +444,8 @@
          wap_s  =  aap(tim_ndx1)*w_ndx1 + aap(tim_ndx2)*w_ndx2  
 !   
         do k=1, nwafix
-           weuv_s(k)  =  Aeuv(k, tim_ndx1)*w_ndx1 + Aeuv(k, tim_ndx2)*w_ndx2
+           weuv_s(k)  =  
+     &              Aeuv(k, tim_ndx1)*w_ndx1 + Aeuv(k, tim_ndx2)*w_ndx2
         enddo
 !
        end subroutine solar_wam_get_feuv
@@ -512,7 +517,8 @@
        allocate( dates(ntimes),  times(ntimes),stat=astat )  
        allocate( dfhours(ntimes),stat=astat )  
        if( astat /= 0 ) then
-       write(iulog,*) ' alloc_err in read_waccm_solar for dates,times', ntimes 
+        write(iulog,*) ' alloc_err in read_waccm_solar for dates,times', 
+     &                 ntimes 
        end if    
 
 
@@ -655,7 +661,8 @@
        allocate( dates(ntimes_wx),  times(ntimes_wx),stat=astat )  
        allocate( dfhours(ntimes_wx),stat=astat )  
        if( astat /= 0 ) then
-       write(iulog,*) ' alloc_err in read_waccm_solar for dates/times', ntimes_wx 
+       write(iulog,*) ' alloc_err in read_waccm_solar for dates/times',
+     &                 ntimes_wx 
        end if    
 
  

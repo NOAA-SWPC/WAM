@@ -173,8 +173,8 @@
         integer,parameter:: n=624
         integer,parameter:: m=397
         integer,parameter:: mata=-1727483681 ! constant vector a
-        integer,parameter:: umask=-2147483648 ! most significant w-r bits
-        integer,parameter:: lmask =2147483647 ! least significant r bits
+        integer,parameter:: lmask=HUGE(0) ! least significant r bits
+        integer,parameter:: umask=-lmask - 1 ! most significant w-r bits
         integer,parameter:: tmaskb=-1658038656 ! tempering parameter
         integer,parameter:: tmaskc=-272236544 ! tempering parameter
         integer,parameter:: mag01(0:1)=(/0,mata/)
