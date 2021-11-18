@@ -181,6 +181,8 @@
       TYPE(ESMF_Field)               :: Field      
       TYPE(ESMF_FieldBundle)         :: Bundle      
 !
+      TYPE(ESMF_Info)                :: info
+!
       TYPE(ESMF_VM)                  :: VM
 
 !-----------------------------------------------------------------------
@@ -211,7 +213,10 @@
       call err_msg(rc,msg,rc_cpl)
 
       msg = 'retrieve adiabatic from cpl import state'
-      call ESMF_AttributeGet(imp_state,"adiabatic",adiabatic,rc=rc)
+
+      call ESMF_InfoGetFromHost(imp_state,info,rc=rc)
+      call err_msg(rc,msg,rc_cpl)
+      call ESMF_InfoGet(info,"adiabatic",adiabatic,rc=rc)
       call err_msg(rc,msg,rc_cpl)
       n2dflddiff = max(ndata_2d_phy_exp-ndata_2d_phy_imp,0)
       n3dflddiff = max(ndata_3d_phy_exp-ndata_3d_phy_imp,0)

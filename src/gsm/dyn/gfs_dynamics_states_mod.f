@@ -854,35 +854,35 @@
 !  ---  inputs:  (in scope variables)
 !  ---  outputs: (in scope variables)
 
+       TYPE(ESMF_Info) :: info
+
 ! ---  Set attributes for ri and cpi
-       CALL ESMF_AttributeSet(Bundle                         &  !<-- Dyn export state tracer bundle
-               ,name ='cpi_dryair'                           &  !<-- Name of the attribute to insert
-!               ,value = int_state%gfs_dyn_tracer%cpi(0)      &  !<-- Value of the attribute
-               ,value = gfs_dyn_tracer%cpi(0)      &  !<-- Value of the attribute
-               ,rc   =RC)
+
+       CALL ESMF_InfoGetFromHost(Bundle, info, rc=RC)
+       call gfs_dynamics_err_msg(rc,"retrieve info from dyn_exp",rcfinal)
+
+       CALL ESMF_InfoSet(info                                   &  !<-- Info handle from dyn export state tracer bundle
+               ,key   ='cpi_dryair'                             &  !<-- Name of the attribute to insert
+               ,value = gfs_dyn_tracer%cpi(0)                   &  !<-- Value of the attribute
+               ,rc    = RC)
        call gfs_dynamics_err_msg(rc,"insert cpi(0) attribute to dyn_exp",rcfinal)
 
-       CALL ESMF_AttributeSet(Bundle                         &  !<-- Dyn export state tracer bundle
-               ,name ='ri_dryair'                            &  !<-- Name of the attribute to insert
-!               ,value = int_state%gfs_dyn_tracer%ri(0)       &  !<-- Value of the attribute
-               ,value = gfs_dyn_tracer%ri(0)       &  !<-- Value of the attribute
-               ,rc   =RC)
+       CALL ESMF_InfoSet(info                                   &  !<-- Info handle from dyn export state tracer bundle
+               ,key   ='ri_dryair'                              &  !<-- Name of the attribute to insert
+               ,value = gfs_dyn_tracer%ri(0)                    &  !<-- Value of the attribute
+               ,rc    = RC)
        call gfs_dynamics_err_msg(rc,"insert ri(0) attribute to dyn_exp",rcfinal)
 
-       CALL ESMF_AttributeSet(Bundle                         &  !<-- Dyn export state tracer bundle
-               ,name ='cpi'                                  &  !<-- Name of the attribute array
-               ,itemCount= int_state%ntrac                   &  !<-- Length of array being inserted
-!               ,valueList = int_state%gfs_dyn_tracer%cpi(1:int_state%ntrac)  &!<-- The array being inserted
-               ,valueList = gfs_dyn_tracer%cpi(1:int_state%ntrac)  &!<-- The array being inserted
-               ,rc   =RC)
+       CALL ESMF_InfoSet(info                                   &  !<-- Info handle from dyn export state tracer bundle
+               ,key    ='cpi'                                   &  !<-- Name of the attribute array
+               ,values = gfs_dyn_tracer%cpi(1:int_state%ntrac)  &  !<-- The array being inserted
+               ,rc     = RC)
        call gfs_dynamics_err_msg(rc,"insert cpi(:) attribute to dyn_exp",rcfinal)
 
-       CALL ESMF_AttributeSet(Bundle                         &  !<-- Dyn export state tracer bundle
-               ,name ='ri'                                   &  !<-- Name of the attribute array
-               ,itemCount= int_state%ntrac                   &  !<-- Length of array being inserted
-!               ,valueList = int_state%gfs_dyn_tracer%ri(1:int_state%ntrac)  &!<-- The array being inserted
-               ,valueList = gfs_dyn_tracer%ri(1:int_state%ntrac)  &!<-- The array being inserted
-               ,rc   =RC)
+       CALL ESMF_InfoSet(info                                   &  !<-- Info handle from dyn export state tracer bundle
+               ,key    ='ri'                                    &  !<-- Name of the attribute array
+               ,values = gfs_dyn_tracer%ri(1:int_state%ntrac)   &!<-- The array being inserted
+               ,rc     = RC)
        call gfs_dynamics_err_msg(rc,"insert ri(:) attribute to dyn_exp",rcfinal)
 
       RETURN

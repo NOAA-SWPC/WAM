@@ -268,6 +268,8 @@
                                                                         !     the GFS physics gridded component.
                           , GRID_GFS_ATM                                !<-- The ESMF grid for the integration attached to
                                                                         !     the GFS ATM gridded component
+      TYPE(ESMF_Info)    :: info                                        !<-- The ESMF Info object.
+
 !* restart file
 !
       TYPE(ESMF_Time)    :: CURRTIME                                 &  !<-- The ESMF current time.
@@ -810,17 +812,22 @@
       CALL ESMF_StateAddReplace(IMP_STATE, (/gfs_int_state%IMP_GFS_DYN/), rc = RC)
       CALL ESMF_StateAddReplace(EXP_STATE, (/gfs_int_state%EXP_GFS_DYN/), rc = RC)
 
-      MESSAGE_CHECK = "GFS set Cpl_flag"
+      MESSAGE_CHECK = "GFS get info from IMP_GFS_DYN"
 !     CALL ESMF_LogWrite(MESSAGE_CHECK, ESMF_LOGMSG_INFO, rc=RC)
 
       gfs_int_state%Cpl_flag = .false.
 
-      CALL ESMF_AttributeSet(gfs_int_state%IMP_GFS_DYN,          &
-                             'Cpl_flag',                         &
-                             gfs_int_state%Cpl_flag,             &
-                             rc = RC)
+      CALL ESMF_InfoGetFromHost(gfs_int_state%IMP_GFS_DYN,       &
+                                info,                            &
+                                rc = RC)
 
       CALL ERR_MSG(RC, MESSAGE_CHECK, RC_INIT)
+
+      MESSAGE_CHECK = "GFS set Cpl_flag"
+      CALL ESMF_InfoSet(info,                                    &
+                        'Cpl_flag',                              &
+                        gfs_int_state%Cpl_flag,                  &
+                        rc = RC)
 !
 ! ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
       CALL ERR_MSG(RC, MESSAGE_CHECK, RC_INIT)
@@ -844,8 +851,11 @@
       CALL ERR_MSG(RC, MESSAGE_CHECK, RC_INIT)
 ! ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
 !
-      call ESMF_AttributeSet( gfs_int_state%IMP_GFS_DYN,"adiabatic",adiabatic,rc=rc)
-      call ESMF_AttributeSet( gfs_int_state%EXP_GFS_DYN,"adiabatic",adiabatic,rc=rc)
+      CALL ESMF_InfoGetFromHost(gfs_int_state%IMP_GFS_DYN,info,rc=rc)
+      call ESMF_InfoSet(info,"adiabatic",adiabatic,rc=rc)
+
+      call ESMF_InfoGetFromHost(gfs_int_state%EXP_GFS_DYN,info,rc=rc)
+      call ESMF_InfoSet(info,"adiabatic",adiabatic,rc=rc)
 
       IF(adiabatic)THEN                                         !<-- Adiabatic => Physics off
         gfs_int_state%PHYSICS_ON = ESMF_False
@@ -946,13 +956,15 @@
                                  ,stateintent = ESMF_STATEINTENT_IMPORT&
                                  ,rc       =RC)
 
-      call ESMF_AttributeSet( gfs_int_state%IMP_GFS_PHY,"adiabatic",MODE,rc=rc)
+      call ESMF_InfoGetFromHost(gfs_int_state%IMP_GFS_PHY,info,rc=rc)
+      call ESMF_InfoSet(info,"adiabatic",MODE,rc=rc)
 !
       gfs_int_state%EXP_GFS_PHY = ESMF_StateCreate                     &
                                  (name="physics export"           &
                                  ,stateintent = ESMF_STATEINTENT_EXPORT&
                                  ,rc       =RC)
-      call ESMF_AttributeSet( gfs_int_state%EXP_GFS_PHY,"adiabatic",MODE,rc=rc)
+      call ESMF_InfoGetFromHost(gfs_int_state%EXP_GFS_PHY,info,rc=rc)
+      call ESMF_InfoSet(info,"adiabatic",MODE,rc=rc)
 !
 ! ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
       CALL ERR_MSG(RC, MESSAGE_CHECK, RC_INIT)

@@ -590,6 +590,7 @@
 
       TYPE(ESMF_DISTGRID) :: DistGrid
       TYPE(ESMF_GRID)     :: Grid
+      TYPE(ESMF_Info)     :: info
 !
       TYPE(PHY_ISC),DIMENSION(MAX_KOUNT) :: I_SC
       TYPE(PHY_RSC),DIMENSION(MAX_KOUNT) :: R_SC
@@ -770,20 +771,22 @@
 !
 !*** add im, jm into import state
 !
-      CALL ESMF_AttributeSet(state    =IMP_WRITE_STATE                  &  !<--The Write component import state
-                            ,name     ='im'                             &  !<--Name of the integer array
-                            ,value    =int_state%lonr                   &  !<--The array being inserted into the import state
-                            ,rc       =RC)
+      CALL ESMF_InfoGetFromHost(IMP_WRITE_STATE, info, rc=RC)
 
-      CALL ESMF_AttributeSet(state    =IMP_WRITE_STATE                  &  !<--The Write component import state
-                            ,name     ='jm'                             &!<-- Name of the integer array
-                            ,value    =int_state%latr                   &  !<--The array being inserted into the import state
-                            ,rc       =RC)
+      CALL ESMF_InfoSet(info                                            &  !<-- The Write component import state's info handle
+                        ,key      ='im'                                 &  !<-- Name of the integer attribute
+                        ,value    =int_state%lonr                       &  !<-- The value being inserted into the import state
+                        ,rc       =RC)
+
+      CALL ESMF_InfoSet(info                                            &  !<-- The Write component import state's info handle
+                        ,key      ='jm'                                 &  !<-- Name of the integer attribute
+                        ,value    =int_state%latr                       &  !<-- The value being inserted into the import state
+                        ,rc       =RC)
 !
-      CALL ESMF_AttributeSet(state    =IMP_WRITE_STATE                  &  !<--The Write component import state
-                            ,name     ='zhour'                          &!<-- Name of the integer array
-                            ,value    =int_state%zhour                  &  !<--The array being inserted into the import state
-                            ,rc       =RC)
+      CALL ESMF_InfoSet(info                                            &  !<-- The Write component import state's info handle
+                        ,key      ='zhour'                              &  !<-- Name of the integer attribute
+                        ,value    =int_state%zhour                      &  !<-- The value being inserted into the import state
+                        ,rc       =RC)
 !
 !-----------------------------------------------------------------------
 !***  INSERT INTO THE WRITE COMPONENTS' IMPORT STATE THE POINTERS
@@ -1030,6 +1033,7 @@
 !
       TYPE(ESMF_Field)         :: FIELD
       TYPE(ESMF_DataCopy_Flag) :: COPYFLAG=ESMF_DATACOPY_REFERENCE
+      TYPE(ESMF_Info)          :: info
 
       MYPE = int_state%ME
 !
@@ -1055,6 +1059,8 @@
 !     CALL ESMF_LogWrite(MESSAGE_CHECK,ESMF_LOGMSG_INFO,rc=RC)
 ! ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
 !
+      CALL ESMF_InfoGetFromHost(file_bundle, info, rc=RC)
+
       DO NFIND=1,MAX_KOUNT
         IF(trim(PHY_INT_STATE_ISCALAR(file_index,NFIND)) == trim(file_id).or. &
            trim(PHY_INT_STATE_ISCALAR(file_index,NFIND)) == trim(file_gen) ) THEN !<-- Take integer scalar data specified for history output
@@ -1062,10 +1068,10 @@
 
 !     write(0,*)' VBL_NAME =',VBL_NAME,' nfind=',nfind,' vali=',I_SC(NFIND)%NAME,' me=',mype
 
-          CALL ESMF_AttributeSet(FIELDBUNDLE=FILE_BUNDLE                &  !<-- The write component's output data Bundle
-                                ,name       =VBL_NAME                   &  !<-- Name of the integer scalar
-                                ,value      =I_SC(NFIND)%NAME           &  !<-- The scalar being inserted into the output data Bundle
-                                ,rc         =RC)
+          CALL ESMF_InfoSet(info                                        &  !<-- The info handle for the Write component output history Bundle
+                            ,key        =VBL_NAME                       &  !<-- Name of the integer scalar
+                            ,value      =I_SC(NFIND)%NAME               &  !<-- The scalar being inserted into the output data Bundle
+                            ,rc         =RC)
         ENDIF
 !
         IF(PHY_INT_STATE_ISCALAR(file_index,NFIND)=='**********' ) THEN           !<-- End of the integer scalar list
@@ -1093,10 +1099,10 @@
           VBL_NAME = TRIM(PHY_INT_STATE_RSCALAR(1,NFIND))
 !     write(0,*)' VBL_NAME =',VBL_NAME,' nfind=',nfind,' val=',R_SC(NFIND)%NAME,' me=',mype
 
-          CALL ESMF_AttributeSet(FIELDBUNDLE=FILE_BUNDLE                &  !<-- The write component's output data Bundle
-                                ,name       =VBL_NAME                   &  !<-- Name of the integer scalar
-                                ,value      =R_SC(NFIND)%NAME           &  !<-- The scalar being inserted into the output data Bundle
-                                ,rc         =RC)
+          CALL ESMF_InfoSet(info                                        &  !<-- The info handle for the Write component output history Bundle
+                            ,key        =VBL_NAME                       &  !<-- Name of the integer scalar
+                            ,value      =R_SC(NFIND)%NAME               &  !<-- The scalar being inserted into the output data Bundle
+                            ,rc         =RC)
 
         ENDIF
 !
@@ -1129,11 +1135,10 @@
 !         write(0,*)'phy_out,I1D NFIND=',NFIND,'VBL_NAME=',trim(VBL_NAME),  &
 !            'length=',length,'value=',I_1D(NFIND)%NAME
 
-          CALL ESMF_AttributeSet(FIELDBUNDLE=FILE_BUNDLE             &  !<-- The write component's output data Bundle
-                                ,name       =VBL_NAME                &  !<-- Name of the integer scalar
-                                ,itemCount  =LENGTH                  &  !<-- # of elements in this attribute
-                                ,valueList  =I_1D(NFIND)%NAME        &  !<-- The 1D integer being inserted into the output data Bundle
-                                ,rc         =RC)
+          CALL ESMF_InfoSet(info                                        &  !<-- The info handle for the Write component output history Bundle
+                            ,key        =VBL_NAME                       &  !<-- Name of the integer array
+                            ,values     =I_1D(NFIND)%NAME               &  !<-- The 1D integer being inserted into the output data Bundle
+                            ,rc         =RC)
 
         ENDIF
 !
@@ -1166,11 +1171,10 @@
 !          write(0,*)'phy_out,R1D NFIND=',NFIND,'VBL_NAME=',trim(VBL_NAME),  &
 !             'length=',length,'value=',R_1D(NFIND)%NAME
 
-          CALL ESMF_AttributeSet(FIELDBUNDLE=FILE_BUNDLE             &  !<-- The write component's output data Bundle
-                                ,name       =VBL_NAME                &  !<-- Name of the integer scalar
-                                ,ITEMCOUNT  =LENGTH                  &  !<-- # of elements in this attribute
-                                ,valueList  =R_1D(NFIND)%NAME        &  !<-- The 1D real being inserted into the output data Bundle
-                                ,rc         =RC)
+          CALL ESMF_InfoSet(info                                        &  !<-- The info handle for the Write component output history Bundle
+                            ,key        =VBL_NAME                       &  !<-- Name of the real array
+                            ,values     =R_1D(NFIND)%NAME               &  !<-- The 1D real being inserted into the output data Bundle
+                            ,rc         =RC)
 
         ENDIF
 !
