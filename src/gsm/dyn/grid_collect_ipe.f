@@ -41,6 +41,7 @@
 !
       integer i, j, k, ngrids_gg_ipe, kdt
       integer, dimension(lonf,lats_node_a)             :: kmsk
+      integer, parameter :: iord = 2
       logical nc_out
       real deltim
 !
@@ -62,33 +63,33 @@
 
       if (nc_out) then
         do k=1,levs
-          call uninterpred_dyn(1,kmsk,
+          call uninterpred_dyn(iord,kmsk,
      &                         buff_mult_pieceg_ipe(1,1,k),
      &                         wwg(:,:,k),global_lats_a,lonsperlat)
-          call uninterpred_dyn(1,kmsk,
+          call uninterpred_dyn(iord,kmsk,
      &                         buff_mult_pieceg_ipe(1,1,k+levs),
      &                         zzg(:,:,k),global_lats_a,lonsperlat)
-          call uninterpred_dyn(1,kmsk,
+          call uninterpred_dyn(iord,kmsk,
      &                         buff_mult_pieceg_ipe(1,1,k+levs*2),
      &                         uug(:,:,k),global_lats_a,lonsperlat)
-          call uninterpred_dyn(1,kmsk,
+          call uninterpred_dyn(iord,kmsk,
      &                         buff_mult_pieceg_ipe(1,1,k+levs*3),
      &                         vvg(:,:,k),global_lats_a,lonsperlat)
-          call uninterpred_dyn(1,kmsk,
+          call uninterpred_dyn(iord,kmsk,
      &                         buff_mult_pieceg_ipe(1,1,k+levs*4),
      &                         ttg(:,:,k),global_lats_a,lonsperlat)
-          call uninterpred_dyn(1,kmsk,
+          call uninterpred_dyn(iord,kmsk,
      &                         buff_mult_pieceg_ipe(1,1,k+levs*5+levh),
      &                         n2g(:,:,k),global_lats_a,lonsperlat)
-          call uninterpred_dyn(1,kmsk,
+          call uninterpred_dyn(iord,kmsk,
      &                         buff_mult_pieceg_ipe(1,1,k+levs*6+levh),
      &                         den(:,:,k),global_lats_a,lonsperlat)
-          call uninterpred_dyn(1,kmsk,
+          call uninterpred_dyn(iord,kmsk,
      &                         buff_mult_pieceg_ipe(1,1,k+levs*7+levh),
      &                         gmol(:,:,k),global_lats_a,lonsperlat)
         end do
         do k=1,levh
-          call uninterpred_dyn(1,kmsk,
+          call uninterpred_dyn(iord,kmsk,
      &                         buff_mult_pieceg_ipe(1,1,k+levs*5),
      &                         rqg(:,:,k),global_lats_a,lonsperlat)
         end do
