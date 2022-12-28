@@ -256,7 +256,7 @@
       real, intent(in)    :: f107       ! f10.7cm
       real, intent(in)    :: f107d      ! 81 day mean f10.7
       real, intent(in)    :: cospass    ! cos zenith angle
-      real, intent(in)    :: dayno      ! day of year
+      integer, intent(in) :: dayno      ! day of year
       real, intent(in)    :: height(np) !layer height (m)
 
 ! output
