@@ -13,7 +13,7 @@ integer,parameter:: &
 
 !JR PPP doesn't like the hex constants so remove them
 #if 0
-real   (kind=kfpt),parameter :: r4_in=x'ffbfffff'
-real   (kind=kdbl),parameter :: r8_in=x'fff7ffffffffffff'
+real   (kind=kfpt),parameter :: r4_in=z'ffbfffff'
+real   (kind=kdbl),parameter :: r8_in=z'fff7ffffffffffff'
 #endif
 integer(kind=kint),parameter :: i4_in=-999 ! -huge(1)
