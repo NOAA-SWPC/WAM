@@ -39,14 +39,11 @@
       integer              iprint,locl,node,nodesio
       integer              len_trie_ls_nod, len_trio_ls_nod
 !
-      integer              indlsev,jbasev,indlsod,jbasod
+      integer              jbasev,jbasod
 !
       integer gl_lats_index
       integer global_time_sort_index_r(latr)
       integer nodes_tmp
-!
-      include 'function_indlsev'
-      include 'function_indlsod'
 !
       real(kind=kind_evod) global_time_r(latr)
 !

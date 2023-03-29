@@ -2508,8 +2508,8 @@ test "$program_suffix" != NONE &&
 ac_script='s/[\\$]/&&/g;s/;s,x,x,$//'
 program_transform_name=`$as_echo "$program_transform_name" | sed "$ac_script"`
 
-# Expand $ac_aux_dir to an absolute path.
-am_aux_dir=`cd "$ac_aux_dir" && pwd`
+# expand $ac_aux_dir to an absolute path
+am_aux_dir=`cd $ac_aux_dir && pwd`
 
 if test x"${MISSING+set}" != xset; then
   case $am_aux_dir in
@@ -8983,7 +8983,7 @@ esac
 
 
 # Output Makefiles
-ac_config_files="$ac_config_files Makefile src/Makefile src/fim/Makefile src/gen/Makefile src/gsm/Makefile src/gsm/dyn/Makefile src/gsm/libutil/Makefile src/gsm/phys/Makefile src/io/Makefile src/nmm/Makefile src/phys/Makefile src/post/Makefile src/share/Makefile"
+ac_config_files="$ac_config_files Makefile src/Makefile src/gen/Makefile src/gsm/Makefile src/gsm/dyn/Makefile src/gsm/libutil/Makefile src/gsm/phys/Makefile src/io/Makefile src/phys/Makefile src/post/Makefile src/share/Makefile"
 
 cat >confcache <<\_ACEOF
 # This file is a shell script that caches the results of configure
@@ -9737,14 +9737,12 @@ do
     "depfiles") CONFIG_COMMANDS="$CONFIG_COMMANDS depfiles" ;;
     "Makefile") CONFIG_FILES="$CONFIG_FILES Makefile" ;;
     "src/Makefile") CONFIG_FILES="$CONFIG_FILES src/Makefile" ;;
-    "src/fim/Makefile") CONFIG_FILES="$CONFIG_FILES src/fim/Makefile" ;;
     "src/gen/Makefile") CONFIG_FILES="$CONFIG_FILES src/gen/Makefile" ;;
     "src/gsm/Makefile") CONFIG_FILES="$CONFIG_FILES src/gsm/Makefile" ;;
     "src/gsm/dyn/Makefile") CONFIG_FILES="$CONFIG_FILES src/gsm/dyn/Makefile" ;;
     "src/gsm/libutil/Makefile") CONFIG_FILES="$CONFIG_FILES src/gsm/libutil/Makefile" ;;
     "src/gsm/phys/Makefile") CONFIG_FILES="$CONFIG_FILES src/gsm/phys/Makefile" ;;
     "src/io/Makefile") CONFIG_FILES="$CONFIG_FILES src/io/Makefile" ;;
-    "src/nmm/Makefile") CONFIG_FILES="$CONFIG_FILES src/nmm/Makefile" ;;
     "src/phys/Makefile") CONFIG_FILES="$CONFIG_FILES src/phys/Makefile" ;;
     "src/post/Makefile") CONFIG_FILES="$CONFIG_FILES src/post/Makefile" ;;
     "src/share/Makefile") CONFIG_FILES="$CONFIG_FILES src/share/Makefile" ;;

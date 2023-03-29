@@ -271,14 +271,12 @@ AM_PROG_AR
 # Output Makefiles
 AC_CONFIG_FILES([Makefile
                  src/Makefile
-                 src/fim/Makefile
                  src/gen/Makefile
                  src/gsm/Makefile
                  src/gsm/dyn/Makefile
                  src/gsm/libutil/Makefile
                  src/gsm/phys/Makefile
                  src/io/Makefile
-                 src/nmm/Makefile
                  src/phys/Makefile
                  src/post/Makefile
                  src/share/Makefile])

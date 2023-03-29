@@ -63,8 +63,6 @@ cc
       integer              indlsev,jbasev
       integer              indlsod,jbasod
 cc
-      include 'function2'
-cc
 cc
       CALL countperf(0,13,0.)
 !!
