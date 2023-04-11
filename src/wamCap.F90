@@ -25,7 +25,7 @@
 !          |    |
 !          |    (MOM5, HYCOM, etc.)
 !          |
-!          CORE component (GSM, NMM, FIM, GEN, etc.)
+!          CORE component (GSM, GEN, etc.)
 !
 !-----------------------------------------------------------------------
 !  2011-05-11  Theurich & Yang  - Modified for using the ESMF 5.2.0r_beta_snapshot_07.
@@ -46,9 +46,7 @@
       USE module_ATM_INTERNAL_STATE,ONLY: ATM_INTERNAL_STATE            &
                                          ,WRAP_ATM_INTERNAL_STATE
 
-      USE module_NMM_GRID_COMP,ONLY: NMM_REGISTER
       USE module_GFS_GRID_COMP,ONLY: GFS_REGISTER
-      USE module_FIM_GRID_COMP,ONLY: FIM_REGISTER
       USE module_GEN_GRID_COMP,ONLY: GEN_REGISTER   ! For the "Generic Core" gridded component.
 
       USE module_ERR_MSG,ONLY: ERR_MSG,MESSAGE_CHECK
@@ -583,11 +581,6 @@
 !
       SELECT CASE(atm_int_state%CORE)
 !
-        CASE('nmm')
-          CALL ESMF_GridCompSetServices (atm_int_state%CORE_GRID_COMP   &
-                                        ,NMM_REGISTER                   &
-                                        ,rc=RC)
-!
         CASE('gfs')
           CALL ESMF_GridCompSetServices (atm_int_state%CORE_GRID_COMP   &
                                         ,GFS_REGISTER                   &
@@ -598,11 +591,6 @@
                                         ,GFS_REGISTER                   &
                                         ,rc=RC)
 !
-        CASE('fim')
-          CALL ESMF_GridCompSetServices (atm_int_state%CORE_GRID_COMP   &
-                                        ,FIM_REGISTER                   &
-                                        ,rc=RC)
-
         CASE('gen')
           CALL ESMF_GridCompSetServices (atm_int_state%CORE_GRID_COMP   &
                                         ,GEN_REGISTER                   &

@@ -18,8 +18,8 @@
       integer               ndexev(len_trie_ls)
       integer              i,indev,indev1,indev2,j,k,l,locl,n
       integer              indlsev,jbasev
-      include 'function_indlsev'
       real(kind=kind_evod) cons0,cons1,cons2     !constant
+      include 'function_indlsev'
       cons0 = 0.d0     !constant
       cons1 = 1.d0     !constant
       cons2 = 2.d0     !constant

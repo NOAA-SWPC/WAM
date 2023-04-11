@@ -387,7 +387,7 @@ libgfsphys_a_SOURCES = aoicpl_prep.f compns_physics.f coordinate_def.f \
 	lon_lat_para.f mod_state.f mpi_def.f mpi_quit.f namelist_physics_def.f \
 	para_fixio_w.f para_nst_w.f read_fix.f reduce_lons_grid_module.f \
 	resol_def.f setlats.f setlats_r_slg.f sortrx.f vert_def.f wrt3d.f \
-	wrt3d_hyb.f wrtout_physics.f function_indlsev function_indlsod
+	wrt3d_hyb.f wrtout_physics.f
 
 libgfsphysf_a_FFLAGS = -I $(top_srcdir)/include $(FC_MODINC) \
 	../libutil $(FC_MODINC) ../dyn $(FC_MODINC) ../../phys \
@@ -1110,7 +1110,7 @@ libgfsphys_a-gbphys_adv_hyb_gc.$(OBJEXT) : libgfsphys_a-coordinate_def.$(OBJEXT)
 libgfsphys_a-gbphys_adv_hyb_gc_h.$(OBJEXT) : libgfsphys_a-coordinate_def.$(OBJEXT) libgfsphys_a-resol_def.$(OBJEXT)
 libgfsphys_a-gcycle.$(OBJEXT) : libgfsphys_a-namelist_physics_def.$(OBJEXT) \
 	libgfsphys_a-resol_def.$(OBJEXT) libgfsphysf_a-gfs_physics_sfc_flx_mod.$(OBJEXT)
-libgfsphys_a-getcon_physics.$(OBJEXT) : function_indlsev function_indlsod libgfsphys_a-namelist_physics_def.$(OBJEXT) \
+libgfsphys_a-getcon_physics.$(OBJEXT) : libgfsphys_a-namelist_physics_def.$(OBJEXT) \
 	libgfsphys_a-resol_def.$(OBJEXT) libgfsphys_a-layout1.$(OBJEXT) libgfsphys_a-gg_def.$(OBJEXT)
 libgfsphys_a-get_lats_node_shuff_r_fix.$(OBJEXT) : libgfsphys_a-resol_def.$(OBJEXT) libgfsphys_a-layout1.$(OBJEXT)
 libgfsphys_a-GFS_simple_scatter.$(OBJEXT) : libgfsphys_a-resol_def.$(OBJEXT) libgfsphys_a-layout1.$(OBJEXT)

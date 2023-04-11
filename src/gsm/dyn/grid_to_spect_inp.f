@@ -97,8 +97,6 @@
 !
       real(kind=kind_evod) ga2, tem
 !
-      INCLUDE 'function2'
-!
 !--------------------------------------------------------------------
 !
       lotdim  = lota + 1

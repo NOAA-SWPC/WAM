@@ -159,7 +159,7 @@
       integer               iblk,njeff,lon,item,jtem,ktem,ltem,stp
      &,                     ngptcd,mtem,ntem
 !     integer , parameter :: ngptcd = 12
-      include 'function2'
+      include 'function_indlsev'
       LOGICAL               LSOUT,ex_out
       LOGICAL               start_step,reset_step,end_step
       LOGICAL               restart_step,dfiend_step

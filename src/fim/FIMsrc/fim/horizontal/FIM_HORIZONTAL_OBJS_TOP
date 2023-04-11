@@ -1,2 +1,0 @@
-# please keep the following on a single line so copy.ksh can easily read it
-OBJS_TOP = init.o run.o finalize.o fim.o

@@ -351,7 +351,7 @@
          do iband=1,21
          read(UNIT7,fmt=*) string_dum
          read(UNIT7,fmt=*)
-         read(UNIT=UNIT7,fmt='(1X,5e10.4)')(djspectra(iflux,iband),
+         read(UNIT=UNIT7,fmt='(1X,5e10.3)')(djspectra(iflux,iband),
      &   iflux=1,15)
          read(UNIT7,fmt=*)
          enddo
