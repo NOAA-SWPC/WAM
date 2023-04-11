@@ -157,7 +157,7 @@ end subroutine
     integer klim(2),k,kd,ktp, kd_array(1)
 ! - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - - -
 !  find tropopause level
-    call rsearch1(km-2,p(2),2,ptplim(1),klim(1))
+    call rsearch1(km-2,p(2),2,ptplim(1:1),klim(1))
 !    klim(1)=klim(1)+2
     klim(1)=klim(1)+1
 !    klim(2)=klim(2)+1

@@ -841,9 +841,9 @@
 ! Calculate composition on Victor grid above x=12.5 (index 50) for 
 !       recurrent formula
 !
-      call splin2(xhr,mu,xvic0(51),vicmu,lhr,itm50,im,jm)
-      call splin2(xhr,rn2,xvic0(51),vicn2,lhr,itm50,im,jm)
-      call splin2(xhr,ro2,xvic0(51),vico2,lhr,itm50,im,jm)
+      call splin2(xhr,mu,xvic0(51:51),vicmu,lhr,itm50,im,jm)
+      call splin2(xhr,rn2,xvic0(51:51),vicn2,lhr,itm50,im,jm)
+      call splin2(xhr,ro2,xvic0(51:51),vico2,lhr,itm50,im,jm)
 !
 ! Feb 28, 2008
 ! idea change: the following portion of the code commented out and 
@@ -871,7 +871,7 @@
 !      call splin2(xhr(iwork),ro1(1:im,iwork:),xvic0(51),vico1,         
 !     &     lhr-iwork+1,itm50,im,jm)
 !
-      call splin2(xhr,ro1,xvic0(51),vico1,lhr,itm50,im,jm)
+      call splin2(xhr,ro1,xvic0(51:51),vico1,lhr,itm50,im,jm)
 !
 ! idea add: make sure O is non-negative
 !
