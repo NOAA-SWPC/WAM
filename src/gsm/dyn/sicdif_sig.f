@@ -23,9 +23,8 @@
       real(kind=kind_evod) svdt, u1, u2
       integer              indlsev,jbasev
       integer              indlsod,jbasod
-      include 'function2'
       real(kind=kind_evod) cons0,cons1,cons2     !constant
-
+      include 'function_indlsev'
       cons0 = 0.d0     !constant
       cons1 = 1.d0     !constant
       cons2 = 2.d0     !constant
@@ -341,7 +340,7 @@
       real(kind=kind_evod) svdt, u1, u2
       integer              indlsev,jbasev
       integer              indlsod,jbasod
-      include 'function2'
+      include 'function_indlsod'
       real(kind=kind_evod) cons0,cons1,cons2     !constant
       cons0 = 0.d0     !constant
       cons1 = 1.d0     !constant

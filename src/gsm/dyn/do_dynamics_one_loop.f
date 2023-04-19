@@ -127,7 +127,6 @@ cc
       REAL(KIND=kind_mpi)   coef00m(LEVS,ntrac) ! temp. ozone clwater  
       REAL(KIND=kind_evod)  coef00(LEVS,ntrac) ! temp. ozone clwater  
       INTEGER               INDLSEV,JBASEV
-      INTEGER               INDLSOD,JBASOD
 
 c idea-related changes
 c Introduced arrays cvd00 and cvd00m (global mean temperature,h2o,o3,cld,
@@ -141,7 +140,7 @@ c idea add 1
       integer               lon_dim,lons_lat,node,nvcn
       integer               iblk,njeff,lon,stp
       integer , parameter :: ngptcd = 12
-      include 'function2'
+      include 'function_indlsev'
       LOGICAL               LSOUT,ex_out
       LOGICAL               start_step,reset_step,end_step,dfiend_step
       LOGICAL               restart_step

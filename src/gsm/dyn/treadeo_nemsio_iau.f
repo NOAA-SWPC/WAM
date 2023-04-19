@@ -80,8 +80,6 @@
 !
       real(8) timef,stime,etime
 !
-      INTEGER              INDLSEV,JBASEV,INDLSOD,JBASOD
-      INCLUDE 'function2'
 !------------------------------------------------------------------------
 !       Input file is in grid-point space - use gfs_io package
 !

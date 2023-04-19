@@ -139,10 +139,10 @@ am__v_AR_ = $(am__v_AR_@AM_DEFAULT_V@)
 am__v_AR_0 = @echo "  AR      " $@;
 am__v_AR_1 = 
 libwam_a_AR = $(AR) $(ARFLAGS)
-libwam_a_DEPENDENCIES = fim/*.$(OBJEXT) gen/*.$(OBJEXT) \
-	gsm/*.$(OBJEXT) gsm/dyn/*.$(OBJEXT) gsm/libutil/*.$(OBJEXT) \
-	gsm/phys/*.$(OBJEXT) io/*.$(OBJEXT) nmm/*.$(OBJEXT) \
-	phys/*.$(OBJEXT) post/*.$(OBJEXT) share/*.$(OBJEXT)
+libwam_a_DEPENDENCIES = gen/*.$(OBJEXT) gsm/*.$(OBJEXT) \
+	gsm/dyn/*.$(OBJEXT) gsm/libutil/*.$(OBJEXT) \
+	gsm/phys/*.$(OBJEXT) io/*.$(OBJEXT) phys/*.$(OBJEXT) \
+	post/*.$(OBJEXT) share/*.$(OBJEXT)
 am_libwam_a_OBJECTS = libwam_a-module_ATM_INTERNAL_STATE.$(OBJEXT) \
 	libwam_a-wamCap.$(OBJEXT)
 libwam_a_OBJECTS = $(am_libwam_a_OBJECTS)
@@ -396,22 +396,20 @@ target_alias = @target_alias@
 top_build_prefix = @top_build_prefix@
 top_builddir = @top_builddir@
 top_srcdir = @top_srcdir@
-SUBDIRS = post share phys io fim gen gsm nmm .
+SUBDIRS = post share phys io gen gsm .
 lib_LIBRARIES = libwam.a
 libwam_a_SOURCES = module_ATM_INTERNAL_STATE.F90 wamCap.F90
 libwam_a_FCFLAGS = -I $(top_srcdir)/include \
-	$(FC_MODINC) fim $(FC_MODINC) gen $(FC_MODINC) gsm $(FC_MODINC) nmm \
+	$(FC_MODINC) gen $(FC_MODINC) gsm \
 	$(FC_MODINC) share $(FC_MODINC) phys $(FC_MODINC) io
 
 libwam_a_LIBADD = \
-	fim/*.$(OBJEXT) \
 	gen/*.$(OBJEXT) \
 	gsm/*.$(OBJEXT) \
 	gsm/dyn/*.$(OBJEXT) \
 	gsm/libutil/*.$(OBJEXT) \
 	gsm/phys/*.$(OBJEXT) \
 	io/*.$(OBJEXT) \
-	nmm/*.$(OBJEXT) \
 	phys/*.$(OBJEXT) \
 	post/*.$(OBJEXT) \
 	share/*.$(OBJEXT)
