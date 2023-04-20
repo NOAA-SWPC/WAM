@@ -18,7 +18,7 @@
       integer              indev,indev1,indev2,l,locl,n
       integer              indlsev,jbasev
       integer              indlsod,jbasod
-      include 'function2'
+      include 'function_indlsev'
       real(kind=kind_evod) cons0     !constant
  
 !     print *,' enter impadje_hyb.locl_gc_fd '			! hmhj
@@ -137,7 +137,7 @@
       integer              indod,indod1,indod2,l,locl,n
       integer              indlsev,jbasev
       integer              indlsod,jbasod
-      include 'function2'
+      include 'function_indlsod'
       real(kind=kind_evod) cons0     !constant
 
 !     print *,' enter impadjo_hyb.locl_gc_fd '			! hmhj

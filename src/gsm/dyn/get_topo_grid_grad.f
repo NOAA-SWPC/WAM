@@ -63,9 +63,6 @@
      &,       indlsev,jbasev,indev,indev1,indev2
      &,       indlsod,jbasod,indod,indod1,indod2
 
-!     include 'function2'
-      include 'function_indlsev'
-      include 'function_indlsod'
 
 ! --------------------------------------------------------------------
 

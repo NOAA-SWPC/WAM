@@ -24,9 +24,8 @@
       real(kind=kind_evod) svhybdt, u1, u2
       integer              indlsev,jbasev
       integer              indlsod,jbasod
-      include 'function2'
       real(kind=kind_evod) cons0,cons1,cons2     !constant
-
+      include 'function_indlsev'
 !     print *,' enter sicdife_hyb_fd ' 		! hmhj
 
       cons0 = 0.d0     !constant
@@ -329,7 +328,7 @@ c$$$      enddo
       real(kind=kind_evod) svhybdt, u1, u2
       integer              indlsev,jbasev
       integer              indlsod,jbasod
-      include 'function2'
+      include 'function_indlsod'
       real(kind=kind_evod) cons0,cons1,cons2     !constant
 
 !     print *,' enter sicdifo_hyb_fd ' 		! hmhj
