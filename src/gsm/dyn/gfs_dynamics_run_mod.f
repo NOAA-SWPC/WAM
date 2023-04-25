@@ -60,6 +60,7 @@
       logical              lcom2mdl
 
       LOGICAL            :: Cpl_flag1
+      type(ESMF_Info)    :: info
 !***********************************************************************
 !
 !     lsfwd      logical true during a first forward step
@@ -249,14 +250,13 @@
                    gis_dyn% nfcstdate7,                                 &
                    gis_dyn%Cpl_flag)
 
+          CALL ESMF_InfoGetFromHost(imp_gfs_dyn, info, rc = rc1)
           IF(gis_dyn%end_step) THEN
              Cpl_flag1 = .true.
-             CALL ESMF_AttributeSet(imp_gfs_dyn, 'Cpl_flag',            &
-                                    Cpl_flag1, rc = rc1)
+             CALL ESMF_InfoSet(info, 'Cpl_flag', Cpl_flag1, rc = rc1)
           ELSE
              Cpl_flag1 = .false.
-             CALL ESMF_AttributeSet(imp_gfs_dyn, 'Cpl_flag',            &
-                                    Cpl_flag1, rc = rc1)
+             CALL ESMF_InfoSet(info, 'Cpl_flag', Cpl_flag1, rc = rc1)
           END IF
 !
 ! ======================================================================

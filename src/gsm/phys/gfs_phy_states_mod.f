@@ -330,36 +330,56 @@
 !  ---  inputs:  (in scope variables)
 !  ---  outputs: (in scope variables)
 
+       REAL(ESMF_KIND_R8), ALLOCATABLE :: values(:)
+       TYPE(ESMF_Info) :: info
+
 ! ---  Retrieve ri and cpi
-       CALL ESMF_AttributeGet(Bundle                         &  !<-- Tracer bundle
-               ,name ='cpi_dryair'                           &  !<-- Name of the attribute to retrieve
-!               ,value = int_state%gfs_phy_tracer%cpi(0)      &  !<-- Value of the attribute
-               ,value = gfs_phy_tracer%cpi(0)      &  !<-- Value of the attribute
-               ,rc   =RC)
+       CALL ESMF_InfoGetFromHost(Bundle, info, rc=RC)
+       ! test
+       if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
+         line=__LINE__,  &
+         file=__FILE__,  &
+         rcToReturn=rcfinal)) return  ! bail out
+
+       CALL ESMF_InfoGet(info                                &  !<-- Tracer bundle's info handle
+               ,key   ='cpi_dryair'                          &  !<-- Name of the attribute to retrieve
+!              ,value = int_state%gfs_phy_tracer%cpi(0)      &  !<-- Value of the attribute
+               ,value = gfs_phy_tracer%cpi(0)                &  !<-- Value of the attribute
+               ,rc    = RC)
+       if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
+         line=__LINE__,  &
+         file=__FILE__,  &
+         rcToReturn=rcfinal)) return  ! bail out
        call gfs_physics_err_msg(rc,'retrieve cpi(0) attribute from phy_imp',rcfinal)
 
-       CALL ESMF_AttributeGet(Bundle                         &  !<-- Tracer bundle
-               ,name ='ri_dryair'                            &  !<-- Name of the attribute to retrieve
-!               ,value = int_state%gfs_phy_tracer%ri(0)       &  !<-- Value of the attribute
-               ,value = gfs_phy_tracer%ri(0)       &  !<-- Value of the attribute
-               ,rc   =RC)
+       CALL ESMF_InfoGet(info                                &  !<-- Tracer bundle's info handle
+               ,key   ='ri_dryair'                            &  !<-- Name of the attribute to retrieve
+!              ,value = int_state%gfs_phy_tracer%ri(0)       &  !<-- Value of the attribute
+               ,value = gfs_phy_tracer%ri(0)                 &  !<-- Value of the attribute
+               ,rc    = RC)
+       if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
+         line=__LINE__,  &
+         file=__FILE__,  &
+         rcToReturn=rcfinal)) return  ! bail out
        call gfs_physics_err_msg(rc,'retrieve ri(0) attribute from phy_imp',rcfinal)
 
-       CALL ESMF_AttributeGet(Bundle                         &  !<-- Tracer bundle
-               ,name ='cpi'                                  &  !<-- Name of the attribute to retrieve
-               ,itemCount= int_state%ntrac                   &  !<-- Number of values in the attribute
-!               ,valueList = int_state%gfs_phy_tracer%cpi(1:int_state%ntrac)  &!<-- Value of the attribute
-               ,valueList = gfs_phy_tracer%cpi(1:int_state%ntrac)  &!<-- Value of the attribute
-               ,rc   =RC)
+       CALL ESMF_InfoGetAlloc(info                           &  !<-- Tracer bundle's info handle
+               ,key       ='cpi'                             &  !<-- Name of the attribute to retrieve
+               ,itemCount = int_state%ntrac                  &  !<-- Number of values in the attribute
+               ,values    = values                           &  !<-- Value of the attribute
+               ,rc        = RC)
        call gfs_physics_err_msg(rc,'retrieve cpi(:) attribute from phy_imp',rcfinal)
+       gfs_phy_tracer%cpi(1:int_state%ntrac) = values
 
-       CALL ESMF_AttributeGet(Bundle                         &  !<-- Tracer bundle
-               ,name ='ri'                                   &  !<-- Name of the attribute to retrieve
-               ,itemCount= int_state%ntrac                   &  !<-- Number of values in the attribute
-!               ,valueList = int_state%gfs_phy_tracer%ri(1:int_state%ntrac)  &!<-- Value of the attribute
-               ,valueList = gfs_phy_tracer%ri(1:int_state%ntrac)  &!<-- Value of the attribute
-               ,rc   =RC)
+       CALL ESMF_InfoGet(info                                &  !<-- Tracer bundle's info handle
+               ,key       ='ri'                              &  !<-- Name of the attribute to retrieve
+               ,itemCount = int_state%ntrac                  &  !<-- Number of values in the attribute
+               ,values    = values                           &  !<-- Number of values in the attribute
+               ,rc        = RC)
        call gfs_physics_err_msg(rc,'retrieve ri(:) attribute from phy_imp',rcfinal)
+       gfs_phy_tracer%ri(1:int_state%ntrac) = values
+
+       if (allocated(values)) deallocate(values)
 
 ! ---  Fill in ri/cpi local array
        if(.not.allocated(ri)) then
@@ -417,6 +437,7 @@
 
       TYPE(ESMF_Field)                                    :: Field
       TYPE(ESMF_FieldBundle), SAVE                        :: Bundle
+      TYPE(ESMF_Info)                                     :: info
 
       REAL(KIND = kind_evod), DIMENSION(:, :),    POINTER ::    &
                    hold_z,    hold_ps, hold_rqtk
@@ -649,43 +670,42 @@
           enddo
         endif
 
-        CALL ESMF_AttributeSet(state=exp_gfs_phy        &  !<-- The physics export state
-                              ,name ='deltim'           &  !<-- Name of the attribute to insert
-                              ,value= int_state%nam_gfs_phy%deltim  & !<-- Value of the attribute
-                              ,rc   =RC1)
+        CALL ESMF_InfoGetFromHost(exp_gfs_phy, info, rc=rc1)
 
-        CALL ESMF_AttributeSet(state=exp_gfs_phy             &  !<-- The physics export state
-                              ,name ='lats_node_r'           &  !<-- Name of the attribute to insert
-                              ,value= lats_node_r            &  !<-- Value of the attribute
-                             ,rc   =RC1)
+        CALL ESMF_InfoSet(info                                          &  !<-- The physics export state's info handle
+                          ,key  ='deltim'                               &  !<-- Name of the attribute to insert
+                          ,value= int_state%nam_gfs_phy%deltim          &  !<-- Value of the attribute
+                          ,rc   =RC1)
 
-        CALL ESMF_AttributeSet(state=exp_gfs_phy             &
-                              ,name ='lats_node_r_max'       &
-                              ,value= lats_node_r_max        &
-                              ,rc   =RC1)
+        CALL ESMF_InfoSet(info                                          &  !<-- The physics export state's info handle
+                          ,key  ='lats_node_r'                          &  !<-- Name of the attribute to insert
+                          ,value= lats_node_r                           &  !<-- Value of the attribute
+                          ,rc   =RC1)
 
-        CALL ESMF_AttributeSet(state=exp_gfs_phy             &
-                              ,name ='lonr'                  &
-                              ,value= lonr                   &
-                              ,rc   =RC1)
+        CALL ESMF_InfoSet(info                                          &  !<-- The physics export state's info handle
+                          ,key  ='lats_node_r_max'                      &  !<-- Name of the attribute to insert
+                          ,value= lats_node_r_max                       &  !<-- Value of the attribute
+                          ,rc   =RC1)
 
-        CALL ESMF_AttributeSet(state=exp_gfs_phy             &  !<-- The physics export state
-                              ,name ='lonsperlar_r'          &  !<-- Name of the attribute to insert
-                              ,itemCount= lats_node_r_max    &  !<-- Number of values in the attribute
-                              ,valueList =lonsperlar_r       &  !<-- Value of the attribute
-                              ,rc   =RC1)
+        CALL ESMF_InfoSet(info                                          &  !<-- The physics export state's info handle
+                          ,key  ='lonr'                                 &  !<-- Value of the attribute
+                          ,value= lonr                                  &  !<-- Value of the attribute
+                          ,rc   =RC1)
+
+        CALL ESMF_InfoSet(info                                          &  !<-- The physics export state's info handle
+                          ,key    ='lonsperlar_r'                       &  !<-- Name of the attribute to insert
+                          ,values =lonsperlar_r                         &  !<-- Value of the attribute
+                          ,rc     =RC1)
  
-        CALL ESMF_AttributeSet(state=exp_gfs_phy             &  !<-- The physics export state
-                              ,name ='slat_r'                &  !<-- Name of the attribute to insert
-                              ,itemCount= lats_node_r_max    &  !<-- Number of values in the attribute
-                              ,valueList =myslat_r           &  !<-- Value of the attribute
-                              ,rc   =RC1)
+        CALL ESMF_InfoSet(info                                          &  !<-- The physics export state's info handle
+                          ,key    ='slat_r'                             &  !<-- Name of the attribute to insert
+                          ,values =myslat_r                             &  !<-- Value of the attribute
+                          ,rc     =RC1)
  
-        CALL ESMF_AttributeSet(state=exp_gfs_phy             &  !<-- The physics export state
-                              ,name ='dlat_r'                &  !<-- Name of the attribute to insert
-                              ,itemCount= lats_node_r_max    &  !<-- Number of values in the attribute
-                              ,valueList =mydlat_r           &  !<-- Value of the attribute
-                              ,rc   =RC1)
+        CALL ESMF_InfoSet(info                                          &  !<-- The physics export state's info handle
+                          ,key    ='dlat_r'                             &  !<-- Name of the attribute to insert
+                          ,values =mydlat_r                             &  !<-- Value of the attribute
+                          ,rc     =RC1)
  
 ! loop through the 2D diag fields
 
@@ -861,10 +881,10 @@
 
           FieldName = trim(aerosol)//'_nfld'
           msg       = "Insert attribute "//FieldName//" to state"
-          CALL ESMF_AttributeSet(exp_gfs_phy             &  !<-- User specified bundle
-                                ,name  = FieldName       &  !<-- Attribute name to insert
-                                ,value = kcount          &  !<-- Value of the attribute
-                                ,rc    = RC1)
+          CALL ESMF_InfoSet(info                     &  !<-- User specified bundle
+                            ,key   = FieldName       &  !<-- Attribute name to insert
+                            ,value = kcount          &  !<-- Value of the attribute
+                            ,rc    = RC1)
           call gfs_physics_err_msg(rc1, msg ,rcfinal)
 
         ENDDO   lab_do_diag
@@ -888,48 +908,52 @@
 !  ---  inputs:  (in scope variables)
 !  ---  outputs: (in scope variables)
 
+       TYPE(ESMF_Info) :: info
+
 ! ---  Set attributes for ri and cpi
+       msg   = "retrieve info handle from phy_exp"
+       CALL ESMF_InfoGetFromHost(Bundle, info, rc=RC1)
+       call gfs_physics_err_msg(rc1,msg,rcfinal)
+
        msg   = "insert cpi(0) attribute to phy_exp"
-       CALL ESMF_AttributeSet(Bundle                         &  !<-- Phy export state tracer bundle
-               ,name ='cpi_dryair'                           &  !<-- Name of the attribute to insert
-!               ,value = int_state%gfs_phy_tracer%cpi(0)      &  !<-- Value of the attribute
-               ,value = gfs_phy_tracer%cpi(0)      &  !<-- Value of the attribute
-               ,rc   =RC1)
+       CALL ESMF_InfoSet(info                                &  !<-- Phy export state tracer bundle's info handle
+               ,key   ='cpi_dryair'                          &  !<-- Name of the attribute to insert
+!              ,value = int_state%gfs_phy_tracer%cpi(0)      &  !<-- Value of the attribute
+               ,value = gfs_phy_tracer%cpi(0)                &  !<-- Value of the attribute
+               ,rc    = RC1)
        call gfs_physics_err_msg(rc1,msg,rcfinal)
 
        msg   = "inset ri(0) attribute to phy_exp"
-       CALL ESMF_AttributeSet(Bundle                         &  !<-- Phy export state tracer bundle
-               ,name ='ri_dryair'                            &  !<-- Name of the attribute to insert
-!               ,value = int_state%gfs_phy_tracer%ri(0)       &  !<-- Value of the attribute
+       CALL ESMF_InfoSet(info                                &  !<-- Phy export state tracer bundle's info handle
+               ,key  ='ri_dryair'                            &  !<-- Name of the attribute to insert
+!              ,value = int_state%gfs_phy_tracer%ri(0)       &  !<-- Value of the attribute
                ,value = gfs_phy_tracer%ri(0)       &  !<-- Value of the attribute
-               ,rc   =RC1)
+               ,rc    = RC1)
        call gfs_physics_err_msg(rc1,msg,rcfinal)
 
        msg   = "insert cpi(:) attribute to phy_exp"
-       CALL ESMF_AttributeSet(Bundle                         &  !<-- Phy export state tracer bundle
-               ,name ='cpi'                                  &  !<-- Name of the attribute array
-               ,itemCount= int_state%ntrac                   &  !<-- Length of array being inserted
-!               ,valueList = int_state%gfs_phy_tracer%cpi(1:int_state%ntrac)  &!<-- The array being inserted
-               ,valueList = gfs_phy_tracer%cpi(1:int_state%ntrac)  &!<-- The array being inserted
-               ,rc   =RC1)
+       CALL ESMF_InfoSet(info                                &  !<-- Phy export state tracer bundle's info handle
+               ,key    ='cpi'                                &  !<-- Name of the attribute array
+!              ,values = int_state%gfs_phy_tracer%cpi(1:int_state%ntrac)  &!<-- The array being inserted
+               ,values = gfs_phy_tracer%cpi(1:int_state%ntrac)  &!<-- The array being inserted
+               ,rc     = RC1)
        call gfs_physics_err_msg(rc1,msg,rcfinal)
 
        msg   = "insert ri(:) attribute to phy_exp"
-       CALL ESMF_AttributeSet(Bundle                         &  !<-- Phy export state tracer bundle
-               ,name ='ri'                                   &  !<-- Name of the attribute array
-               ,itemCount= int_state%ntrac                   &  !<-- Length of array being inserted
-!               ,valueList = int_state%gfs_phy_tracer%ri(1:int_state%ntrac)  &!<-- The array being inserted
-               ,valueList = gfs_phy_tracer%ri(1:int_state%ntrac)  &!<-- The array being inserted
-               ,rc   =RC1)
+       CALL ESMF_InfoSet(info                                &  !<-- Phy export state tracer bundle's info handle
+               ,key    ='ri'                                 &  !<-- Name of the attribute array
+!              ,values = int_state%gfs_phy_tracer%ri(1:int_state%ntrac)  &!<-- The array being inserted
+               ,values = gfs_phy_tracer%ri(1:int_state%ntrac)  &!<-- The array being inserted
+               ,rc     = RC1)
        call gfs_physics_err_msg(rc1,msg,rcfinal)
 
 ! ---  Set attribute for ntrac
        msg   = "insert ntrac attribute to phy_exp"
-       CALL ESMF_AttributeSet(Bundle                         &  !<-- Phy export state tracer bundle
-               ,name ='ntrac'                                &  !<-- Name of the attribute to insert
-!               ,value = int_state%gfs_phy_tracer%ntrac      &  !<-- Value of the attribute
+       CALL ESMF_InfoSet(info                                &  !<-- Phy export state tracer bundle's info handle
+               ,key   ='ntrac'                               &  !<-- Name of the attribute to insert
+!              ,value = int_state%gfs_phy_tracer%ntrac       &  !<-- Value of the attribute
                ,value = gfs_phy_tracer%ntrac                 &  !<-- Value of the attribute
-               ,rc   =RC1)
+               ,rc   = RC1)
        call gfs_physics_err_msg(rc1,msg,rcfinal)
 
       RETURN
@@ -946,17 +970,22 @@
       integer, INTENT(in)                  :: k
       INTEGER, OPTIONAL, INTENT(out)       :: rc
 
+      TYPE(ESMF_Info)                      :: info
       character*50                         :: msg, vname, tag
       integer                              :: rc1
 
       write(tag, '(i2.2)') k
       vname = trim(aer)//'_'//trim(tag)
 
+      msg   = "retrieve info handle from bundle"
+      CALL ESMF_InfoGetFromHost(Bundle, info, rc=RC1)
+      call gfs_physics_err_msg(rc1,msg,rc)
+
       msg   = "insert attribute "//vname//" to bundle "
-      CALL ESMF_AttributeSet(Bundle               &  !<-- User specified bundle
-                            ,name = vname         &  !<-- Name of the attribute to insert
-                            ,value = name         &  !<-- Value of the attribute
-                            ,rc   =RC1)
+      CALL ESMF_InfoSet(info                      &  !<-- User specified bundle's info handle
+                        ,key   = vname            &  !<-- Name of the attribute to insert
+                        ,value = name             &  !<-- Value of the attribute
+                        ,rc    = RC1)
       call gfs_physics_err_msg(rc1,msg,rc)
 
       return

@@ -44,7 +44,6 @@
       use gfs_dynamics_finalize_mod
       use gfs_dyn_resol_def,               only: kdt_start
 
-      use gfs_dyn_mpi_def
       use gfs_dynamics_output,             only: point_dynamics_output_gfs
       use gfs_dyn_tracer_config,           only: gfs_dyn_tracer
       use namelist_dynamics_def,           only: nemsio_in, ldfi_spect
@@ -486,8 +485,8 @@
 
       subroutine gfs_dyn_run(gc_gfs_dyn, imp_gfs_dyn, exp_gfs_dyn, clock, rc)
 
-      use gfs_dynamics_states_mod
-      use gfs_dyn_date_def
+      use gfs_dynamics_states_mod, only : gfs_dynamics_internal2export, &
+                                          gfs_dynamics_import2internal
 !
 ! !input variables and parameters:
 !---------------------------------
@@ -524,6 +523,7 @@
 !! debug print for tracking import and export state (Sarah Lu)
       TYPE(ESMF_Field)                   :: ESMFField             !chlu_debug
       TYPE(ESMF_FieldBundle)             :: ESMFBundle            !chlu_debug
+      TYPE(ESMF_Info)                    :: info
       real(kind_grid), dimension(:,:,:),allocatable ::  grid_gr_iau
       REAL(ESMF_KIND_R8), DIMENSION(:,:,:), POINTER :: fArr3D     !chlu_debug
       integer                            :: rc1, rcfinal, DFIHR &
@@ -637,7 +637,8 @@
 
 ! Set up the ensemble coupling time flag.
 !----------------------------------------
-      CALL ESMF_AttributeGet(imp_gfs_dyn, 'Cpl_flag', int_state%Cpl_flag, rc = rc1)
+      CALL ESMF_InfoGetFromHost(imp_gfs_dyn, info, rc = rc1)
+      CALL ESMF_InfoSet(info, 'Cpl_flag', int_state%Cpl_flag, rc = rc1)
 
       if( currtime  == stoptime ) then
 !         print *,' currtime equals to stoptime '
@@ -757,10 +758,12 @@
 !
      call esmf_logwrite("set pdryini in imp_state_write",               &
                           ESMF_LOGMSG_INFO, rc = rc1)
-     CALL ESMF_AttributeSet(state     =IMP_STATE_WRITE                  &  !<-- The Write component import state 
-                            ,name     ='pdryini'                        &  !<-- Name of the var 
-                            ,value    =int_state%pdryini                &  !<-- The var being inserted into the import state 
-                            ,rc       =RC1) 
+     CALL ESMF_InfoGetFromHost(IMP_STATE_WRITE, info, rc=rc1)
+     call gfs_dynamics_err_msg(rc1,'retrieve info from imp_state_write',rc)
+     CALL ESMF_InfoSet(info                                             &  !<-- The Write component import state's info handle
+                       ,key      ='pdryini'                             &  !<-- Name of the var
+                       ,value    =int_state%pdryini                     &  !<-- The var being inserted into the import state
+                       ,rc       =RC1)
      call gfs_dynamics_err_msg(rc1,'set pdryini in imp_state_write',rc)
 !*******************************************************************
 !

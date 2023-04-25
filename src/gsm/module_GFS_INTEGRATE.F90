@@ -168,6 +168,7 @@
       INTEGER                                :: YY, MM, DD, H, M, S
 !
       TYPE(ESMF_Field)                       :: FIELD
+      TYPE(ESMF_info)                        :: info
 !     real(ESMF_KIND_R8), dimension(:,:), pointer :: tmp_ptr2d
 !-----------------------------------------------------------------------
 !***  Set up alarm for output,alarm starts from current time
@@ -589,7 +590,8 @@
 
 !         Not sure if this cpl_flag stuff works - Moorthi
 !         -----------------------------------------------
-          CALL ESMF_AttributeGet(imp_gfs_dyn, 'Cpl_flag', Cpl_flag, rc = rc)
+          CALL ESMF_InfoGetFromHost(imp_gfs_dyn, info, rc = rc)
+          CALL ESMF_InfoGet(info, 'Cpl_flag', Cpl_flag, rc = rc)
 
           IF(.NOT. Cpl_flag) THEN
 

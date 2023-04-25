@@ -210,6 +210,7 @@
     type(ESMF_Clock)      :: clock
     integer, intent(out)  :: rc
 
+    logical                                   :: isPresent, isSet
     character(len=10)                         :: value
     
     rc = ESMF_SUCCESS
@@ -222,21 +223,23 @@
       file=__FILE__)) &
       return  ! bail out
 
-    call ESMF_AttributeGet(gcomp, name="DumpFields", value=value, defaultValue="false", &
-      convention="NUOPC", purpose="Instance", rc=rc)
+    write_diagnostics = .false.
+    call NUOPC_CompAttributeGet(gcomp, name="DumpFields", value=value, &
+      isPresent=isPresent, isSet=isSet, rc=rc)
     if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
       line=__LINE__, &
       file=__FILE__)) &
       return  ! bail out
-    write_diagnostics=(trim(value)=="true")
+    if (isSet) write_diagnostics=(trim(value)=="true")
 
-    call ESMF_AttributeGet(gcomp, name="ProfileMemory", value=value, defaultValue="false", &
-      convention="NUOPC", purpose="Instance", rc=rc)
+    profile_memory = .false.
+    call NUOPC_CompAttributeGet(gcomp, name="ProfileMemory", value=value, &
+      isPresent=isPresent, isSet=isSet, rc=rc)
     if (ESMF_LogFoundError(rcToCheck=rc, msg=ESMF_LOGERR_PASSTHRU, &
       line=__LINE__, &
       file=__FILE__)) &
       return  ! bail out
-    profile_memory=(trim(value)/="false")
+    if (isSet) profile_memory=(trim(value)/="false")
     
   end subroutine
 

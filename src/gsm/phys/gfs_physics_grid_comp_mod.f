@@ -559,6 +559,7 @@
 !    validation variables
      type(ESMF_Grid)                   :: grid
      type(ESMF_Field), save            :: validationField
+     type(ESMF_Info)                   :: info
      integer, save                     :: slice=1
 
 
@@ -714,29 +715,33 @@
 !
       CALL gfs_physics_err_msg(rc1,"Retrieve Write Import State from Physics Export State",RC)
 !-----------------------------------------------------------------------
-!      CALL ESMF_AttributeSet(state    =imp_wrt_state                    &  !<-- The Write component import state
+!      CALL ESMF_AttributeSet(state    =imp_wrt_state                   &  !<-- The Write component import state
 !                           ,name     ='zhour'                          &  !<-- Name of the var
 !                           ,value    =int_state%zhour                  &  !<-- The var being inserted into the impo
 !                            ,rc       =RC)
+      CALL ESMF_InfoGetFromHost(imp_wrt_state, info, rc=RC)
+
       if(ldfi .and. int_state%kdt-kdt_start-1 == ndfi) then
-         CALL ESMF_AttributeSet(state    =imp_wrt_state                    &  !<-- The Write component import state
-                               ,name     ='zhour'                          &  !<-- Name of the var
-                               ,value    =int_state%zhour_dfi              &  !<-- The var being inserted into the import state
-                               ,rc       =RC)
+         CALL ESMF_InfoSet(info                                         &  !<-- The Write component import state's info handle
+                           ,key      ='zhour'                           &  !<-- Name of the var
+                           ,value    =int_state%zhour_dfi               &  !<-- The var being inserted into the import state
+                           ,rc       =RC)
       else
-         CALL ESMF_AttributeSet(state    =imp_wrt_state                    &  !<-- The Write component import state
-                               ,name     ='zhour'                          &  !<-- Name of the var
-                               ,value    =int_state%zhour                  &  !<-- The var being inserted into the impo
-                               ,rc       =RC)
+         CALL ESMF_InfoSet(info                                         &  !<-- The Write component import state's info handle
+                           ,key      ='zhour'                           &  !<-- Name of the var
+                           ,value    =int_state%zhour                   &  !<-- The var being inserted into the impo
+                           ,rc       =RC)
 
       endif
 !       write(0,*)'in physgrid comp,kdt=',int_state%kdt,'zhour=',int_state%zhour,'zhour_dfi=',  &
 !           int_state%zhour_dfi,'ldfi=',ldfi,'ndfi=',ndfi,'rc=',rc
 !
-      CALL ESMF_AttributeSet(state=exp_gfs_phy        &  !<-- The physics export state
-                            ,name ='kdt'              &  !<-- Name of the attribute to insert
-                            ,value= int_state%kdt     & !<-- Value of the attribute
-                            ,rc   =RC)
+      CALL ESMF_InfoGetFromHost(exp_gfs_phy, info, rc=RC)
+
+      CALL ESMF_InfoSet(info                                            &  !<-- The physics export state's info handle
+                        ,key  ='kdt'                                    &  !<-- Name of the attribute to insert
+                        ,value= int_state%kdt                           & !<-- Value of the attribute
+                        ,rc   =RC)
 
 !
 

@@ -650,6 +650,7 @@
       TYPE(ESMF_TimeInterval)                 :: IAUTIMEINTERVAL
 !
       TYPE(ESMF_TypeKind_Flag)                :: DATATYPE
+      TYPE(ESMF_Info)                         :: info
 !
 !-----------------------------------------------------------------------
 !
@@ -772,45 +773,48 @@
 !-----------------------------------------------------------------------
 !
       if(mype < num_pes_fcst) then
-         CALL ESMF_AttributeGet(state     =IMP_STATE_WRITE             &  !<-- The Write component's import state
-                             ,name      ='ipt_lats_node_a'             &  !<-- Name of the Attribute to extract
-                             ,value =wrt_int_state%ipt_lats_node_a     &  !<-- Extract local subdomain starting I's
-                             ,rc=RC)
+        CALL ESMF_InfoGetFromHost(IMP_STATE_WRITE                      &  !<-- The Write component's import state
+                                  ,info                                &  !<-- Info object handle
+                                  ,rc=RC)
+        CALL ESMF_InfoGet(info                                         &  !<-- Info object handle from import state
+                          ,key    ='ipt_lats_node_a'                   &  !<-- Name of the Attribute to extract
+                          ,value  =wrt_int_state%ipt_lats_node_a       &  !<-- Extract local subdomain starting I's
+                          ,rc=RC)
 !
-        CALL ESMF_AttributeGet(state    =IMP_STATE_WRITE               &  !<-- The Write component's import state
-                             ,name     ='lats_node_a'                  &  !<-- Name of the Attribute to extract
-                             ,value = wrt_int_state%lats_node_a        &  !<-- Extract local subdomain ending I's
-                             ,rc=RC)
+        CALL ESMF_InfoGet(info                                         &  !<-- Info object handle from import state
+                          ,key    ='lats_node_a'                       &  !<-- Name of the Attribute to extract
+                          ,value  = wrt_int_state%lats_node_a          &  !<-- Extract local subdomain ending I's
+                          ,rc=RC)
 !
-        CALL ESMF_AttributeGet(state    =IMP_STATE_WRITE               &  !<-- The Write component's import state
-                             ,name     ='im'                           &  !Name of the Attribute to extract
-                             ,value = wrt_int_state%im(1)        &  !<-- Extract local subdomain ending I's
-                             ,rc=RC)
+        CALL ESMF_InfoGet(info                                         &  !<-- Info object handle from import state
+                          ,key   ='im'                                 &  !Name of the Attribute to extract
+                          ,value = wrt_int_state%im(1)                 &  !<-- Extract local subdomain ending I's
+                          ,rc=RC)
 
-        CALL ESMF_AttributeGet(state    =IMP_STATE_WRITE               &  !<-- The Write component's import state
-                             ,name     ='jm'                           &  !Name of the Attribute to extract
-                             ,value = wrt_int_state%jm(1)              &  !<-- Extract local subdomain ending I's
-                             ,rc=RC)
+        CALL ESMF_InfoGet(info                                         &  !<-- Info object handle from import state
+                          ,key   ='jm'                                 &  !Name of the Attribute to extract
+                          ,value = wrt_int_state%jm(1)                 &  !<-- Extract local subdomain ending I's
+                          ,rc=RC)
 
         IF(.NOT.ALLOCATED(wrt_int_state%global_lats_a))THEN
          ALLOCATE(wrt_int_state%global_lats_a(1:wrt_int_state%jm(1)),stat=ISTAT)  !<-- Local starting I for each fcst task's subdomain
         ENDIF
 !
-        CALL ESMF_AttributeGet(state     =IMP_STATE_WRITE              &  !<-- The Write component's import state
-                              ,name      ='global_lats_a'              &  !<-- Name of the Attribute to extract
-                              ,itemCount     =wrt_int_state%jm(1)      &  !<-- Length of Attribute
-                              ,valueList =wrt_int_state%global_lats_a  &  !<-- Extract local subdomain starting J's
-                              ,rc=RC)
+        CALL ESMF_InfoGet(info                                         &  !<-- Info object handle from import state
+                          ,key       ='global_lats_a'                  &  !<-- Name of the Attribute to extract
+                          ,itemCount =wrt_int_state%jm(1)              &  !<-- Length of Attribute
+                          ,values    =wrt_int_state%global_lats_a      &  !<-- Extract local subdomain starting J's
+                          ,rc=RC)
 
-        CALL ESMF_AttributeGet(state     =IMP_STATE_WRITE              &  !<-- The Write component's import state
-                              ,name      ='zhour'                    &  !<-- Name of the Attribute to extract
-                              ,value     =zhour(1)                   &  !<-- Extract local subdomain starting J's
-                              ,rc=RC)
+        CALL ESMF_InfoGet(info                                         &  !<-- Info object handle from import state
+                          ,key       ='zhour'                          &  !<-- Name of the Attribute to extract
+                          ,value     =zhour(1)                         &  !<-- Extract local subdomain starting J's
+                          ,rc=RC)
 !
-        CALL ESMF_AttributeGet(state     =IMP_STATE_WRITE              &  !<-- The Write component's import state
-                              ,name      ='pdryini'                    &  !<-- Name of the Attribute to extract
-                              ,value     =pdryini(1)                   &  !<-- Extract local subdomain starting J's
-                              ,rc=RC)
+        CALL ESMF_InfoGet(info                                         &  !<-- Info object handle from import state
+                          ,key       ='pdryini'                        &  !<-- Name of the Attribute to extract
+                          ,value     =pdryini(1)                       &  !<-- Extract local subdomain starting J's
+                          ,rc=RC)
 !
 ! ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~ ~
         CALL ERR_MSG(RC,MESSAGE_CHECK,RC_RUN)

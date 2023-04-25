@@ -39,21 +39,29 @@
  TYPE(gfs_dynamics_internal_state), POINTER, INTENT(in)    :: Int_State
  INTEGER, OPTIONAL,                          INTENT(out)   :: rc
 
- INTEGER                                         :: rc1, rcfinal
+ INTEGER         :: rc1, rcfinal
+ TYPE(ESMF_Info) :: info
 
  rc1     = ESMF_SUCCESS
  rcfinal = ESMF_SUCCESS
 
 ! One by one add the parameters to the GFS ESMF export state.
 !------------------------------------------------------------
- CALL ESMF_AttributeSet(State, 'NTRAC', ntrac, rc = rc1)
+ CALL ESMF_InfoGetFromHost(State, info, rc = rc1)
+     IF(ESMF_LogFoundError(rc1, msg="Retrieve info handle from GFS export state.")) THEN
+         rcfinal = ESMF_FAILURE
+         PRINT*, 'Error Happened When Retrieving Info Handle from GFS export state, rc = ', rc1
+         rc1 = ESMF_SUCCESS
+     END IF
+
+ CALL ESMF_InfoSet(info, 'NTRAC', ntrac, rc = rc1)
      IF(ESMF_LogFoundError(rc1, msg="Add ntrac to the GFS export state.")) THEN
          rcfinal = ESMF_FAILURE
          PRINT*, 'Error Happened When Adding ntrac to the GFS export state, rc = ', rc1
          rc1 = ESMF_SUCCESS
      END IF
 
- CALL ESMF_AttributeSet(State, 'MPI_R_MPI_R', MPI_R_MPI_R, rc = rc1)
+ CALL ESMF_InfoSet(info, 'MPI_R_MPI_R', MPI_R_MPI_R, rc = rc1)
 
      IF(ESMF_LogFoundError(rc1, msg="Add MPI_R_MPI_R to the GFS export state.")) THEN
          rcfinal = ESMF_FAILURE
@@ -61,7 +69,7 @@
          rc1 = ESMF_SUCCESS
      END IF
 
- CALL ESMF_AttributeSet(State, 'JCAP', jcap, rc = rc1)
+ CALL ESMF_InfoSet(info, 'JCAP', jcap, rc = rc1)
 
      IF(ESMF_LogFoundError(rc1, msg="Add JCAP to the GFS export state.")) THEN
          rcfinal = ESMF_FAILURE
@@ -69,7 +77,7 @@
          rc1 = ESMF_SUCCESS
      END IF
 
- CALL ESMF_AttributeSet(State, 'NODES_COMP', nodes, rc = rc1)
+ CALL ESMF_InfoSet(info, 'NODES_COMP', nodes, rc = rc1)
 
      IF(ESMF_LogFoundError(rc1, msg="Add NODES_COMP to the GFS export state.")) THEN
          rcfinal = ESMF_FAILURE
@@ -77,7 +85,7 @@
          rc1 = ESMF_SUCCESS
      END IF
 
- CALL ESMF_AttributeSet(State, 'ME_COMP', me, rc = rc1)
+ CALL ESMF_InfoSet(info, 'ME_COMP', me, rc = rc1)
 
      IF(ESMF_LogFoundError(rc1, msg="Add ME_COMP to the GFS export state.")) THEN
          rcfinal = ESMF_FAILURE
@@ -85,7 +93,7 @@
          rc1 = ESMF_SUCCESS
      END IF
 
- CALL ESMF_AttributeSet(State, 'MC_COMP', MC_COMP, rc = rc1)
+ CALL ESMF_InfoSet(info, 'MC_COMP', MC_COMP, rc = rc1)
 
      IF(ESMF_LogFoundError(rc1, msg="Add MC_COMP to the GFS export state.")) THEN
          rcfinal = ESMF_FAILURE
@@ -93,7 +101,7 @@
          rc1 = ESMF_SUCCESS
      END IF
 
- CALL ESMF_AttributeSet(State, 'LATS_NODE_A', lats_node_a, rc = rc1)
+ CALL ESMF_InfoSet(info, 'LATS_NODE_A', lats_node_a, rc = rc1)
 
      IF(ESMF_LogFoundError(rc1, msg="Add LATS_NODE_A to the GFS export state.")) THEN
          rcfinal = ESMF_FAILURE
@@ -101,7 +109,7 @@
          rc1 = ESMF_SUCCESS
      END IF
 
- CALL ESMF_AttributeSet(State, 'IPT_LATS_NODE_A', ipt_lats_node_a, rc = rc1)
+ CALL ESMF_InfoSet(info, 'IPT_LATS_NODE_A', ipt_lats_node_a, rc = rc1)
 
      IF(ESMF_LogFoundError(rc1, msg="Add IPT_LATS_NODE_A to the GFS export state.")) THEN
          rcfinal = ESMF_FAILURE
@@ -109,7 +117,7 @@
          rc1 = ESMF_SUCCESS
      END IF
 
- CALL ESMF_AttributeSet(State, 'LONF', lonf, rc = rc1)
+ CALL ESMF_InfoSet(info, 'LONF', lonf, rc = rc1)
 
      IF(ESMF_LogFoundError(rc1, msg="Add LONF to the GFS export state.")) THEN
          rcfinal = ESMF_FAILURE
@@ -117,7 +125,7 @@
          rc1 = ESMF_SUCCESS
      END IF
 
- CALL ESMF_AttributeSet(State, 'LATG', latg, rc = rc1)
+ CALL ESMF_InfoSet(info, 'LATG', latg, rc = rc1)
 
      IF(ESMF_LogFoundError(rc1, msg="Add LATG to the GFS export state.")) THEN
          rcfinal = ESMF_FAILURE
@@ -125,8 +133,7 @@
          rc1 = ESMF_SUCCESS
      END IF
 
- CALL ESMF_AttributeSet(State, 'GLOBAL_LATS_A', Int_State%global_lats_a, &
-     itemCount = latg, rc = rc1)
+ CALL ESMF_InfoSet(info, 'GLOBAL_LATS_A', Int_State%global_lats_a(1:latg), rc = rc1)
 
      IF(ESMF_LogFoundError(rc1, msg="Add GLOBAL_LATS_A to the GFS export state.")) THEN
          rcfinal = ESMF_FAILURE
@@ -134,8 +141,7 @@
          rc1 = ESMF_SUCCESS
      END IF
 
- CALL ESMF_AttributeSet(State, 'LONSPERLAT', Int_State%lonsperlat, &
-     itemCount = latg, rc = rc1)
+ CALL ESMF_InfoSet(info, 'LONSPERLAT', Int_State%lonsperlat(1:latg), rc = rc1)
 
      IF(ESMF_LogFoundError(rc1, msg="Add LONSPERLAT to the GFS export state.")) THEN
          rcfinal = ESMF_FAILURE
