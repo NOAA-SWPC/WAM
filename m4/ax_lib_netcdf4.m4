@@ -128,7 +128,7 @@ AC_ARG_WITH([netcdf4],
    else
      with_netcdf4="yes"
      NETCDF4_PREFIX="${withval}"
-     NC_CONFIG="${withval}/bin/nc-config"
+     NC_CONFIG="${withval}/bin/nf-config"
    fi],
    [with_netcdf4="yes"]
 )
@@ -148,7 +148,7 @@ dnl Try and find NetCDF4 tools and options.
 if test "$with_netcdf4" = "yes"; then
     if test -z "$NC_CONFIG"; then
         dnl Check to see if NC_CONFIG is in the path.
-        AC_PATH_PROGS([NC_CONFIG], [nc-config], [])
+        AC_PATH_PROGS([NC_CONFIG], [nf-config], [])
         NETCDF4_PREFIX=$(AS_DIRNAME([$(AS_DIRNAME(["$NC_CONFIG"]))]))
     else
         AC_MSG_CHECKING([Using provided NetCDF4 prefix])
