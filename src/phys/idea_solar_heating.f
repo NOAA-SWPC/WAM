@@ -17,7 +17,8 @@
 !=============================================================================
       subroutine idea_sheat(im,ix,levs,te,dt,cospass,
      & o_n,o2_n,o3_n,n2_n,     
-     & ro,cp,lat,dayno,prsl,zg,grav,am,maglat,dt6dt, f107, f107d, kpa)
+     &     ro,cp,lat,dayno,prsl,zg,grav,am,maglat,dt6dt, f107, 
+     &     f107d,kpa,wam_stbeuv)
 !----------------------------------------------------------------------------
 ! calculete solar heating, NO coooling from 2Pa up
 !----------------------------------------------------------------------------
@@ -34,7 +35,7 @@
       integer, intent(in) :: levs     !number of press level
       integer, intent(in) :: lat      ! latitude index
       integer, intent(in) :: dayno    ! calender day
-!
+      
 !VAY-2016
       real, intent(in)    :: f107, f107d, kpa ! solar-geo drivers
 !
@@ -66,13 +67,17 @@
 
       real :: vay_avgd, tg_vay, vay_cprho, rcpro, ron2
 
+! EUV bands coming from idea_phys.f      
+      real wam_stbeuv(37)
+
+! Fluxes output file variable:
 !==================================================================
 
       vay_rgas_o =  1.e3*rgas/amo
       vay_rgas_o2 = 1.e3*rgas/amo2
       vay_rgas_n2 = 1.e3*rgas/amn2
       vay_avgd    = 1.e3*avgd 
-      ron2 = amo/amn2          
+      ron2 = amo/amn2
 
       do i=1,im
         do k=1,levs
@@ -95,9 +100,14 @@
 ! get heating
 !
       IF (sheat_hao) then
+
+!OBS there are about 420 calls to the subroutine below from here,
+!which is ????  
+
+         
        call solar_heat_dissociation_TIEGCM(levs,nps,o,o2,o3,n2,           
-     &     ho,ho2,hn2, f107,f107d,cospass(i),dayno,         
-     &     ht,sheat,sh1,sh2,dissociation_rate, Jo3)
+     &     ho,ho2,hn2,f107,f107d,cospass(i),dayno,
+     &        ht,sheat,sh1,sh2,dissociation_rate,Jo3,wam_stbeuv)
 !     ELSE                ! ' OLD-SOLAR_EUV_SRC-2014'
 !        call solar_heat(levs,nps,o,o2,n2,ho,ho2,hn2,effeuv,effuv,       
 !     &   f107, cospass(i),sheat,sh1,sh2)
@@ -127,8 +137,10 @@
         enddo ! k
 
       enddo !i
-! 
+
+!
       return
+
       end
 !---------------
       SUBROUTINE presolar(IM,IX,SOLHR,SLAG,                             
@@ -198,7 +210,8 @@
 !
       SUBROUTINE solar_heat_dissociation_TIEGCM(np,nps,O,O2,O3,N2,
      &  HO, HO2, HN2, F107, F107d, COSPASS, dayno, height,
-     &  sheat,sh1,sh2, O2dissociation_rate, O3dissociation_rate)
+     &     sheat,sh1,sh2, O2dissociation_rate, O3dissociation_rate,
+     &     wam_stbeuv)
 
 ! Vay-2015   solar_heat_dissociation_TIEGCM   1D_height subroutine
 ! RAA        Dec 2017: SED correction factors(sfeps), some cleanup
@@ -213,7 +226,7 @@
        use idea_solar,       only  : csao, csao2, csan2, csao3
        use idea_solar,       only  : csio, csio2, csin2
        use idea_solar,       only  : csdo2, csdeo2
-       use idea_solar,       only  : sfmin, afac
+       use idea_solar,       only  : sfmin, afac, rlmeuv
        use idea_solar,       only  : nwaves, nwaves_euv
        use idea_solar,       only  : lyman_a_num,nwaves_src
 !-------------------------------------------------------------------------
@@ -257,8 +270,7 @@
       real, intent(in)    :: f107d      ! 81 day mean f10.7
       real, intent(in)    :: cospass    ! cos zenith angle
       integer, intent(in) :: dayno      ! day of year
-      real, intent(in)    :: height(np) !layer height (m)
-
+      real, intent(in)    :: height(np) ! layer height (m)
 ! output
 
       real, intent(out)   :: sheat(np),sh1(np),sh2(np)   ! W/m3 heating rate
@@ -275,6 +287,9 @@
       real nightfac
       real  attenuation, local_flux
       real rnight_o,rnight_o2,rnight_o3,rnight_n2
+
+! EUV bands from idea_phys.f      
+      real wam_stbeuv(37)       
 
 ! Solar variability factor for SRB dissociation calculation
       REAL FLUX(NWAVES)
@@ -306,6 +321,7 @@
 ! RAA: solar 10-cm flux normalized to 1 AU
       real f107_1au, f107d_1au
 
+      
         nightfac=1.e-9         ! Ratio of nightime ionisation to sec=1.
 
 ! RAA: reintroduce the SED factor, normalize solar flux to 1 AU
@@ -322,19 +338,22 @@
 ! RAA: replace eccentric with sfeps
         vay_srb3=vay_srband_fac * vay_fmxfmn * sfeps
         pind=0.5*(f107_1au+f107d_1au) -80.
+
 !
       do J = 1, NWAVES  
         jinv = nwaves+1-J
 !
-         if (idea_solar_fix.ge.1) then 
+!        if (idea_solar_fix.ge.1) then 
 ! parameterized EUV 
 ! RAA: normalize flux by SED correction factor, sfeps
-           flux(J)=sfmin(jinv)*max(0.8, (1.0+afac(jinv)*pind) )*sfeps
-         else              
+!          flux(J)=sfmin(jinv)*max(0.8, (1.0+afac(jinv)*pind) )*sfeps
+!        else              
 ! solar_fix == 0 use observed EUV               
-           flux(J)=euv37(j)                                          
-         endif
-         IF (flux(J) .LT. 0.0) flux(J) = 0.0
+!         flux(J)=euv37(j)
+          flux(J)=wam_stbeuv(j)
+!        endif
+        IF (flux(J) .LT. 0.0) flux(J) = 0.0
+
       enddo
 !      
       goto 7771
@@ -563,7 +582,7 @@
 !
       subroutine idea_dissociation_jo3(im,ix,levs,te,cospass,
      & o_n,o2_n,o3_n, n2_n,
-     & dayno,zg,grav, f107, f107d, Jo2_2d, Jo3_2d)
+     & dayno, zg,grav, f107, f107d, Jo2_2d, Jo3_2d)
 !----------------------------------------------------------------------------
 ! calculete solar dissociation of O2 (UV+EUV)
 !----------------------------------------------------------------------------
@@ -586,7 +605,10 @@
       real, intent(in)    :: zg(ix,levs)  !layer height (m)
       real, intent(in)    :: grav(ix,levs)! (m/s2)
       real, intent(in)    :: f107, f107d
-!
+
+! EUV bands from idea_phys.f      
+      real wam_stbeuv(37)
+
 ! VAY out dissociation_rate2d
 !
       real, intent(out)   :: Jo2_2d(ix, levs), Jo3_2d(ix, levs)
@@ -597,7 +619,7 @@
       real    :: ho(levs), ho2(levs),hn2(levs)
       real    :: sheat(levs),sh1(levs),sh2(levs)
       real    :: ht(levs)
-      real    ::  jo2_1d(levs), jo3_1d(levs)
+      real    :: jo2_1d(levs), jo3_1d(levs)
 ! TWFANG
       real :: vay_rgas_o 
 !
@@ -626,7 +648,7 @@
 ! 
         call solar_heat_dissociation_TIEGCM(levs,nps,o,o2,o3,n2,
      &     ho,ho2,hn2,f107,f107d,cospass(i),dayno,
-     &     ht,sheat,sh1,sh2, jo2_1d, jo3_1d)
+     &     ht,sheat,sh1,sh2, jo2_1d, jo3_1d, wam_stbeuv)
 ! 
 !VAY-oct 2016 .....dissociation_rate2d
 !VAY-jan 2017    Jo2_2d & Jo3_2d based on TIME-GCM/2015
@@ -641,7 +663,7 @@
 !
       subroutine idea_dissociation_jo2(im,ix,levs,te,cospass,
      & o_n,o2_n,o3_n, n2_n,
-     & dayno,zg,grav, f107, f107d, Jo2_2d)
+     & dayno, zg,grav, f107, f107d, Jo2_2d)
 !----------------------------------------------------------------------------
 ! calculete solar dissociation of O2 (UV+EUV)
 !----------------------------------------------------------------------------
@@ -664,7 +686,10 @@
       real, intent(in)    :: zg(ix,levs)  !layer height (m)
       real, intent(in)    :: grav(ix,levs)! (m/s2)
       real, intent(in)    :: f107, f107d
-!
+
+! EUV bands from idea_phys.f      
+      real wam_stbeuv(37)
+
 ! VAY out dissociation_rate2d
       real, intent(out)   :: Jo2_2d(ix, levs)
 !
@@ -702,7 +727,7 @@
 ! 
         call solar_heat_dissociation_TIEGCM(levs,nps,o,o2,o3,n2,
      &     ho,ho2,hn2,f107,f107d,cospass(i),dayno,
-     &     ht,sheat,sh1,sh2, jo2_1d, jo3_1d)
+     &     ht,sheat,sh1,sh2, jo2_1d, jo3_1d, wam_stbeuv)
 ! 
 !VAY-oct 2016 .....dissociation_rate2d
 !VAY-jan 2017    Jo2_2d & Jo3_2d based on TIME-GCM/2015

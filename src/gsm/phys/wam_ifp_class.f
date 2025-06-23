@@ -14,6 +14,7 @@ module wam_ifp_class
         real, allocatable, dimension(:) :: swbt
         real, allocatable, dimension(:) :: swang
         real, allocatable, dimension(:) :: swden
+        real, allocatable, dimension(:, :) :: stbeuv
       end type farr_t
 
       type forcing_t
@@ -30,6 +31,7 @@ module wam_ifp_class
         real :: swbt
         real :: swang
         real :: swden
+        real, allocatable, dimension(:) :: stbeuv
       end type forcing_t
 
       type param_t

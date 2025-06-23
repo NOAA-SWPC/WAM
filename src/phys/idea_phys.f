@@ -9,7 +9,7 @@
      &                     mpi_ior, mpi_comm, fhour, kstep,
      &                     gzmt, gmmt, gjhr, gshr, go2dr, f107, f107d,
      &                     kp, kpa, nhp, nhpi, shp, shpi, swbt, swang,
-     &                     swvel, swbz, swden)
+     &                     swvel, swbz, swden, stbeuv)
 
 !-----------------------------------------------------------------------
 ! add temp, wind changes due to viscosity and thermal conductivity
@@ -128,6 +128,8 @@
 ! Input parameters
       real, intent(in) :: f107, f107d, kp, kpa, nhp, nhpi, shp, shpi
       real, intent(in) :: swbz, swvel, swbt, swang, swden
+      real, intent(in) :: stbeuv(37)
+      real :: wam_stbeuv(37)
 
 ! Local variables
 !      real,parameter      :: pa2cb=0.001,cb2pa=1000.
@@ -262,7 +264,7 @@
 
       call idea_tracer(im,ix,levs,ntrac,2,grav,prsi,prsl,adt,adr,
      &                 dtp,o_n,o2_n,o3_n, n2_n,nair,rho,am, am29,
-     & cospass, dayno, zg, f107, f107d, me, go2dr, plow,
+     & cospass, dayno, fhour, zg, f107, f107d, me, go2dr, plow,
      & phigh, xpk_low, xpk_high)
 !        if ( me == 0) print *, maxval(am29), minval(am29), 'VAY-am29C
 !
@@ -312,10 +314,21 @@
 !
 ! get solar heating (EUV, UV-SRC-SRV-Lya) and NO cooling
 !
-      call idea_sheat(im,ix,levs,adt,dtRad,cospass,o_n,o2_n,o3_n,n2_n,
-     &                rho, cp,lat,dayno,prsl,zg,grav,am,maglat,dt6dt,
-     &                f107, f107d, kpa)
+      do i = 1, 37
+!orig        weuv_s(i) = stbeuv(i)
+       wam_stbeuv(i) = stbeuv(i)
+      enddo
 
+!mf      if (me == 0) then
+!mf        write(*,*) 'before idea_sheat...dayno, fhour...', dayno, fhour
+!mf        write(*,*) "before idea_sheat...im, ix, xlon(im), xlat(im)",
+!mf     &          im, ix, xlon(im), xlat(im)
+!mf      endif      
+      
+      call idea_sheat(im,ix,levs,adt,dtRad,cospass,o_n,o2_n,o3_n,n2_n,
+     &                rho, cp,lat,dayno,fhour,dtp,prsl,zg,grav,am,
+     &                maglat,dt6dt,f107, f107d, kpa, wam_stbeuv)
+      
 ! Merge the  IPE back coupling WAM dtrad array into WAM.
 !-------------------------------------------------------
       IF(ipe_to_wam_coupling) THEN

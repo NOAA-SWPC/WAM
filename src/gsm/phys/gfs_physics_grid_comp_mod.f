@@ -574,7 +574,7 @@
       integer                                     :: rc1, rcfinal
       real(8) :: zhour1
       real(4) :: wgt
-      integer :: kint
+      integer :: kint, j, kint_euv
 !
 !jw
       type(esmf_state)                   :: imp_wrt_state
@@ -603,6 +603,10 @@
 !------------------------------------------------------------------------------
       int_state => wrap%int_state
 
+! allocate int_state for standband euv      
+      if (.not. allocated(int_state%forcing%stbeuv)) then
+        allocate(int_state%forcing%stbeuv(37))
+      endif      
 
 !     write(0,*)' int_state%lonsperlar=',int_state%lonsperlar
 ! get the esmf import state and over-write the gfs internal state.
@@ -654,9 +658,23 @@
 
       kint = ((int_state%kdt - 1 - params % kdt_start) * timestep_sec / params % ifp_interval) + 1 + params % skip
 
-      if ( kint + 1 .le. size(farr % f107)) then
-        wgt = 1 - real(mod((int_state%kdt-1)*timestep_sec, params % ifp_interval))/params % ifp_interval
+      kint_euv = ((int_state%kdt - 1 - params % kdt_start) * timestep_sec / params % ifp_interval) + 1 + params % skip
 
+!mf      if (me.eq.0) then
+!mf         print *, "i am in gfs_phys---------------------------"
+!mf         write(*,*) 'int_state%kdt =',int_state%kdt
+!mf         write(*,*) 'params % kdt_start =',params % kdt_start
+!mf         write(*,*) 'params % ifp_interval =',params % ifp_interval
+!mf         write(*,*) 'params % skip =',params % skip                 
+!mf         write(*,*) 'kint =',kint
+!mf         write(*,*) 'kint_euv =',kint_euv 
+!mf         write(*,*) '-----------------------------------------'
+!mf      endif      
+
+      if ( kint + 1 .le. size(farr % f107)) then
+         
+        wgt = 1 - real(mod((int_state%kdt-1)*timestep_sec, params % ifp_interval))/params % ifp_interval
+        
         int_state % forcing % f107  = farr % f107 (kint) * wgt + farr % f107 (kint+1) * (1 - wgt)
         int_state % forcing % f107d = farr % f107d(kint) * wgt + farr % f107d(kint+1) * (1 - wgt)
         int_state % forcing % kp    = farr % kp   (kint) * wgt + farr % kp   (kint+1) * (1 - wgt)
@@ -670,9 +688,36 @@
         int_state % forcing % swvel = farr % swvel(kint) * wgt + farr % swvel(kint+1) * (1 - wgt)
         int_state % forcing % swbz  = farr % swbz (kint) * wgt + farr % swbz (kint+1) * (1 - wgt)
         int_state % forcing % swbt  = farr % swbt (kint) * wgt + farr % swbt (kint+1) * (1 - wgt)
-      else
-        kint = size(farr % f107)
 
+!mf        if (me.eq.0) then
+!mf           write(*,*) '-----------------------------------------'
+!mf           write(*,*) 'kint, kint + 1 =',kint, kint + 1
+!mf           write(*,*) 'farr % swvel(kint) =',farr % swvel(kint)
+!mf           write(*,*) 'int_state % forcing % f107 =',int_state % forcing % f107
+!mf           write(*,*) 'int_state % forcing % swvel =',int_state % forcing % swvel
+!mf           write(*,*) '-----------------------------------------'
+!mf        endif
+
+        do j = 1, 37 ! assign evu data to int_state
+!mf          int_state % forcing % stbeuv(j) = farr % stbeuv(j,kint)*wgt +&
+!mf                                      farr % stbeuv(j, kint+1) * (1-wgt)
+          int_state % forcing % stbeuv(j) = farr % stbeuv(j,kint_euv)*wgt +&
+                                      farr % stbeuv(j, kint_euv+1) * (1-wgt)
+
+!mf          if (me.eq.0) then
+!mf           print *, "i am still in gfs_phys 2222-------------------"
+!mf           write(*,*) 'j, kint_euv, kint_euv + 1 =',j, kint_euv, kint_euv + 1
+!mf           write(*,*) 'farr % stbeuv(j,kint_euv) =',farr % stbeuv(j,kint_euv)
+!mf           write(*,*) 'farr % stbeuv(j, kint_euv+1) =',farr % stbeuv(j, kint_euv+1)
+!mf           write(*,*) '>>> int_state % forcing % stbeuv(j) =',int_state % forcing % stbeuv(j)                
+!mf           write(*,*) '-----------------------------------------'
+!mf          endif
+        end do
+
+      else
+         
+        kint = size(farr % f107)
+        
         int_state % forcing % f107  = farr % f107 (kint)
         int_state % forcing % f107d = farr % f107d(kint)
         int_state % forcing % kp    = farr % kp   (kint)
@@ -686,6 +731,29 @@
         int_state % forcing % swvel = farr % swvel(kint)
         int_state % forcing % swbz  = farr % swbz (kint)
         int_state % forcing % swbt  = farr % swbt (kint)
+
+!mf      if (me.eq.0) then
+!mf         print *, "i am in gfs_phys 3333---------------------------"
+!mf         write(*,*) 'kint + 1, size(farr % f107) =',kint + 1,size(farr % f107)
+!mf         write(*,*) 'int_state % forcing % f107 =',int_state % forcing % f107
+!mf         write(*,*) 'farr % swvel(kint) =',farr % swvel(kint)
+!mf         write(*,*) 'int_state % forcing % swvel =',int_state % forcing % swvel                
+!mf         write(*,*) '-----------------------------------------'
+!mf      endif                   
+        
+        do j = 1, 37 ! assign evu data to int_state
+!mf          int_state % forcing % stbeuv(j) = farr % stbeuv(j,kint)
+          int_state % forcing % stbeuv(j) = farr % stbeuv(j,kint_euv)
+
+!mf          if (me.eq.0) then
+!mf             print *, "i am still in gfs_phys 3333-----------------"
+!mf             write(*,*) '---> int_state % forcing % stbeuv(j) =', int_state % forcing % stbeuv(j)     
+!mf             write(*,*) '-----------------------------------------'
+!mf             write(*,*) 'farr % stbeuv(j,kint_euv) =',farr % stbeuv(j,kint_euv)
+!mf             write(*,*) '-----------------------------------------'
+!mf          endif           
+        enddo
+
       end if
 !      PRINT*, 'In phys grid comp, kdt, kdt_3h=', int_state%kdt, kdt_3h
 

@@ -418,7 +418,8 @@
        weuv_s   = Euv_fix 
       endif
       if (idea_solar_fix == 0) then
-       weuv_s   = Euv_fix 
+       weuv_s   = Euv_fix
+       write(*,*) 'i am in idea_solar_input.f..this is weuv_s :',weuv_s  
       endif
 !
 ! full path to NO-eof file
@@ -445,7 +446,9 @@
 !   
         do k=1, nwafix
            weuv_s(k)  =  
-     &              Aeuv(k, tim_ndx1)*w_ndx1 + Aeuv(k, tim_ndx2)*w_ndx2
+     &          Aeuv(k, tim_ndx1)*w_ndx1 + Aeuv(k, tim_ndx2)*w_ndx2
+           write(*,*) 'i am in idea_solar_input.f ....weuv_s do loop:',
+     &     weuv_s            
         enddo
 !
        end subroutine solar_wam_get_feuv

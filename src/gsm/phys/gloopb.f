@@ -609,11 +609,15 @@
 !    &     
 !---------------------------main latitude loop starts---------------------------------
 !
+      if (me == 0) print *,' hi 1111 lats_node_r=',lats_node_r      
       do lan=1,lats_node_r
          lat         = global_lats_r(ipt_lats_node_r-1+lan)
          lon_dim     = lon_dims_r(lan)
          lons_lat    = lonsperlar(lat)
-
+         if (me == 0) then
+            print *,' 1111 lan,lats_node_r=',lan,lats_node_r 
+            print *,' lat,lon_dim,lons_lat=',lat,lon_dim,lons_lat
+         endif
 !$omp parallel do private(i,j)
          do n=1,ntrac
            do i=1,lonr
@@ -667,7 +671,12 @@
 
 
 !---------------------------main longitude loop starts--------------------------------
+        if (me == 0) print *,' hi 2222 lons_lat,ngptc=',lons_lat,ngptc
         do lon=1,lons_lat,ngptc
+
+          if (me == 0) then
+            print *,' 2222 lon,lons_lat,ngptc=',lon,lons_lat,ngptc
+          endif
 !!
           njeff = min(ngptc,lons_lat-lon+1)
           iblk  = (lon-1)/ngptc + 1
@@ -862,7 +871,7 @@
      &                     forcing % shp,    forcing % shpi,
      &                     forcing % swbt,   forcing % swang,
      &                     forcing % swvel,  forcing % swbz,
-     &                     forcing % swden)
+     &                     forcing % swden, forcing % stbeuv)
 !
 !
 !
@@ -981,7 +990,7 @@
 
           do nn=1,nsphys             ! physics sub-steps
 
-      ! write(0,*)' calling gbphys for lon=',lon,' lan=',lan,' nn=',nn
+!       write(0,*)' calling gbphys for lon=',lon,' lan=',lan,' nn=',nn
 
             if (imfdeepcnv <= 0 .or. cal_pre) then
               if (random_clds) then

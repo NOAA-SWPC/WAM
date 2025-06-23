@@ -22,7 +22,8 @@
       character(len=19), parameter :: filename = "input_parameters.nc"
       class(COMIO_T), allocatable :: io
       integer, parameter      :: fmt =  COMIO_FMT_PNETCDF
-      integer, pointer :: dims(:)
+      integer, pointer, dimension(:) :: dims, euv_dims
+      integer, dimension(2) :: mstart, mcount
 
       call COMIO_Create(io, fmt, &
                         comm=MPI_COMM_ALL, &
@@ -49,6 +50,31 @@
       call io % read("swvel", farr % swvel)
       call io % read("swbz",  farr % swbz)
       call io % read("swbt",  farr % swbt)
+
+      call io % domain("EUV", euv_dims)
+!      write(*,*) '1111 type(euv_dims)',type(euv_dims)
+!      write(*,*) '1111 SHAPE(euv_dims)',SHAPE(euv_dims)
+!      write(*,*) '1111 SIZE(euv_dims, DIM=1)',SIZE(euv_dims, DIM=1)
+!      write(*,*) '1111 SIZE(euv_dims, DIM=2)',SIZE(euv_dims, DIM=2)       
+!      write(*,*) '1111...mf in wam_ifp_mod stbeuv=',euv_dims
+      mstart = (/1, 1/)
+!mftemp      mcount = (/euv_dims(2), euv_dims(1)/)
+      mcount = (/euv_dims(1), euv_dims(2)/)      
+      call io % domain(euv_dims, mstart, mcount)
+      call io % read("EUV",   farr % stbeuv)
+
+!      if (me.eq.0) then
+!         print *, "4444444444444444444444444444444444444444444 whatever"
+!         write(*,*) 'size(farr % f107) =',size(farr % f107)
+!         write(*,*) 'farr % f107 =',farr % f107         
+!         write(*,*) 'size(farr % swvel)',size(farr % swvel)
+!         write(*,*) '9999 mf in wam_ifp_mod swvel =',farr % swvel
+!         write(*,*) '55555555555555555555555555555555555555555555555555'
+!         write(*,*) 'size(farr % stbeuv)',size(farr % stbeuv)
+!         write(*,*) '9999 mf in wam_ifp_mod stbeuv=',farr % stbeuv         
+!         write(*,*) '66666666666666666666666666666666666666666666666666'
+!      endif
+      
       call io % close()
 
       end subroutine read_ifp
@@ -69,7 +95,8 @@
         if (.not.allocated(farr%swang)) allocate(farr%swang(dim))
         if (.not.allocated(farr%swbz))  allocate(farr%swbz (dim))
         if (.not.allocated(farr%swbt))  allocate(farr%swbt (dim))
-
+        if (.not.allocated(farr%stbeuv)) allocate(farr%stbeuv(37, dim))
+        
       end subroutine alloc
 
       subroutine dealloc()
@@ -87,7 +114,8 @@
         if (allocated(farr%swang)) deallocate(farr%swang)
         if (allocated(farr%swbz))  deallocate(farr%swbz)
         if (allocated(farr%swbt))  deallocate(farr%swbt)
-
+        if (allocated(farr%stbeuv)) deallocate(farr%stbeuv)
+        
       end subroutine dealloc
 ! legacy code below, not sure this is still needed
 !==========================================================
