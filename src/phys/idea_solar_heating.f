@@ -462,8 +462,7 @@
         enddo           ! end of wavelength loop - J-index
 
       dt6dt(:, 1) = flux
-      dt6dt(:, 2) = rwpcc
-      dt6dt(:, 3) = rlmeuv(size(rlmeuv):1:-1)
+      dt6dt(:, 2) = rlmeuv(size(rlmeuv):1:-1)
 !==========================================================
 !  qtotal(k,i,lat) = qtotal(k,i,lat)+ho2src(k,i)+ho2srb(k,i) 
 !  Calculate O2 Schumunn Runge band heating  see "o2srbc.F"
