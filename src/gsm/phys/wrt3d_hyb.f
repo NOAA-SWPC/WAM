@@ -103,12 +103,12 @@
       call check(nf90_open(fname, NF90_WRITE, id))
 
       call check(nf90_inq_varid(id, vars(nv), varid))
-      call check(nf90_put_var(id,varid,(/workga/),start=(/k,kdt/),
+      call check(nf90_put_var(id,varid,(/workga/),start=(/k,kdt+1/),
      &                              count=(/1,1/)))
 
       if (nv .eq. 1) then
         call check(nf90_inq_varid(id, "time", varid))
-        call check(nf90_put_var(id,varid,kdt,start=(/kdt/)))
+        call check(nf90_put_var(id,varid,kdt,start=(/kdt+1/)))
       end if
 
       call check(nf90_close(id))
