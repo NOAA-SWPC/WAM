@@ -117,7 +117,7 @@
       real, intent(inout) :: adu(ix,levs)       ! W-E u
       real, intent(inout) :: adv(ix,levs)       ! S-N v
 !
-      real, intent(inout) :: dt6dt(ix,levs,6)   ! diagnostic 3D-array ....never used
+      real, intent(inout) :: dt6dt(37,2)
 !                                               !
 ! (2)-wtot-merged (SH-LW, H2O, CO2, O2,O3), (4-5-6) for Strobel +Cooling
 ! (1)-MT_SHEAT(EUV+?),  (3) - Joule heating
@@ -264,8 +264,8 @@
 
       call idea_tracer(im,ix,levs,ntrac,2,grav,prsi,prsl,adt,adr,
      &                 dtp,o_n,o2_n,o3_n, n2_n,nair,rho,am, am29,
-     & cospass, dayno, fhour, zg, f107, f107d, me, go2dr, plow,
-     & phigh, xpk_low, xpk_high)
+     & cospass, dayno, zg, f107, f107d, me, go2dr, plow,
+     & phigh, xpk_low, xpk_high, stbeuv, dt6dt)
 !        if ( me == 0) print *, maxval(am29), minval(am29), 'VAY-am29C
 !
 !
@@ -293,7 +293,7 @@
 !  only molecular diss. (viscosity + conductivity) no eddy diff. for tracers
 !  dissipation of 2013-idea:
       call idea_phys_dissipation(im,ix,levs,grav,prsi,prsl,
-     &      adu,adv,adt,o_n,o2_n,n2_n,dtp,cp, rho,dt6dt)
+     &      adu,adv,adt,o_n,o2_n,n2_n,dtp,cp, rho)
 !
 !--------------------------------------------------------------------------
 !      endif
@@ -395,9 +395,6 @@
       do k=1,levs
         do i=1,im
           adt(i,k)     = adt(i,k) + dtp*wtot(i,k)
-! dt6dt
-          dt6dt(i,k,2) = wtot(i,k)
-!
         enddo
       enddo
 !=========================================================================

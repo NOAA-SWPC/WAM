@@ -657,7 +657,7 @@
 
          ! Used only by gbphys
          real (kind=kind_phys), pointer :: rqtk (:)     => null()  ! mass change due to moisture variation
-         real (kind=kind_phys), pointer :: hlwd (:,:,:) => null()  ! idea sky lw heating rates ( k/s )
+         real (kind=kind_phys), pointer :: dt6dt (:,:) => null()  ! idea sky lw heating rates ( k/s )
          real (kind=kind_phys), pointer :: dtdtr(:,:)   => null()  ! temperature change due to radiative heating per time step (K)
 
          real (kind=kind_phys), pointer :: swhc (:,:)   => null()  ! clear sky sw heating rates ( k/s ) 
@@ -1735,7 +1735,7 @@
 
                                       ! swh                 ! hlw
        subroutine rad_tend_set (this, htrsw, sfalb, coszen, htrlw, tsflw, semis, coszdg,  &
-                                rqtk, hlwd, dtdtr, swhc, hlwc )
+                                rqtk, dt6dt, dtdtr, swhc, hlwc )
                                 
          implicit none
 
@@ -1755,7 +1755,7 @@
 
          ! Optional, used only by gbphys
          real (kind=kind_phys), optional, target :: rqtk (:)
-         real (kind=kind_phys), optional, target :: hlwd (:,:,:)
+         real (kind=kind_phys), optional, target :: dt6dt(:,:)
          real (kind=kind_phys), optional, target :: dtdtr(:,:)
 
          real (kind=kind_phys), optional, target :: swhc (:,:)
@@ -1775,7 +1775,7 @@
              if (present(coszdg)) this%coszdg => coszdg
 
              if (present(rqtk)) this%rqtk => rqtk
-             if (present(hlwd)) this%hlwd => hlwd
+             if (present(dt6dt)) this%dt6dt => dt6dt
              if (present(dtdtr)) this%dtdtr => dtdtr
 
              if (present(swhc)) this%swhc => swhc
@@ -2945,7 +2945,7 @@
                  intr%ulwsfcin_cpl, intr%dusfcin_cpl, intr%dvsfcin_cpl, &
                  intr%dtsfcin_cpl, intr%dqsfcin_cpl, &
                  intr%sfcdlw, rad%tsflw, rad%semis, rad%sfalb, rad%htrsw, &
-                 rad%swhc, rad%htrlw, rad%hlwc, rad%hlwd, mdl%lsidea, mdl%ras,  &   !mdl%lsidea
+                 rad%swhc, rad%htrlw, rad%hlwc, rad%dt6dt, mdl%lsidea, mdl%ras,  &   !mdl%lsidea
                  mdl%pre_rad, mdl%ldiag3d, mdl%lgocart, dyn%lssav,  &
                  mdl%lssav_cpl, tbd%xkzm_m, tbd%xkzm_h, &
                  tbd%xkzm_s, tbd%psautco, tbd%prautco,  &
@@ -3405,7 +3405,7 @@
                  intr%sfcvisdfd, intr%sfcnirbmu, intr%sfcnirdfu, intr%sfcvisbmu, intr%sfcvisdfu, intr%slimskin_cpl,       &
                  intr%ulwsfcin_cpl, intr%dusfcin_cpl, intr%dvsfcin_cpl, intr%dtsfcin_cpl, intr%dqsfcin_cpl, & 
                  intr%sfcdlw, rad%tsflw, rad%semis, rad%sfalb, rad%htrsw, &
-                 rad%swhc, rad%htrlw, rad%hlwc, rad%hlwd, mdl%lsidea, mdl%ras,  &
+                 rad%swhc, rad%htrlw, rad%hlwc, rad%dt6dt, mdl%lsidea, mdl%ras,  &
                  mdl%pre_rad, mdl%ldiag3d, mdl%lgocart, dyn%lssav,  &
                  mdl%lssav_cpl, tbd%xkzm_m, tbd%xkzm_h, tbd%xkzm_s, tbd%psautco, tbd%prautco,  &
                  tbd%evpco, tbd%wminco, mdl%pdfcld, mdl%shcnvcw, cld%sup, mdl%redrag, mdl%hybedmf, mdl%dspheat,  &
@@ -3495,7 +3495,7 @@
                  intr%sfcvisdfd, intr%sfcnirbmu, intr%sfcnirdfu, intr%sfcvisbmu, intr%sfcvisdfu, intr%slimskin_cpl,    &
                  intr%ulwsfcin_cpl, intr%dusfcin_cpl, intr%dvsfcin_cpl, intr%dtsfcin_cpl, intr%dqsfcin_cpl, &
                  intr%sfcdlw, rad%tsflw, rad%semis, rad%sfalb, rad%htrsw, &
-                 rad%swhc, rad%htrlw, rad%hlwc, rad%hlwd, mdl%lsidea, mdl%ras,  &
+                 rad%swhc, rad%htrlw, rad%hlwc, rad%dt6dt, mdl%lsidea, mdl%ras,  &
                  mdl%pre_rad, mdl%ldiag3d, mdl%lgocart, dyn%lssav,  &
                  mdl%lssav_cpl, tbd%xkzm_m, tbd%xkzm_h, tbd%xkzm_s, tbd%psautco, tbd%prautco,  &
                  tbd%evpco, tbd%wminco, mdl%pdfcld, mdl%shcnvcw, cld%sup, mdl%redrag, mdl%hybedmf, mdl%dspheat,  &
@@ -3628,7 +3628,7 @@
            print *, "rad%swhc : ", rad%swhc
            print *, "rad%htrlw : ", rad%htrlw
            print *, "rad%hlwc : ", rad%hlwc
-           print *, "rad%hlwd : ", rad%hlwd
+           print *, "rad%dt6dt : ", rad%dt6dt
            print *, "mdl%lsidea : ", mdl%lsidea
            print *, "mdl%ras : ", mdl%ras
            print *, "mdl%pre_rad : ", mdl%pre_rad

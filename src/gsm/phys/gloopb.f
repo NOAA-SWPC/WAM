@@ -8,7 +8,7 @@
      &                  ozplin,       jindx1,        jindx2,  ddy,
      &                  phy_f3d,      phy_f2d,       phy_fctd, nctp,
      &                  xlat,         nblck,   kdt,  restart_step,
-     &                  mdl_parm,     iniauinterval, forcing)
+     &                  mdl_parm,     iniauinterval, forcing, dt6dt)
 !!
 !! Code Revision:
 !! Sep    2009       Shrinivas Moorthi added nst_fld
@@ -150,11 +150,8 @@
      &                            swh, swhc, hlw, hlwc
 !!
       real (kind=kind_rad)  hprime(nmtvr,lonr,lats_node_r)
-
-!idea add by hmhj
-      real (kind=kind_rad) hlwd(ngptc,levs,6)
-!    &,                    htrswb(ngptc,levs,nbdsw,nblck,lats_node_r)
-!    &,                    htrlwb(ngptc,levs,nbdlw,nblck,lats_node_r)
+      real(kind=kind_rad),dimension(37,2) ::
+     &                            dt6dt
 !!
       real (kind=kind_phys) phy_f3d(ngptc,levs,ntot3d,nblck,lats_node_r)
      &,                     phy_f2d(lonr,lats_node_r,ntot2d)
@@ -639,7 +636,7 @@
 !$omp+private(phy_f2dv,dtdt,phy_fctdv)
 !$omp+private(dt3dt_v,du3dt_v,dv3dt_v,dq3dt_v)
 !$omp+private(upd_mfv,dwn_mfv,det_mfv)
-!$omp+private(dqdt_v,cnvqc_v,hlwd)
+!$omp+private(dqdt_v,cnvqc_v,dt6dt)
 !$omp+private(njeff,iblk,i,j,k,n,item,nn,nnr,tem)
 !!$omp+private(njeff,iblk,i,j,k,n,item,nn,nnr,dbgu)
 
@@ -805,7 +802,7 @@
           endif
 
           if (ldiag3d) then
-            do k=1,6
+            do k=1,7
               do j=1,levs
                 do i=1,njeff
                   dt3dt_v(i,j,k) = dt3dt(i,j,k,iblk,lan)
@@ -861,7 +858,7 @@
      &                     solhr,slag,sdec,cdec,sinlat_v,coslat_v,
      &                     xlon(lon,lan),xlat(lon,lan),
      &                     sfc_fld%oro(lon,lan),flx_fld%coszen(lon,lan),
-     &                     swh(1,1,iblk,lan),hlw(1,1,iblk,lan),hlwd,
+     &                     swh(1,1,iblk,lan),hlw(1,1,iblk,lan),dt6dt,
      &                     thermodyn_id,sfcpress_id,gen_coord_hybrid,
      &                     me,mpi_r_io_r,MPI_COMM_ALL, fhour, kdt,
      &                     gzmt, gmmt, gjhr, gshr, go2dr,
@@ -1122,7 +1119,7 @@
      &      hlw(1:ngptc,1:levs,iblk,lan),
      &      flx_fld%tsflw(lon:lonbnd,lan),
      &      flx_fld%sfcemis(lon:lonbnd,lan),
-     &      rqtk=rqtk, hlwd=hlwd, dtdtr=dtdt,
+     &      rqtk=rqtk, dt6dt=dt6dt, dtdtr=dtdt,
      &      swhc=swhc(1:ngptc,1:levs,iblk,lan),
      &      hlwc=hlwc(1:ngptc,1:levs,iblk,lan)
 !     &      swhc=swhc(1,1,iblk,lan),
@@ -1250,7 +1247,7 @@
      &      flx_fld%sfcdlw(lon,lan),    flx_fld%tsflw (lon,lan),        &
      &      flx_fld%sfcemis(lon,lan),   sfalb(lon,lan),                 &
      &      swh(1,1,iblk,lan),swhc(1,1,iblk,lan),                       &
-     &      hlw(1,1,iblk,lan),hlwc(1,1,iblk,lan), hlwd, lsidea,         &
+     &      hlw(1,1,iblk,lan),hlwc(1,1,iblk,lan), dt6dt, lsidea,        &
      &      ras,pre_rad,ldiag3d,lgocart,lssav,cplflx,                   &
      &      bkgd_vdif_m,bkgd_vdif_h,bkgd_vdif_s,psautco,prautco,evpco,  &
      &      wminco,pdfcld,shcnvcw,sup,redrag,hybedmf,dspheat,           &
@@ -1480,13 +1477,6 @@
           enddo
 !
           if (ldiag3d) then
-            do k=1,6
-              do j=1,levs
-                do i=1,njeff
-                  dt3dt(i,j,k,iblk,lan) = dt3dt_v(i,j,k)
-                enddo
-              enddo
-            enddo
             do k=1,4
               do j=1,levs
                 do i=1,njeff

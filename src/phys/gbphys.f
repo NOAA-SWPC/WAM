@@ -23,7 +23,7 @@
 !           sfcnirbmu,sfcnirdfu,sfcvisbmu,sfcvisdfu,                    !
 !           slimskin_cpl,ulwsfcin_cpl,                                  !
 !           dusfcin_cpl,dvsfcin_cpl,dtsfcin_cpl,dqsfcin_cpl,            !
-!           sfcdlw,tsflw,sfcemis,sfalb,swh,swhc,hlw,hlwc,hlwd,lsidea,   !
+!           sfcdlw,tsflw,sfcemis,sfalb,swh,swhc,hlw,hlwc,dt6dt,lsidea,  !
 !           ras,pre_rad,ldiag3d,lgocart,lssav,lssav_cpl                 !
 !           xkzm_m,xkzm_h,xkzm_s,psautco,prautco,evpco,wminco,          !
 !           pdfcld,shcnvcw,sup,redrag,hybedmf,dspheat,                  !
@@ -61,7 +61,7 @@
 !           t2mi_cpl,q2mi_cpl,                                          !
 !           u10mi_cpl,v10mi_cpl,tseai_cpl,psurfi_cpl,                   !
 !           tref, z_c, c_0, c_d, w_0, w_d, rqtk,                        !
-!           hlwd,lsidea                         )                       !
+!           dt6dt,lsidea                         )                      !
 !                                                                       !
 !  subprograms called:                                                  !
 !                                                                       !
@@ -271,7 +271,7 @@
 !     swhc     - real, clear sky sw heating rates ( k/s )       ix,levs !
 !     hlw      - real, total sky lw heating rates ( k/s )       ix,levs !
 !     hlwc     - real, clear sky lw heating rates ( k/s )       ix,levs !
-!     hlwd     - real, idea  sky lw heating rates ( k/s )       ix,levs !
+!     dt6dt    - real, idea  sky lw heating rates ( k/s )       ix,levs !
 !     ras      - logical, flag for ras convection scheme           1    !
 !     cscnv    - logical, flag for Chikira-Sugiyama convection     1    !
 !     nctp     - integer, number of cloud types in CS scheme       1    !
@@ -525,7 +525,7 @@
      &      sfcnirbmu,sfcnirdfu,sfcvisbmu,sfcvisdfu,                    &
      &      slimskin_cpl,ulwsfcin_cpl,                                  &
      &      dusfcin_cpl,dvsfcin_cpl,dtsfcin_cpl,dqsfcin_cpl,            &
-     &      sfcdlw,tsflw,sfcemis,sfalb,swh,swhc,hlw,hlwc,hlwd,lsidea,   &
+     &      sfcdlw,tsflw,sfcemis,sfalb,swh,swhc,hlw,hlwc,dt6dt,lsidea,  &
      &      ras,pre_rad,ldiag3d,lgocart,lssav,lssav_cpl,                &
 
      &      xkzm_m,xkzm_h,xkzm_s,psautco,prautco,evpco,wminco,          &
@@ -634,7 +634,7 @@
      &   ugrs, vgrs, tgrs, vvel, prsl, prslk, phil, swh, swhc, hlw, hlwc
 
 !idea add by hmhj
-      real(kind=kind_phys), intent(in) ::  hlwd(ix,levs,6)
+      real(kind=kind_phys), intent(in) ::  dt6dt(37,2)
 
       real(kind=kind_phys), intent(inout) ::  qgrs(ix,levs,ntrac)
 
@@ -1113,12 +1113,7 @@
       endif
 !
       if (lsidea) then                       !idea jw
-        do k = 1, levs
-          do i = 1, im
-!           dtdt(i,k) = hlwd(i,k,2)
-            dtdt(i,k) = 0.
-          enddo
-        enddo
+        dtdt = 0.
       endif
 
 !  ---  convert lw fluxes for land/ocean/sea-ice models
@@ -1177,16 +1172,7 @@
 
         if (ldiag3d) then
           if( lsidea ) then
-            do k = 1, levs
-              do i = 1, im
-                dt3dt(i,k,1) = dt3dt(i,k,1) + hlwd(i,k,1)*dtf
-                dt3dt(i,k,2) = dt3dt(i,k,2) + hlwd(i,k,2)*dtf
-                dt3dt(i,k,3) = dt3dt(i,k,3) + hlwd(i,k,3)*dtf
-                dt3dt(i,k,4) = dt3dt(i,k,4) + hlwd(i,k,4)*dtf
-                dt3dt(i,k,5) = dt3dt(i,k,5) + hlwd(i,k,5)*dtf
-                dt3dt(i,k,6) = dt3dt(i,k,6) + hlwd(i,k,6)*dtf
-              enddo
-            enddo
+             dt3dt(i,k,1) = 0.0
           else
             do k = 1, levs
               do i = 1, im

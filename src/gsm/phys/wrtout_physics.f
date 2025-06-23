@@ -299,21 +299,6 @@
       te = t4-t3
 !
 !      print *,'---- start diag3d.f section -----'
-      if (ldiag3d) then
-        if (me == 0) print *,' wrtout_physics ldiag3d on so wrt3d '
-        no3d = 64
-        if(me == IOPROC)
-     &  call BAOPENWT(NO3D,d3df//CFHOUR,iostat)
-        if (hybrid .or. gen_coord_hybrid) then
-          call WRT3D_hyb(IOPROC,no3d,zhour_iau,fhour_iau,jdate_iau,
-     &                   colat1,global_lats_r,lonsperlar,pl_coeff,
-     &                   SECSWR,SECLWR,sfc_fld%slmsk,flx_fld%psurf)
-        else
-          call WRT3D(IOPROC,no3d,zhour_iau,fhour_iau,jdate_iau,colat1,
-     &               global_lats_r,lonsperlar,pl_coeff,
-     &               SECSWR,SECLWR,sl,si,sfc_fld%slmsk,flx_fld%psurf)
-        endif
-      endif
 !
 !      if(me .eq. ioproc)  call wrtlog_physics(phour,fhour,idate)
 

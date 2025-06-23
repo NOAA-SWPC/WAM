@@ -10,7 +10,7 @@
       integer, intent(in) :: ntrac  ! number of tracer
 !
       real, intent(in)    :: adr(ix,levs,ntrac)    ! tracer kg/kg
-      real, intent(out)   :: xcp(ix,levs)          !CP (J/kg/k)
+      real, intent(out)   :: xcp(ix,levs)          ! Cp (J/kg/K)
       integer thermodyn_id
       logical gen_coord_hybrid
 !

@@ -1,5 +1,5 @@
       subroutine idea_phys_dissipation(im,ix,levs,grav,prsi,prsl,       
-     &adu,adv,adt,o_n,o2_n,n2_n,dtp,cp,rho, dt6dt)
+     &adu,adv,adt,o_n,o2_n,n2_n,dtp,cp,rho)
 !-----------------------------------------------------------------------
 ! add temp, wind changes due to viscosity and thermal conductivity
 ! Apr 06 2012  Henry Juang, initial implement for nems
@@ -27,7 +27,6 @@
       real, intent(inout) :: adt(ix,levs)       ! temperature
       real, intent(inout) :: adu(ix,levs)       ! u
       real, intent(inout) :: adv(ix,levs)       ! v
-      real, intent(inout) :: dt6dt(ix,levs,6)   !     
        
 ! Local variables
       real up(ix,levs,3),dudt(ix,levs,3) 
@@ -43,7 +42,7 @@
       enddo
 
       call phys_vis_cond(im,ix,levs,grav,prsi,prsl,up,dudt,o_n,o2_n,    
-     &     n2_n,dtp,cp, rho, ahs_i, ma_i, dt6dt)
+     &     n2_n,dtp,cp, rho, ahs_i, ma_i)
 
 
       call phys_eddy_heat_cond(im,ix,levs,grav,prsi,prsl,
@@ -64,7 +63,7 @@
 !ccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccccc     
 
       subroutine phys_vis_cond(im,ix,levs,grav,prsi,prsl,up,dudt,o_n,   
-     &o2_n,n2_n,dtp,cp, rho, ahs_i, ma_i, dt6dt)
+     &o2_n,n2_n,dtp,cp, rho, ahs_i, ma_i)
 !-----------------------------------------------------------------------
 !
 ! calaulate temp., wind tendency caused by viscosity and molecular thermal conductivity
@@ -111,7 +110,6 @@
       real, intent(out)   :: ma_i(ix,levs+1)    ! mean mass 
       real, intent(out)   :: dudt(ix,levs,3)    ! u,v,t tendency
      
-      real, intent(inout) :: dt6dt(ix,levs,6)    !  
 ! Local variables
       real o_ni(levs+1),o2_ni(levs+1),n2_ni(levs+1)
       real mu_i(levs+1),la_i(levs+1),cp1(levs)
@@ -179,8 +177,6 @@
           t_i(k)=t_i(k)**(0.69)
           coef_i(k,1)=mu_i(k)*t_i(k)
           coef_i(k,2)=la_i(k)*t_i(k)
-!         dt6dt(i,k,2)=mu_i(k)*t_i(k)
-!         dt6dt(i,k,6)=la_i(k)*t_i(k)
 !        enddo
 ! solve tridiagonal problem
 ! non-Pa           parta(k,1)=dtp*grav(i,k)/(prsi(i,k)-prsi(i,k+1))
@@ -218,7 +214,6 @@
           enddo
         enddo  !kk
 !        do k=1,levs
-!        dt6dt(i,k,5)=dudt(i,k,3)     ! molecular conduct cooling
 !        enddo
 !
 ! u v changes add to temperature tendency due to energy conservation 
@@ -227,8 +222,6 @@
         dudt(i,k,3)=dudt(i,k,3)-(up(i,k,1)*dudt(i,k,1)   
      &    +up(i,k,2)*dudt(i,k,2)) * cp1(k)
 
-!         dt6dt(i,k,6)= -1.*cp1(k)*(up(i,k,1)*dudt(i,k,1)               
-!    &    +up(i,k,2)*dudt(i,k,2))
        enddo
       enddo !i
       return
