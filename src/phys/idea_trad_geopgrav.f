@@ -1,5 +1,5 @@
       subroutine getcp_idea(im,ix,levs,ntrac,adr,xcp,                   
-     &                      thermodyn_id,gen_coord_hybrid,dt6dt)
+     &                      thermodyn_id,gen_coord_hybrid)
 !
       use tracer_const              ! NENS/gsmphys: see tracer_const_h.f:      module tracer_const
 !
@@ -10,7 +10,6 @@
       integer, intent(in) :: ntrac  ! number of tracer
 !
       real, intent(in)    :: adr(ix,levs,ntrac)    ! tracer kg/kg
-      real, intent(inout) :: dt6dt(ix,levs,7)      ! diagnostic array
       real, intent(out)   :: xcp(ix,levs)          ! Cp (J/kg/K)
       integer thermodyn_id
       logical gen_coord_hybrid
@@ -46,7 +45,6 @@
       do k=1,levs
         do j=1,im
           xcp(j,k) = xcp(j,k) + (1.-sumq(j,k))*cpi(0)
-          dt6dt(j,k,5) = xcp(j,k)
         enddo
       enddo
       return

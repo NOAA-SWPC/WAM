@@ -117,7 +117,7 @@
       real, intent(inout) :: adu(ix,levs)       ! W-E u
       real, intent(inout) :: adv(ix,levs)       ! S-N v
 !
-      real, intent(inout) :: dt6dt(ix,levs,7)   ! diagnostic 3D-array ....never used
+      real, intent(inout) :: dt6dt(37,2)
 !                                               !
 ! (2)-wtot-merged (SH-LW, H2O, CO2, O2,O3), (4-5-6) for Strobel +Cooling
 ! (1)-MT_SHEAT(EUV+?),  (3) - Joule heating
@@ -263,14 +263,14 @@
       call idea_tracer(im,ix,levs,ntrac,2,grav,prsi,prsl,adt,adr,
      &                 dtp,o_n,o2_n,o3_n, n2_n,nair,rho,am, am29,
      & cospass, dayno, zg, f107, f107d, me, go2dr, plow,
-     & phigh, xpk_low, xpk_high)
+     & phigh, xpk_low, xpk_high, dt6dt)
 !        if ( me == 0) print *, maxval(am29), minval(am29), 'VAY-am29C
 !
 !
 ! calculate cp and precompute [1/cp/rho =array] for dT/dt = Q/cp/rho
 !=================================================================
       call getcp_idea(im,ix,levs,ntrac,adr,cp,
-     &                thermodyn_id,gen_coord_hybrid,dt6dt)
+     &                thermodyn_id,gen_coord_hybrid)
 
 !============================================
 ! dissipation +GW physics/turbulent eddies
@@ -291,7 +291,7 @@
 !  only molecular diss. (viscosity + conductivity) no eddy diff. for tracers
 !  dissipation of 2013-idea:
       call idea_phys_dissipation(im,ix,levs,grav,prsi,prsl,
-     &      adu,adv,adt,o_n,o2_n,n2_n,dtp,cp, rho,dt6dt)
+     &      adu,adv,adt,o_n,o2_n,n2_n,dtp,cp, rho)
 !
 !--------------------------------------------------------------------------
 !      endif
@@ -382,9 +382,6 @@
       do k=1,levs
         do i=1,im
           adt(i,k)     = adt(i,k) + dtp*wtot(i,k)
-! dt6dt
-          dt6dt(i,k,2) = wtot(i,k)
-!
         enddo
       enddo
 !=========================================================================
@@ -414,7 +411,6 @@
           adu(i,k) = adu(i,k) + dtp*dudt(i,k)
           adv(i,k) = adv(i,k) + dtp*dvdt(i,k)
           adt(i,k) = adt(i,k) + dtp*dtdt(i,k)
-          dt6dt(i,k,7) = zg(i,k)
         enddo
       enddo
 !======================= WAM-IPE physics is completed ========

@@ -51,7 +51,7 @@
       real, intent(in)    :: zg(ix,levs)!layer height (m)
       real, intent(in)    :: grav(ix,levs)! (m/s2)
       real, intent(in)    :: rho(ix,levs)  ! density (kg/m3) 
-      real, intent(inout) :: dt6dt(ix,levs,7)  ! 
+      real, intent(inout) :: dt6dt(37,2)
       real, intent(out)   :: dt(ix,levs) ! (K/s) solar heating rate
 ! Locals
       integer  i,k
@@ -67,7 +67,6 @@
       real :: vay_avgd, tg_vay, vay_cprho, rcpro, ron2
 
 !==================================================================
-
       vay_rgas_o =  1.e3*rgas/amo
       vay_rgas_o2 = 1.e3*rgas/amo2
       vay_rgas_n2 = 1.e3*rgas/amn2
@@ -97,7 +96,7 @@
       IF (sheat_hao) then
        call solar_heat_dissociation_TIEGCM(levs,nps,o,o2,o3,n2,           
      &     ho,ho2,hn2, f107,f107d,cospass(i),dayno,         
-     &     ht,sheat,sh1,sh2,dissociation_rate, Jo3)
+     &     ht,sheat,sh1,sh2,dissociation_rate, Jo3, dt6dt)
 !     ELSE                ! ' OLD-SOLAR_EUV_SRC-2014'
 !        call solar_heat(levs,nps,o,o2,n2,ho,ho2,hn2,effeuv,effuv,       
 !     &   f107, cospass(i),sheat,sh1,sh2)
@@ -111,18 +110,12 @@
         do k=nps,levs
 !    
           rcpro = 1./(cp(i,k)*rho(i,k))
-          dt6dt(i,k,1)=qno(k)*rcpro
-          dt6dt(i,k,3)=sh1(k)*rcpro
-          dt6dt(i,k,4)=sh2(k)*rcpro
 !net Q
           dt(i,k)=(sheat(k)-qno(k))*rcpro
 ! 
         enddo ! k
         do k=1,nps-1
           dt(i,k)=0.
-          dt6dt(i,k,1)=0.
-          dt6dt(i,k,3)=0.
-          dt6dt(i,k,4)=0.
         enddo ! k
 
       enddo !i
@@ -197,7 +190,7 @@
 !
       SUBROUTINE solar_heat_dissociation_TIEGCM(np,nps,O,O2,O3,N2,
      &  HO, HO2, HN2, F107, F107d, COSPASS, dayno, height,
-     &  sheat,sh1,sh2, O2dissociation_rate, O3dissociation_rate)
+     &  sheat,sh1,sh2, O2dissociation_rate, O3dissociation_rate,dt6dt)
 
 ! Vay-2015   solar_heat_dissociation_TIEGCM   1D_height subroutine
 ! RAA        Dec 2017: SED correction factors(sfeps), some cleanup
@@ -212,7 +205,7 @@
        use idea_solar,       only  : csao, csao2, csan2, csao3
        use idea_solar,       only  : csio, csio2, csin2
        use idea_solar,       only  : csdo2, csdeo2
-       use idea_solar,       only  : sfmin, afac
+       use idea_solar,       only  : sfmin, afac, rlmeuv
        use idea_solar,       only  : nwaves, nwaves_euv
        use idea_solar,       only  : lyman_a_num,nwaves_src
 !-------------------------------------------------------------------------
@@ -263,6 +256,7 @@
       real, intent(out)   :: sheat(np),sh1(np),sh2(np)   ! W/m3 heating rate
       real, intent(out)   :: O2dissociation_rate(np)
       real, intent(out)   :: O3dissociation_rate(np)
+      real, intent(inout)   :: dt6dt(37,2)
 
 ! locals 
 
@@ -464,8 +458,12 @@
               Jo3_lyaloc =2.27e-17*pdnolya
            ENDIF                                               ! src/lya
          ENDIF          ! UV/EUV
+
         enddo           ! end of wavelength loop - J-index
 
+      dt6dt(:, 1) = flux
+      dt6dt(:, 2) = rwpcc
+      dt6dt(:, 3) = rlmeuv(size(rlmeuv):1:-1)
 !==========================================================
 !  qtotal(k,i,lat) = qtotal(k,i,lat)+ho2src(k,i)+ho2srb(k,i) 
 !  Calculate O2 Schumunn Runge band heating  see "o2srbc.F"
@@ -562,7 +560,7 @@
 !
       subroutine idea_dissociation_jo3(im,ix,levs,te,cospass,
      & o_n,o2_n,o3_n, n2_n,
-     & dayno,zg,grav, f107, f107d, Jo2_2d, Jo3_2d)
+     & dayno,zg,grav, f107, f107d, Jo2_2d, Jo3_2d, dt6dt)
 !----------------------------------------------------------------------------
 ! calculete solar dissociation of O2 (UV+EUV)
 !----------------------------------------------------------------------------
@@ -585,6 +583,7 @@
       real, intent(in)    :: zg(ix,levs)  !layer height (m)
       real, intent(in)    :: grav(ix,levs)! (m/s2)
       real, intent(in)    :: f107, f107d
+      real, intent(inout) :: dt6dt(37, 2)
 !
 ! VAY out dissociation_rate2d
 !
@@ -625,7 +624,7 @@
 ! 
         call solar_heat_dissociation_TIEGCM(levs,nps,o,o2,o3,n2,
      &     ho,ho2,hn2,f107,f107d,cospass(i),dayno,
-     &     ht,sheat,sh1,sh2, jo2_1d, jo3_1d)
+     &     ht,sheat,sh1,sh2, jo2_1d, jo3_1d, dt6dt)
 ! 
 !VAY-oct 2016 .....dissociation_rate2d
 !VAY-jan 2017    Jo2_2d & Jo3_2d based on TIME-GCM/2015
@@ -640,7 +639,7 @@
 !
       subroutine idea_dissociation_jo2(im,ix,levs,te,cospass,
      & o_n,o2_n,o3_n, n2_n,
-     & dayno,zg,grav, f107, f107d, Jo2_2d)
+     & dayno,zg,grav, f107, f107d, Jo2_2d, dt6dt)
 !----------------------------------------------------------------------------
 ! calculete solar dissociation of O2 (UV+EUV)
 !----------------------------------------------------------------------------
@@ -663,6 +662,7 @@
       real, intent(in)    :: zg(ix,levs)  !layer height (m)
       real, intent(in)    :: grav(ix,levs)! (m/s2)
       real, intent(in)    :: f107, f107d
+      real, intent(inout) :: dt6dt(37,2)
 !
 ! VAY out dissociation_rate2d
       real, intent(out)   :: Jo2_2d(ix, levs)
@@ -701,7 +701,7 @@
 ! 
         call solar_heat_dissociation_TIEGCM(levs,nps,o,o2,o3,n2,
      &     ho,ho2,hn2,f107,f107d,cospass(i),dayno,
-     &     ht,sheat,sh1,sh2, jo2_1d, jo3_1d)
+     &     ht,sheat,sh1,sh2, jo2_1d, jo3_1d, dt6dt)
 ! 
 !VAY-oct 2016 .....dissociation_rate2d
 !VAY-jan 2017    Jo2_2d & Jo3_2d based on TIME-GCM/2015

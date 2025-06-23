@@ -634,7 +634,7 @@
      &   ugrs, vgrs, tgrs, vvel, prsl, prslk, phil, swh, swhc, hlw, hlwc
 
 !idea add by hmhj
-      real(kind=kind_phys), intent(in) ::  dt6dt(ix,levs,7)
+      real(kind=kind_phys), intent(in) ::  dt6dt(37,2)
 
       real(kind=kind_phys), intent(inout) ::  qgrs(ix,levs,ntrac)
 
@@ -1172,16 +1172,7 @@
 
         if (ldiag3d) then
           if( lsidea ) then
-            do k = 1, levs
-              do i = 1, im
-                dt3dt(i,k,1) = dt3dt(i,k,1) + dt6dt(i,k,1)*dtf
-                dt3dt(i,k,2) = dt3dt(i,k,2) + dt6dt(i,k,2)*dtf
-                dt3dt(i,k,3) = dt3dt(i,k,3) + dt6dt(i,k,3)*dtf
-                dt3dt(i,k,4) = dt3dt(i,k,4) + dt6dt(i,k,4)*dtf
-                dt3dt(i,k,5) = dt3dt(i,k,5) + dt6dt(i,k,5)*dtf
-                dt3dt(i,k,6) = dt3dt(i,k,6) + dt6dt(i,k,6)*dtf
-              enddo
-            enddo
+             dt3dt(i,k,1) = 0.0
           else
             do k = 1, levs
               do i = 1, im

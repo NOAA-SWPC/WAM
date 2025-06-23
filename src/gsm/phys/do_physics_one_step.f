@@ -123,8 +123,7 @@
      &                                                     coszdg, sfalb
       real (kind=kind_phys), dimension(ngptc,levs,nblck,lats_node_r) ::
      &                          swh, swhc, hlw, hlwc
-      real (kind=kind_rad), dimension(ngptc,levs,7,nblck,lats_node_r)::
-     &                          dt6dt
+      real (kind=kind_rad), dimension(37,2)::dt6dt
       REAL (KIND=KIND_RAD) HPRIME(NMTVR,LONR,LATS_NODE_R),
      &                     FLUXR(nfxr,LONR,LATS_NODE_R)
 ! idea add by hmhj  - commented by moorthi since unused
@@ -591,9 +590,7 @@
 !     &   'fhour=',fhour,'zhour=',zhour,'zhour_dfin=',zhour_dfin,
 !     &   'zhour_dfi=',zhour_dfi
 
-      if (ldiag3d .and. mod(kdt,60) == 0) then
-       call WRT3D_hyb(dt6dt,kdt/60,global_lats_r,lonsperlar,nblck,idate)
-      end if
+       call WRT3D_hyb(dt6dt,kdt-1,global_lats_r,lonsperlar,nblck,idate)
       if (lsout .and. kdt /= 0 ) then
 !WY bug fix.
 !-----------

@@ -43,7 +43,7 @@
       subroutine idea_tracer(im,ix,levs,ntrac,ntrac_i,grav,prsi,prsl,   
      &  adt,q,dtp,n1,n2,ozn, n3,n,rho,am, am29, 
      &  cospass,dayno,zg,f107,f107d,me, go2dr, plow, phigh, xpk_low,
-     &  xpk_high)
+     &  xpk_high, dt6dt)
 
       use physcons, only          : avgd => con_avgd             
       use idea_composition, only  : bz,amo,amn2, amo2, amo3, amh2o
@@ -81,6 +81,7 @@
       real, intent(out)   :: rho(ix,levs)    ! density of  (kg/m3)
       real, intent(out)   :: am(ix,levs)     ! avg mass of mix  (kg)
       real, intent(out)   :: am29(ix,levs)   ! avg mass of air 28.84 => 16.
+      real, intent(inout) :: dt6dt(37, 2)
 ! local argument
       real ::  dq1(ix,levs,ntrac_i),dq2(ix,levs,ntrac_i),
      &         dq3(ix,levs,ntrac_i)
@@ -132,7 +133,7 @@
 
 ! O2 dissociation rate
       call idea_dissociation_jo2(im,ix,levs,adt,cospass,n1,n2, ozn, n3,
-     &          dayno,zg,grav, f107, f107d, Jrates_O2)
+     &          dayno,zg,grav, f107, f107d, Jrates_O2, dt6dt)
 
 ! Merge the  IPE back coupling WAM variable arrays into WAM.
       IF (ipe_to_wam_coupling) THEN

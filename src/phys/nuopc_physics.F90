@@ -657,7 +657,7 @@
 
          ! Used only by gbphys
          real (kind=kind_phys), pointer :: rqtk (:)     => null()  ! mass change due to moisture variation
-         real (kind=kind_phys), pointer :: dt6dt (:,:,:) => null()  ! idea sky lw heating rates ( k/s )
+         real (kind=kind_phys), pointer :: dt6dt (:,:) => null()  ! idea sky lw heating rates ( k/s )
          real (kind=kind_phys), pointer :: dtdtr(:,:)   => null()  ! temperature change due to radiative heating per time step (K)
 
          real (kind=kind_phys), pointer :: swhc (:,:)   => null()  ! clear sky sw heating rates ( k/s ) 
@@ -1755,7 +1755,7 @@
 
          ! Optional, used only by gbphys
          real (kind=kind_phys), optional, target :: rqtk (:)
-         real (kind=kind_phys), optional, target :: dt6dt(:,:,:)
+         real (kind=kind_phys), optional, target :: dt6dt(:,:)
          real (kind=kind_phys), optional, target :: dtdtr(:,:)
 
          real (kind=kind_phys), optional, target :: swhc (:,:)
