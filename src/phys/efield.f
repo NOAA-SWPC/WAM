@@ -56,8 +56,8 @@
 !     use cam_logfile,   only: iulog
       use IDEA_IO_UNITS, only: iulog  
       use w05sc,         only: EpotVal_new, SetModel_new, read_bndy,
-     &                         read_potential, read_schatable, model
- 
+     &                         read_potential, read_schatable, model,
+     &                         bndyfitr
       implicit none
 
       public :: efield_init,   ! interface routine                     
@@ -1058,6 +1058,11 @@
          den   = swden
          v_sw  = swvel
       end if
+
+      if (den > 60.0) then
+         den = 60.0 + 20.0 * tanh((den-60.0)/20.0)
+      end if
+
       if(debug) then
        write(iulog,"(/,'efield prep_weimer:')")
        write(iulog,"(/,'by code:')")
@@ -1079,6 +1084,12 @@
       tilt = get_tilt( iyear, imo, iday_m, ut )
 
       call SetModel_new(angle,bt,tilt,v_sw,den)
+
+      if (bndyfitr > 89.5) then
+        print *, '[efield wrapper warning] bndyfitr saturated: ',
+     &      bndyfitr
+        bndyfitr = 89.5
+      end if
 
       if(debug) then
        write(iulog,"(/,'efield prep_weimer:')")
